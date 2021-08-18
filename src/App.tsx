@@ -1,9 +1,10 @@
-import React from "react";
-import { Stage, Layer, Rect, Group } from "react-konva";
+import React from 'react';
+import { Stage, Layer, Rect, Group } from 'react-konva';
 
 export const App = () => {
   const PADDING = 0;
 
+  const commitRef = React.useRef<any>(null);
   const stageRef = React.useRef<any>(null);
 
   const [layerX, setLayerX] = React.useState(0);
@@ -37,13 +38,10 @@ export const App = () => {
 
   var scaleBy = 1.04;
   return (
-    // Stage - is a div wrapper
-    // Layer - is an actual 2d canvas element, so you can have several layers inside the stage
-    // Rect and Circle are not DOM elements. They are 2d shapes on canvas
     <Stage
       width={window.innerWidth}
       height={300}
-      style={{ background: "#f3f3f3" }}
+      style={{ background: '#f3f3f3' }}
       ref={stageRef}
       onWheel={(e) => {
         e.evt.preventDefault();
@@ -109,8 +107,8 @@ export const App = () => {
       <Layer x={layerX} scaleX={zoom}>
         <Group
           y={100}
-          x={5}
           draggable
+          ref={commitRef}
           dragBoundFunc={(pos) => {
             return {
               x: pos.x,
@@ -118,7 +116,7 @@ export const App = () => {
             };
           }}
         >
-          <Rect width={100} height={100} fill="blue" />
+          <Rect ref={commitRef} width={100} height={100} fill="blue" />
           <Rect
             width={20}
             height={100}
@@ -126,8 +124,9 @@ export const App = () => {
             radius={50}
             draggable
             dragBoundFunc={(pos) => {
+              const commitAbsPos = commitRef.current.getAbsolutePosition();
               return {
-                x: pos.x,
+                x: pos.x < commitAbsPos.x ? commitAbsPos.x : pos.x,
                 y: 100,
               };
             }}
