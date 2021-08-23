@@ -6,10 +6,11 @@
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
-    "@types/jest": "^26.0.15",
+    "@types/jest": "^27.0.1",
     "@types/node": "^12.0.0",
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
+    "diff": "^5.0.0",
     "konva": "^8.1.1",
     "monaco-editor": "^0.27.0",
     "react": "^17.0.2",
@@ -17,7 +18,8 @@
     "react-konva": "^17.0.2-5",
     "react-scripts": "4.0.3",
     "typescript": "^4.1.2",
-    "web-vitals": "^1.0.1"
+    "web-vitals": "^1.0.1",
+    "yjs": "^13.5.12"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -42,5 +44,15 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/diff": "^5.0.1",
+    "jest": "^27.0.6",
+    "ts-jest": "^27.0.5"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.(t|j)sx?$": "ts-jest"
+    }
   }
 }
