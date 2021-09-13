@@ -1,10 +1,9 @@
-import React from 'react';
-import { Stage, Layer, Rect, Group } from 'react-konva';
+import React from "react";
+import { Stage, Layer, Rect } from "react-konva";
 
 export const App = () => {
   const PADDING = 0;
 
-  const commitRef = React.useRef<any>(null);
   const stageRef = React.useRef<any>(null);
 
   const [layerX, setLayerX] = React.useState(0);
@@ -41,7 +40,7 @@ export const App = () => {
     <Stage
       width={window.innerWidth}
       height={300}
-      style={{ background: '#f3f3f3' }}
+      style={{ background: "#f3f3f3" }}
       ref={stageRef}
       onWheel={(e) => {
         e.evt.preventDefault();
@@ -104,36 +103,81 @@ export const App = () => {
           }}
         />
       </Layer>
-      <Layer x={layerX} scaleX={zoom}>
-        <Group
-          y={100}
-          draggable
-          ref={commitRef}
-          dragBoundFunc={(pos) => {
-            return {
-              x: pos.x,
-              y: 100,
-            };
-          }}
-        >
-          <Rect ref={commitRef} width={100} height={100} fill="blue" />
-          <Rect
-            width={20}
-            height={100}
-            stroke="black"
-            radius={50}
-            draggable
-            dragBoundFunc={(pos) => {
-              const commitAbsPos = commitRef.current.getAbsolutePosition();
-              return {
-                x: pos.x < commitAbsPos.x ? commitAbsPos.x : pos.x,
-                y: 100,
-              };
-            }}
-          />
-        </Group>
-      </Layer>
+      <Changes layerX={layerX} zoom={zoom} />
     </Stage>
   );
 };
 export default App;
+
+function Changes({ layerX, zoom }: { layerX: number; zoom: number }) {
+  const [changes, setChanges] = React.useState({
+    prvi: {
+      x: 100,
+      color: "blue",
+    },
+    drugi: {
+      x: 300,
+      color: "red",
+    },
+  });
+
+  const [lastX, setLastX] = React.useState(-1);
+
+  return (
+    <Layer x={layerX} scaleX={zoom}>
+      {Object.entries(changes).map(([id, change]) => {
+        return (
+          <Rect
+            key={id}
+            x={change.x}
+            y={100}
+            width={100}
+            height={100}
+            draggable
+            onDragStart={() => {
+              setLastX(change.x);
+            }}
+            onDragMove={(event) => {
+              const pos = event.target.getPosition();
+              setChanges({
+                ...changes,
+                [id]: {
+                  ...change,
+                  x: pos.x,
+                },
+              });
+            }}
+            onDragEnd={() => {
+              setChanges({
+                ...changes,
+                [id]: {
+                  ...change,
+                  x: lastX,
+                },
+              });
+              setLastX(-1);
+            }}
+            fill={change.color}
+            dragBoundFunc={(pos) => {
+              return {
+                x: pos.x,
+                y: 100,
+              };
+            }}
+          />
+        );
+      })}
+
+      {lastX !== -1 && (
+        <Rect
+          x={lastX}
+          y={100}
+          width={100}
+          height={100}
+          stroke="black"
+          radius={50}
+        />
+      )}
+    </Layer>
+  );
+}
