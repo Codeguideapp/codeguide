@@ -1,5 +1,5 @@
-import React from "react";
-import { Stage, Layer, Rect } from "react-konva";
+import React from 'react';
+import { Stage, Layer, Rect } from 'react-konva';
 
 export const App = () => {
   const PADDING = 0;
@@ -40,7 +40,7 @@ export const App = () => {
     <Stage
       width={window.innerWidth}
       height={300}
-      style={{ background: "#f3f3f3" }}
+      style={{ background: '#f3f3f3' }}
       ref={stageRef}
       onWheel={(e) => {
         e.evt.preventDefault();
@@ -109,19 +109,40 @@ export const App = () => {
 };
 export default App;
 
+type Change = {
+  x: number;
+  color: string;
+  width: number;
+};
+
 function Changes({ layerX, zoom }: { layerX: number; zoom: number }) {
-  const [changes, setChanges] = React.useState({
+  // used for displaying change "ghost" so it snaps back in that position on dragEnd
+  const [snapPosX, setSnapPosX] = React.useState(-1);
+
+  const [changes, setChanges] = React.useState<Record<string, Change>>({
     prvi: {
       x: 100,
-      color: "blue",
+      width: 100,
+      color: 'blue',
     },
     drugi: {
       x: 300,
-      color: "red",
+      width: 100,
+      color: 'red',
+    },
+    treci: {
+      x: 500,
+      width: 100,
+      color: 'green',
     },
   });
 
-  const [lastX, setLastX] = React.useState(-1);
+  // changes but updated only if ordering is changed
+  const staticChanges = React.useMemo(
+    () => changes,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [snapPosX] // recalculate only when snap position is changed
+  );
 
   return (
     <Layer x={layerX} scaleX={zoom}>
@@ -131,31 +152,55 @@ function Changes({ layerX, zoom }: { layerX: number; zoom: number }) {
             key={id}
             x={change.x}
             y={100}
-            width={100}
+            width={change.width}
             height={100}
             draggable
             onDragStart={() => {
-              setLastX(change.x);
+              setSnapPosX(change.x);
             }}
             onDragMove={(event) => {
               const pos = event.target.getPosition();
-              setChanges({
-                ...changes,
-                [id]: {
-                  ...change,
-                  x: pos.x,
-                },
-              });
+
+              const shouldSwap = Object.entries(staticChanges).find(
+                ([, c]) => c.x < change.x && c.x + c.width > change.x
+              );
+              if (shouldSwap && id !== shouldSwap[0]) {
+                // swapping positions
+                const swapFrom = id;
+                const swapTo = shouldSwap[0];
+
+                setChanges({
+                  ...changes,
+                  [swapFrom]: {
+                    ...changes[swapFrom],
+                    x: staticChanges[swapTo].x,
+                  },
+                  [swapTo]: {
+                    ...changes[swapTo],
+                    x: staticChanges[swapFrom].x,
+                  },
+                });
+
+                setSnapPosX(changes[swapTo].x);
+              } else {
+                setChanges({
+                  ...changes,
+                  [id]: {
+                    ...change,
+                    x: pos.x,
+                  },
+                });
+              }
             }}
             onDragEnd={() => {
               setChanges({
                 ...changes,
                 [id]: {
                   ...change,
-                  x: lastX,
+                  x: snapPosX,
                 },
               });
-              setLastX(-1);
+              setSnapPosX(-1);
             }}
             fill={change.color}
             dragBoundFunc={(pos) => {
@@ -168,9 +213,9 @@ function Changes({ layerX, zoom }: { layerX: number; zoom: number }) {
         );
       })}
 
-      {lastX !== -1 && (
+      {snapPosX !== -1 && (
         <Rect
-          x={lastX}
+          x={snapPosX}
           y={100}
           width={100}
           height={100}
