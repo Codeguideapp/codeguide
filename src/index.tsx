@@ -1,8 +1,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
 import './index.css'
-import App from './App'
-import { Editor } from './Editor'
+import { Timeline } from './Timeline/Timeline'
+import { Editor } from './Editor/Editor'
 import reportWebVitals from './reportWebVitals'
 import type * as monaco from 'monaco-editor'
 
@@ -11,7 +11,7 @@ const renderApp = () =>
     <React.StrictMode>
       <div>
         <Editor />
-        <App />
+        <Timeline />
       </div>
     </React.StrictMode>,
     document.getElementById('root')

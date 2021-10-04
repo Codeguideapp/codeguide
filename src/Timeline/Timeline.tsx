@@ -1,10 +1,11 @@
 import React from 'react';
-import { Stage, Layer, Rect, Group } from 'react-konva';
+import { Stage, Layer, Rect } from 'react-konva';
+import { Changes } from './Changes';
+import { Playhead } from './Playhead';
 
-export const App = () => {
+export const Timeline = () => {
   const PADDING = 0;
 
-  const commitRef = React.useRef<any>(null);
   const stageRef = React.useRef<any>(null);
 
   const [layerX, setLayerX] = React.useState(0);
@@ -104,36 +105,8 @@ export const App = () => {
           }}
         />
       </Layer>
-      <Layer x={layerX} scaleX={zoom}>
-        <Group
-          y={100}
-          draggable
-          ref={commitRef}
-          dragBoundFunc={(pos) => {
-            return {
-              x: pos.x,
-              y: 100,
-            };
-          }}
-        >
-          <Rect ref={commitRef} width={100} height={100} fill="blue" />
-          <Rect
-            width={20}
-            height={100}
-            stroke="black"
-            radius={50}
-            draggable
-            dragBoundFunc={(pos) => {
-              const commitAbsPos = commitRef.current.getAbsolutePosition();
-              return {
-                x: pos.x < commitAbsPos.x ? commitAbsPos.x : pos.x,
-                y: 100,
-              };
-            }}
-          />
-        </Group>
-      </Layer>
+      <Changes layerX={layerX} zoom={zoom} />
+      <Playhead />
     </Stage>
   );
 };
-export default App;
