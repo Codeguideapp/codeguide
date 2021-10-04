@@ -73,10 +73,12 @@ export const Timeline = () => {
         }
       }}
     >
+      <Changes layerX={layerX} zoom={zoom} height={100} y={100} />
+      <Playhead layerX={layerX} zoom={zoom} height={300} />
       <Layer>
         <Rect
           x={scrollbarX}
-          y={285}
+          y={290}
           width={horizontalBarWidth}
           height={10}
           fill="grey"
@@ -88,7 +90,7 @@ export const Timeline = () => {
                 Math.min(pos.x, stageWidth - horizontalBarWidth - PADDING),
                 PADDING
               ),
-              y: 285,
+              y: 290,
             };
           }}
           onDragMove={(event) => {
@@ -105,8 +107,6 @@ export const Timeline = () => {
           }}
         />
       </Layer>
-      <Changes layerX={layerX} zoom={zoom} />
-      <Playhead />
     </Stage>
   );
 };

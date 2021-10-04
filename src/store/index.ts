@@ -7,11 +7,14 @@ type Change = {
 };
 
 type Store = {
+  playHeadX: number;
   changes: Record<string, Change>;
   saveChanges: (newChanges: Record<string, Change>) => void;
+  setPlayHeadX: (x: number) => void;
 };
 
 export const useStore = create<Store>((set) => ({
+  playHeadX: 50,
   changes: {
     prvi: {
       x: 100,
@@ -29,6 +32,7 @@ export const useStore = create<Store>((set) => ({
       color: 'green',
     },
   },
+  setPlayHeadX: (playHeadX) => set({ playHeadX }),
   saveChanges: (newChanges) =>
     set((state) => ({ changes: { ...state.changes, ...newChanges } })),
 }));

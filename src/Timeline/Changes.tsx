@@ -1,12 +1,23 @@
 import React from 'react';
+import { useCallback } from 'react';
 import { Layer, Rect } from 'react-konva';
 import { useStore } from '../store';
 
-export function Changes({ layerX, zoom }: { layerX: number; zoom: number }) {
+export function Changes({
+  layerX,
+  zoom,
+  y,
+  height,
+}: {
+  layerX: number;
+  zoom: number;
+  y: number;
+  height: number;
+}) {
   // used for displaying change "ghost" so it snaps back in that position on dragEnd
   const [snapPosX, setSnapPosX] = React.useState(-1);
-  const changes = useStore((state) => state.changes);
-  const saveChanges = useStore((state) => state.saveChanges);
+  const changes = useStore(useCallback((state) => state.changes, []));
+  const saveChanges = useStore(useCallback((state) => state.saveChanges, []));
 
   // changes but updated only if ordering is changed
   const staticChanges = React.useMemo(
@@ -22,9 +33,9 @@ export function Changes({ layerX, zoom }: { layerX: number; zoom: number }) {
           <Rect
             key={id}
             x={change.x}
-            y={100}
+            y={y}
             width={change.width}
-            height={100}
+            height={height}
             draggable
             onDragStart={() => {
               setSnapPosX(change.x);
@@ -74,7 +85,7 @@ export function Changes({ layerX, zoom }: { layerX: number; zoom: number }) {
             dragBoundFunc={(pos) => {
               return {
                 x: pos.x,
-                y: 100,
+                y,
               };
             }}
           />
@@ -82,14 +93,7 @@ export function Changes({ layerX, zoom }: { layerX: number; zoom: number }) {
       })}
 
       {snapPosX !== -1 && (
-        <Rect
-          x={snapPosX}
-          y={100}
-          width={100}
-          height={100}
-          stroke="black"
-          radius={50}
-        />
+        <Rect x={snapPosX} y={y} width={100} height={height} stroke="black" />
       )}
     </Layer>
   );
