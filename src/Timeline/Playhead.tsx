@@ -26,7 +26,7 @@ export function Playhead({
         }}
         dragBoundFunc={(pos) => {
           return {
-            x: pos.x,
+            x: pos.x < 0 ? 0 : pos.x,
             y: 0,
           };
         }}
