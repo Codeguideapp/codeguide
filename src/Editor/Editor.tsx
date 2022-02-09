@@ -8,7 +8,7 @@ import { monacoHelpers } from "../utils/monaco";
 export function Editor() {
   const editorDiv = useRef<HTMLDivElement>(null);
   const editor = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-  const activeChanges = useStore((state) => state.activeChanges);
+  const appliedChanges = useStore((state) => state.appliedChanges);
   const changes = useStore((state) => state.changes);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ export function Editor() {
 
   useEffect(() => {
     if (editor.current) {
-      const commands = activeChanges.map((change) => changes[change].command);
+      const commands = appliedChanges.map((change) => changes[change].command);
       const res = executeCommands(commands, fixtures[0].oldVal);
 
       const currentValue = editor.current.getValue();
@@ -66,7 +66,7 @@ export function Editor() {
         editor.current.setValue(newValue);
       }
     }
-  }, [activeChanges, changes]);
+  }, [appliedChanges, changes]);
 
   return (
     <div
