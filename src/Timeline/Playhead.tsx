@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
-import { Rect, Layer, Group } from 'react-konva';
-import { useStore } from '../store';
+import { Group, Layer, Rect } from 'react-konva';
+
+import { useStore } from '../store/store';
 
 export function Playhead({
   layerX,

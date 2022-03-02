@@ -12,17 +12,17 @@ export const diffs = [
         document.getElementById('root')
       )
       `,
-    newVal: `
+    newVal: `bla
       const renderApp = () =>
-        ReactDOM.render(
+        RaaeactDOM.render(
           <React.StrictMode>
-            <span>
+            <div>
+              <Editor />
               <App />
-            </span>
+            </div>
           </React.StrictMode>,
-        document.getElementById('something w')
+        document.getElementById('root')
       )
-      // new line
       `,
   },
   {

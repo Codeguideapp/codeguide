@@ -1,5 +1,6 @@
 import React from 'react';
-import { Stage, Layer, Rect } from 'react-konva';
+import { Layer, Rect, Stage } from 'react-konva';
+
 import { Changes } from './Changes';
 import { Playhead } from './Playhead';
 
@@ -42,7 +43,7 @@ export const Timeline = () => {
     <Stage
       width={window.innerWidth}
       height={300}
-      style={{ background: '#f3f3f3' }}
+      style={{ background: '#20262C' }}
       ref={stageRef}
       onWheel={(e) => {
         e.evt.preventDefault();

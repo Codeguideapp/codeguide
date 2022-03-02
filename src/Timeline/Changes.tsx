@@ -1,7 +1,8 @@
 import React from 'react';
 import { useCallback } from 'react';
-import { Layer, Rect } from 'react-konva';
-import { useStore } from '../store';
+import { Group, Layer, Rect } from 'react-konva';
+
+import { useStore } from '../store/store';
 
 export function Changes({
   layerX,
@@ -30,12 +31,10 @@ export function Changes({
     <Layer x={layerX} scaleX={zoom}>
       {Object.entries(changes).map(([id, change]) => {
         return (
-          <Rect
+          <Group
             key={id}
             x={change.x}
             y={y}
-            width={change.width}
-            height={height}
             draggable
             onDragStart={() => {
               setSnapPosX(change.x);
@@ -46,10 +45,14 @@ export function Changes({
               const shouldSwap = Object.entries(staticChanges).find(
                 ([, c]) => c.x < change.x && c.x + c.width > change.x
               );
-              if (shouldSwap && id !== shouldSwap[0]) {
+              if (shouldSwap && id !== shouldSwap[0] && id) {
                 // swapping positions
                 const swapFrom = id;
                 const swapTo = shouldSwap[0];
+
+                if (swapFrom === 'draft' || swapTo === 'draft') {
+                  return;
+                }
 
                 saveChanges({
                   [swapFrom]: {
@@ -81,14 +84,27 @@ export function Changes({
               });
               setSnapPosX(-1);
             }}
-            fill={change.color}
             dragBoundFunc={(pos) => {
               return {
                 x: pos.x,
                 y,
               };
             }}
-          />
+          >
+            <Rect fill={change.color} width={change.width} height={height} />
+            {Object.entries(change.actions).map(([id, action], i) => (
+              // todo: buttons with tooltips https://konvajs.org/docs/sandbox/Shape_Tooltips.html separate component - react with tooltip support?
+              <Rect
+                key={id}
+                fill={action.color}
+                x={i * 10}
+                width={10}
+                height={10}
+                onClick={action.callback}
+                name={action.label}
+              />
+            ))}
+          </Group>
         );
       })}
 

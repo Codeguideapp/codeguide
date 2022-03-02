@@ -1,7 +1,8 @@
-import * as Y from 'yjs';
 import * as diffLib from 'diff';
+import Delta from 'quill-delta';
+import * as Y from 'yjs';
 
-export type Command =
+type Command =
   | {
       type: 'insert';
       value: string;
@@ -19,7 +20,7 @@ export type Command =
       delLength: number;
     };
 
-export type Change = {
+type DiffChunk = {
   count?: number;
   value: string;
   added?: boolean;
@@ -27,8 +28,8 @@ export type Change = {
   replace?: string;
 };
 
-export function diff(oldVal: string, newVal: string): Change[] {
-  const diffs = diffLib.diffWords(oldVal, newVal) as (Change & {
+export function diff(oldVal: string, newVal: string): DiffChunk[] {
+  const diffs = diffLib.diffChars(oldVal, newVal) as (DiffChunk & {
     _skip?: boolean;
   })[];
 
@@ -50,7 +51,7 @@ export function diff(oldVal: string, newVal: string): Change[] {
     return diff;
   });
 
-  const changes: Change[] = [];
+  const changes: DiffChunk[] = [];
   diffsWithReplace.forEach((val) => {
     if (val) {
       changes.push(val);
@@ -60,7 +61,7 @@ export function diff(oldVal: string, newVal: string): Change[] {
   return changes;
 }
 
-export function createCommands(changes: Change[]): Command[] {
+export function createCommands(changes: DiffChunk[]): Command[] {
   const commands: Command[] = [];
   let index = 0;
 
@@ -118,6 +119,19 @@ export function executeCommands(commands: Command[], initialValue: string) {
         break;
     }
 
+    sync(targetYText, changeYText);
+  }
+
+  return targetYText;
+}
+
+export function executeDeltas(deltas: Delta[], initialValue: string) {
+  const initial = createYText(initialValue);
+  const targetYText = createYText(initial);
+
+  for (const delta of deltas) {
+    const changeYText = createYText(initial);
+    changeYText.applyDelta(delta.ops);
     sync(targetYText, changeYText);
   }
 

@@ -1,3 +1,6 @@
+import * as Automerge from 'automerge';
+import Delta from 'quill-delta';
+
 import {
   createCommands,
   createYText,
@@ -6,6 +9,27 @@ import {
   sync,
 } from '../edits';
 import { diffs } from './fixtures/diffs';
+
+test('deltas', () => {
+  const delta = new Delta().insert('a').insert('b');
+  console.log(delta);
+});
+
+test('automerge', () => {
+  const currentDoc = Automerge.init();
+  const newDoc = Automerge.change(currentDoc, (doc: any) => {
+    doc.text = new Automerge.Text();
+    doc.text.insertAt(0, 'h', 'e', 'l', 'l', 'o');
+    doc.text.deleteAt(0);
+    doc.text.insertAt(0, 'H');
+  });
+  const newDoc2 = Automerge.change(newDoc, (doc: any) => {
+    doc.text.insertAt(5, '1');
+  });
+
+  const history = Automerge.getHistory(newDoc2);
+  console.log(history);
+});
 
 test('should apply independent edits', () => {
   const initial = createYText('example text');
