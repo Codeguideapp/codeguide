@@ -1,24 +1,19 @@
 // save draft pa se stvori novi change
 // use immer https://github.com/pmndrs/zustand#sick-of-reducers-and-changing-nested-state-use-immer
 
-import { last } from 'lodash';
 import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 import React, { useCallback, useEffect, useRef } from 'react';
 import * as Y from 'yjs';
 
-import { createYText, sync } from '../edits';
-import { deltaToString, useStore } from '../store/store';
+import { useStore } from '../store/store';
 
 export function Editor() {
   const monacoListener = useRef<monaco.IDisposable>({ dispose: () => {} });
   const editorDiv = useRef<HTMLDivElement>(null);
   const editor = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
-  const activeFileInitial = useStore((state) => state.activeFileInitial);
-  const activeFileChanged = useStore((state) => state.activeFileChanged);
-  const appliedChangesIds = useStore((state) => state.appliedChangesIds);
-  const changes = useStore((state) => state.changes);
   const activeChangeId = useStore((state) => state.activeChangeId);
+  const activeChangeValue = useStore((state) => state.activeChangeValue);
   const pushDraftDelta = useStore(
     useCallback((state) => state.pushDraftDelta, [])
   );
@@ -28,7 +23,7 @@ export function Editor() {
       const readOnly = activeChangeId !== 'draft';
 
       editor.current = window.monaco.editor.create(editorDiv.current, {
-        value: activeFileInitial,
+        value: '',
         language: 'javascript',
         readOnly: readOnly,
         theme: readOnly ? 'readonly' : 'vs-dark',
@@ -45,16 +40,15 @@ export function Editor() {
       readOnly: readOnly,
       theme: readOnly ? 'readonly' : 'vs-dark',
     });
-
-    const monacoModel = editor.current.getModel();
-    if (!monacoModel) return;
-  }, [activeChangeId, pushDraftDelta]);
+  }, [activeChangeId]);
 
   useEffect(() => {
     monacoListener.current.dispose();
     if (!editor.current) return;
     const monacoModel = editor.current.getModel();
     if (!monacoModel) return;
+
+    editor.current.setValue(activeChangeValue);
 
     if (activeChangeId === 'draft') {
       monacoListener.current = monacoModel.onDidChangeContent((e) => {
@@ -72,67 +66,9 @@ export function Editor() {
 
           pushDraftDelta(delta);
         });
-
-        // if (
-        //   draftValue !== undefined &&
-        //   editor.current?.getValue() === activeFileChanged
-        // ) {
-        //   setDraftValue(undefined);
-        // } else if (draftValue !== editor.current?.getValue()) {
-        //   setDraftValue(editor.current?.getValue());
-        // }
       });
-
-      // if (
-      //   draftValue !== undefined &&
-      //   draftValue !== editor.current.getValue()
-      // ) {
-      //   editor.current.setValue(draftValue);
-      // } else if (
-      //   draftValue === undefined &&
-      //   activeFileChanged !== editor.current.getValue()
-      // ) {
-      //   editor.current.setValue(activeFileChanged);
-      // }
-      // let ydoc = new Y.Doc();
-      // let draftYText = ydoc.getText(editor.current.getValue());
-      // // @ts-ignore
-      // if (window.ytext) {
-      //   // @ts-ignore
-      //   ydoc = window.ytext.doc;
-      //   // @ts-ignore
-      //   draftYText = window.ytext;
-      // }
-      // // @ts-ignore
-      // window.ytext = draftYText;
-    } else {
-      // take all changes using appliedChangesIds
-      // evertything from start to playhead
-
-      const yTextPerChange: Record<string, Y.Text> = {};
-      const targetYText = createYText('');
-
-      appliedChangesIds.forEach((id) => {
-        const { deltas, deps } = changes[id];
-        const lastDep = last(deps);
-
-        const changeYtext = createYText(lastDep ? yTextPerChange[lastDep] : '');
-        changeYtext.applyDelta(deltas.ops);
-        yTextPerChange[id] = changeYtext;
-
-        sync(changeYtext, targetYText);
-      });
-
-      editor.current.setValue(targetYText.toString());
     }
-  }, [
-    appliedChangesIds,
-    changes,
-    activeChangeId,
-    activeFileInitial,
-    activeFileChanged,
-    pushDraftDelta,
-  ]);
+  }, [activeChangeId, activeChangeValue, pushDraftDelta]);
 
   return (
     <div
