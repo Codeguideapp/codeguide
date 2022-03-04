@@ -19,6 +19,10 @@ export function Changes({
   const [snapPosX, setSnapPosX] = React.useState(-1);
   const changes = useStore(useCallback((state) => state.changes, []));
   const saveChanges = useStore(useCallback((state) => state.saveChanges, []));
+  const saveChanges2 = useStore(useCallback((state) => state.saveChanges2, []));
+  const updateChangesOrder = useStore(
+    useCallback((state) => state.updateChangesOrder, [])
+  );
 
   // changes but updated only if ordering is changed
   const staticChanges = React.useMemo(
@@ -37,6 +41,12 @@ export function Changes({
             y={y}
             draggable
             onDragStart={() => {
+              saveChanges2((store) => {
+                for (const depId of change.deps) {
+                  store.changes[depId].highlightAsDep = true;
+                }
+              });
+
               setSnapPosX(change.x);
             }}
             onDragMove={(event) => {
@@ -45,12 +55,17 @@ export function Changes({
               const shouldSwap = Object.entries(staticChanges).find(
                 ([, c]) => c.x < change.x && c.x + c.width > change.x
               );
-              if (shouldSwap && id !== shouldSwap[0] && id) {
-                // swapping positions
-                const swapFrom = id;
-                const swapTo = shouldSwap[0];
 
-                if (swapFrom === 'draft' || swapTo === 'draft') {
+              const swapFrom = id;
+              const swapTo = shouldSwap?.[0];
+
+              if (swapTo && swapFrom !== swapTo) {
+                if (
+                  swapFrom === 'draft' ||
+                  swapTo === 'draft' ||
+                  change.deps.includes(swapTo) ||
+                  changes[swapTo].deps.includes(swapFrom)
+                ) {
                   return;
                 }
 
@@ -65,6 +80,8 @@ export function Changes({
                   },
                 });
 
+                updateChangesOrder(swapFrom, swapTo);
+
                 setSnapPosX(changes[swapTo].x);
               } else {
                 saveChanges({
@@ -76,11 +93,11 @@ export function Changes({
               }
             }}
             onDragEnd={() => {
-              saveChanges({
-                [id]: {
-                  ...change,
-                  x: snapPosX,
-                },
+              saveChanges2((store) => {
+                store.changes[id].x = snapPosX;
+                for (const depId of change.deps) {
+                  store.changes[depId].highlightAsDep = false;
+                }
               });
               setSnapPosX(-1);
             }}

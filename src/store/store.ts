@@ -1,14 +1,14 @@
+import produce from 'immer';
 import { isEqual, last } from 'lodash';
 import Delta from 'quill-delta';
-import * as Y from 'yjs';
 import create, { GetState, Mutate, SetState, StoreApi } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 
 import { diffs as fixtures } from '../__tests__/fixtures/diffs';
-import { createYText, sync } from '../edits';
 
 export type Change = {
   x: number;
+  highlightAsDep: boolean;
   color: string;
   deps: string[];
   width: number;
@@ -24,16 +24,17 @@ export type Change = {
 };
 
 type Store = {
-  draftDeltas: Delta[];
   appliedChangesIds: string[];
   playHeadX: number;
   changes: Record<string, Change>;
+  changesOrder: string[];
   activeChangeId?: string;
   activeChangeValue: string;
   saveChanges: (newChanges: Record<string, Change>) => void;
+  saveChanges2: (cb: (store: Store) => void) => void;
   setPlayHeadX: (x: number) => void;
   updateAppliedChangesIds: () => void;
-  pushDraftDelta: (delta: Delta) => void;
+  updateChangesOrder: (from: string, to: string) => void;
 };
 
 const initialDelta = new Delta();
@@ -47,11 +48,6 @@ export const useStore = create<
 >(
   subscribeWithSelector((set, get) => ({
     activeChangeValue: '',
-    draftDeltas: [] as Delta[],
-    pushDraftDelta: (delta) => {
-      const draftDeltas = get().draftDeltas;
-      set({ draftDeltas: [...draftDeltas, delta] });
-    },
     appliedChangesIds: [] as string[],
     playHeadX: 20,
     changes: {
@@ -62,13 +58,15 @@ export const useStore = create<
         delta: initialDelta,
         deps: [],
         actions: {},
+        highlightAsDep: false,
       },
       draft: {
         x: 100,
         color: '#cccccc',
         width: 50,
         delta: new Delta(),
-        deps: [],
+        deps: ['bla'],
+        highlightAsDep: false,
         actions: {
           discardDraft: {
             label: 'Discard Draft',
@@ -81,15 +79,6 @@ export const useStore = create<
             callback: () => {
               const store = get();
 
-              const draftChange = composeDeltas(store.draftDeltas);
-
-              const getDeltas = (id: string) => {
-                if (id === 'draft') {
-                  return draftChange;
-                }
-                return store.changes[id].delta;
-              };
-
               const idsNoDraft = store.appliedChangesIds.slice(0, -1);
               const takenCoordinates = calcCoordinates(
                 idsNoDraft.map((id) => ({
@@ -100,14 +89,25 @@ export const useStore = create<
               const draftCoordinates = calcCoordinates([
                 {
                   id: 'draft',
-                  delta: draftChange,
+                  delta: store.changes.draft.delta,
                 },
               ]);
 
               const deps = takenCoordinates
-                .filter((draft) => {
-                  return draftCoordinates.find((taken) => {
-                    return isOverlapping(draft, taken);
+                .filter((taken) => {
+                  return draftCoordinates.find((draft) => {
+                    // mislim da ovaj draft treba transformirat
+                    const transformedTaken = calcCoordinates([
+                      {
+                        id: taken.id,
+                        delta: transformToCurrent(
+                          taken.id,
+                          store.appliedChangesIds,
+                          store.changes
+                        ),
+                      },
+                    ]);
+                    return isOverlapping(transformedTaken[0], draft);
                   });
                 })
                 .map((c) => c.id);
@@ -126,52 +126,67 @@ export const useStore = create<
                 store.appliedChangesIds.length - 1
               );
 
-              const baseComposed = composeDeltas(baseIds.map(getDeltas));
-              const toUndoComposed = composeDeltas(idsToUndo.map(getDeltas));
+              const baseComposed = composeDeltas(
+                baseIds.map((id) => store.changes[id].delta)
+              );
+              const toUndoComposed = composeDeltas(
+                idsToUndo.map((id) => store.changes[id].delta)
+              );
               const undoChanges = toUndoComposed.invert(baseComposed);
 
-              const draftChangeTransformed = undoChanges.transform(draftChange);
+              const draftChangeTransformed = undoChanges.transform(
+                store.changes.draft.delta
+              );
+
+              const newChangeId = 'something' + Math.random();
 
               store.saveChanges({
-                ['something' + Math.random()]: {
+                [newChangeId]: {
                   color: '#374957',
                   width: store.changes.draft.width,
                   x: store.changes.draft.x,
                   actions: {},
                   deps,
+                  highlightAsDep: false,
                   delta: draftChangeTransformed,
                 },
                 draft: {
                   ...store.changes.draft,
                   x: store.changes.draft.x + store.changes.draft.width + 10,
+                  deps: [...idsNoDraft, newChangeId],
+                  delta: new Delta(),
                 },
               });
 
-              set({ draftDeltas: [] });
+              set({
+                changesOrder: [...idsNoDraft, newChangeId, 'draft'],
+              });
             },
           },
         },
       },
     } as Record<string, Change>,
+    changesOrder: ['bla', 'draft'],
     setPlayHeadX: (playHeadX) => set({ playHeadX }),
-    saveChanges: (newChanges) =>
-      set((state) => ({ changes: { ...state.changes, ...newChanges } })),
+    saveChanges: (newChanges) => {
+      set((state) => {
+        return { changes: { ...state.changes, ...newChanges } };
+      });
+    },
+
+    saveChanges2: (cb) =>
+      set(
+        produce((state) => {
+          cb(state);
+        })
+      ),
     updateAppliedChangesIds: () => {
       // changes ids of currently applied changes
       const appliedChangesIds = get().appliedChangesIds;
       // changes ids "left" from playhead
-      const changesIdsToApply = Object.entries(get().changes)
-        .filter(([, change]) => change.x < get().playHeadX)
-        .sort(([aId, a], [bId, b]) => {
-          if (aId === 'draft') {
-            return 1;
-          } else if (bId === 'draft') {
-            return -1;
-          } else {
-            return a.x - b.x;
-          }
-        })
-        .map(([key]) => key);
+      const changesIdsToApply = get().changesOrder.filter(
+        (id) => get().changes[id].x < get().playHeadX
+      );
 
       if (!isEqual(appliedChangesIds, changesIdsToApply)) {
         // something was changed (new change or swap)
@@ -185,41 +200,83 @@ export const useStore = create<
       const lastChangeId = last(changesIdsToApply);
 
       if (lastChangeId !== get().activeChangeId) {
-        const yTextPerChange: Record<string, Y.Text> = {};
-        const targetYText = createYText('');
-
-        for (const id of appliedChangesIds) {
-          const { delta, deps } =
-            id === 'draft'
-              ? {
-                  delta: composeDeltas(get().draftDeltas),
-                  deps: appliedChangesIds.slice(0, -1),
-                }
-              : get().changes[id];
-
-          const lastDep = last(deps);
-
-          const changeYtext = createYText(
-            lastDep ? yTextPerChange[lastDep] : ''
+        const deltas = appliedChangesIds.map((id, i) => {
+          return transformToCurrent(
+            id,
+            appliedChangesIds.slice(0, i),
+            get().changes
           );
-          changeYtext.applyDelta(delta.ops);
-          yTextPerChange[id] = changeYtext;
+        });
 
-          sync(changeYtext, targetYText);
-        }
+        const str = deltaToString(deltas);
 
         set({
           activeChangeId: lastChangeId,
-          activeChangeValue: targetYText.toString(),
+          activeChangeValue: str,
         });
       }
+    },
+    updateChangesOrder: (from: string, to: string) => {
+      // ako "2" prebaciš na početak, se "3" mora transformirat
+      // "1" ne jer se on applya na "bla" koji je netaknut reorderom
+      // old: record<id, index>, new: record<id, index>
+      // loop na svaki change i pogledaj dal je njegov lastDep promijenjen
+      // tako da provjeri dal je old index === new index
+
+      set(
+        produce((state: Store) => {
+          const fromIndex = state.changesOrder.findIndex((id) => id === from);
+          const toIndex = state.changesOrder.findIndex((id) => id === to);
+
+          if (fromIndex < toIndex) {
+            throw new Error('nemoze jos');
+          }
+
+          const oldIndexes: Record<string, string> = state.changesOrder.reduce(
+            (acc, curr, index) => {
+              return {
+                ...acc,
+                [curr]: index,
+              };
+            },
+            {}
+          );
+
+          // moving array item
+          const elCopy = state.changesOrder[fromIndex];
+          state.changesOrder.splice(fromIndex, 1); // remove from element
+          state.changesOrder.splice(toIndex, 0, elCopy); // add elCopy in toIndex
+
+          const newIndexes: Record<string, string> = state.changesOrder.reduce(
+            (acc, curr, index) => {
+              return {
+                ...acc,
+                [curr]: index,
+              };
+            },
+            {}
+          );
+
+          for (const changeId of state.changesOrder) {
+            const lastDep = last(state.changes[changeId].deps);
+            if (lastDep && oldIndexes[lastDep] !== newIndexes[lastDep]) {
+              state.changes[changeId].delta = state.changes[
+                from
+              ].delta.transform(state.changes[changeId].delta);
+            }
+          }
+        })
+      );
+
+      console.log(get().changes);
+      get().updateAppliedChangesIds();
     },
   }))
 );
 
 // update active changes on playhead move or on position swap
 useStore.subscribe(
-  (state) => [state.playHeadX, state.changes],
+  (state) => [state.playHeadX],
   () => {
     useStore.getState().updateAppliedChangesIds();
   }
@@ -259,4 +316,30 @@ function calcCoordinates(data: { delta: Delta; id: string }[]): Coordinate[] {
 
 function composeDeltas(deltas: Delta[]) {
   return deltas.reduce((acc, curr) => acc.compose(curr), new Delta());
+}
+
+function deltaToString(deltas: Delta[], initial = '') {
+  const composeAllDeltas = composeDeltas(deltas);
+  return composeAllDeltas.reduce((text, op) => {
+    if (!op.insert) return text;
+    if (typeof op.insert !== 'string') return text + ' ';
+
+    return text + op.insert;
+  }, initial);
+}
+
+function transformToCurrent(
+  changeId: string,
+  appliedIds: string[],
+  changes: Record<string, Change>
+) {
+  const { deps, delta } = changes[changeId];
+
+  const lastDep = last(deps);
+  const lastDepIndex = appliedIds.findIndex((i) => i === lastDep);
+  const changesIdFromDep = appliedIds.slice(lastDepIndex + 1);
+  const changesFromDepComposed = composeDeltas(
+    changesIdFromDep.map((id) => changes[id].delta)
+  );
+  return changesFromDepComposed.transform(delta);
 }

@@ -4,7 +4,6 @@
 import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 import React, { useCallback, useEffect, useRef } from 'react';
-import * as Y from 'yjs';
 
 import { useStore } from '../store/store';
 
@@ -14,9 +13,7 @@ export function Editor() {
   const editor = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const activeChangeId = useStore((state) => state.activeChangeId);
   const activeChangeValue = useStore((state) => state.activeChangeValue);
-  const pushDraftDelta = useStore(
-    useCallback((state) => state.pushDraftDelta, [])
-  );
+  const saveChanges2 = useStore(useCallback((state) => state.saveChanges2, []));
 
   useEffect(() => {
     if (editorDiv.current) {
@@ -64,11 +61,14 @@ export function Editor() {
             delta.insert(change.text);
           }
 
-          pushDraftDelta(delta);
+          saveChanges2((store) => {
+            store.changes.draft.delta =
+              store.changes.draft.delta.compose(delta);
+          });
         });
       });
     }
-  }, [activeChangeId, activeChangeValue, pushDraftDelta]);
+  }, [activeChangeId, activeChangeValue, saveChanges2]);
 
   return (
     <div
