@@ -6,6 +6,8 @@ import { subscribeWithSelector } from 'zustand/middleware';
 
 import { diffs as fixtures } from '../__tests__/fixtures/diffs';
 
+let globalChange = 1;
+
 export type Change = {
   x: number;
   highlightAsDep: boolean;
@@ -100,7 +102,7 @@ export const useStore = create<
                     const transformedTaken = calcCoordinates([
                       {
                         id: taken.id,
-                        delta: transformToCurrent(
+                        delta: rebaseChangeToDepState(
                           taken.id,
                           store.appliedChangesIds,
                           store.changes
@@ -138,7 +140,9 @@ export const useStore = create<
                 store.changes.draft.delta
               );
 
-              const newChangeId = 'something' + Math.random();
+              //const newChangeId = 'something' + Math.random();
+              const newChangeId = String(globalChange);
+              globalChange++;
 
               store.saveChanges({
                 [newChangeId]: {
@@ -201,7 +205,7 @@ export const useStore = create<
 
       if (lastChangeId !== get().activeChangeId) {
         const deltas = appliedChangesIds.map((id, i) => {
-          return transformToCurrent(
+          return rebaseChangeToDepState(
             id,
             appliedChangesIds.slice(0, i),
             get().changes
@@ -227,10 +231,6 @@ export const useStore = create<
         produce((state: Store) => {
           const fromIndex = state.changesOrder.findIndex((id) => id === from);
           const toIndex = state.changesOrder.findIndex((id) => id === to);
-
-          if (fromIndex < toIndex) {
-            throw new Error('nemoze jos');
-          }
 
           const oldIndexes: Record<string, string> = state.changesOrder.reduce(
             (acc, curr, index) => {
@@ -260,15 +260,48 @@ export const useStore = create<
           for (const changeId of state.changesOrder) {
             const lastDep = last(state.changes[changeId].deps);
             if (lastDep && oldIndexes[lastDep] !== newIndexes[lastDep]) {
-              state.changes[changeId].delta = state.changes[
-                from
-              ].delta.transform(state.changes[changeId].delta);
+              // change which dependency has changed
+
+              if (fromIndex > toIndex) {
+                // taking something from the future into the past
+
+                // transforming change
+                state.changes[changeId].delta = state.changes[
+                  from
+                ].delta.transform(state.changes[changeId].delta);
+              } else {
+                // usecase koji ne radi
+                // "1" dodat, pobrisat char di je inače 2, 3 dodat,
+                // move 2 change i vrati ju nazad
+
+                // moguće da treba dep transformirat, a ne samo changeId
+
+                // taking something applied in past and moving it in future which changed a "from" dependency
+
+                // usecase example:
+                // moving "2" to be after "1"
+                // means that "3" (which has "1" as dep) needs to transform its delta by unding "2" delta
+                // so it is inserted in index 100 rather than 101
+
+                // basically delta "from" is no longer valid
+                // it needs to be transformed by taking new dependecy state in account
+                // this is done by rebasing "from" delta to new depState
+                // and then inverting "from" delta using that depState
+                const depState = rebaseChangeToDepState(
+                  lastDep,
+                  get().appliedChangesIds.slice(0, fromIndex),
+                  state.changes
+                );
+
+                state.changes[changeId].delta = state.changes[from].delta
+                  .invert(depState)
+                  .transform(state.changes[changeId].delta);
+              }
             }
           }
         })
       );
 
-      console.log(get().changes);
       get().updateAppliedChangesIds();
     },
   }))
@@ -285,6 +318,9 @@ useStore.subscribe(
 type Coordinate = { from: number; to: number; id: string };
 
 function isOverlapping(first: Coordinate, second: Coordinate) {
+  if (!first || !second) {
+    return false;
+  }
   return first.to >= second.from && first.from <= second.to;
 }
 
@@ -328,7 +364,10 @@ function deltaToString(deltas: Delta[], initial = '') {
   }, initial);
 }
 
-function transformToCurrent(
+// taking all changes from "changeId" dependency (everything that happened afterwards)
+// transforming changeId's delta by taking that into account
+// in other words rabasing change to current state
+function rebaseChangeToDepState(
   changeId: string,
   appliedIds: string[],
   changes: Record<string, Change>
