@@ -12,8 +12,8 @@ export function Playhead({
   zoom: number;
   height: number;
 }) {
-  const playHeadX = useStore(useCallback((state) => state.playHeadX, []));
-  const setPlayHeadX = useStore(useCallback((state) => state.setPlayHeadX, []));
+  const playHeadX = useStore((state) => state.playHeadX);
+  const updateStore = useStore(useCallback((state) => state.updateStore, []));
 
   return (
     <Layer x={layerX} scaleX={zoom}>
@@ -23,7 +23,9 @@ export function Playhead({
         draggable
         onDragMove={(event) => {
           const pos = event.target.getPosition();
-          setPlayHeadX(pos.x);
+          updateStore((store) => {
+            store.playHeadX = pos.x;
+          });
         }}
         dragBoundFunc={(pos) => {
           return {

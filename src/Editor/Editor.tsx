@@ -13,7 +13,7 @@ export function Editor() {
   const editor = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   const activeChangeId = useStore((state) => state.activeChangeId);
   const activeChangeValue = useStore((state) => state.activeChangeValue);
-  const saveChanges2 = useStore(useCallback((state) => state.saveChanges2, []));
+  const updateStore = useStore(useCallback((state) => state.updateStore, []));
 
   useEffect(() => {
     if (editorDiv.current) {
@@ -61,14 +61,13 @@ export function Editor() {
             delta.insert(change.text);
           }
 
-          saveChanges2((store) => {
-            store.changes.draft.delta =
-              store.changes.draft.delta.compose(delta);
+          updateStore(({ changes }) => {
+            changes.draft.delta = changes.draft.delta.compose(delta);
           });
         });
       });
     }
-  }, [activeChangeId, activeChangeValue, saveChanges2]);
+  }, [activeChangeId, activeChangeValue, updateStore]);
 
   return (
     <div

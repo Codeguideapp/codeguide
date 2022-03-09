@@ -1,12 +1,10 @@
 import produce from 'immer';
-import { isEqual, last } from 'lodash';
+import { difference, last } from 'lodash';
 import Delta from 'quill-delta';
 import create, { GetState, Mutate, SetState, StoreApi } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 
 import { diffs as fixtures } from '../__tests__/fixtures/diffs';
-
-let globalChange = 1;
 
 export type Change = {
   x: number;
@@ -15,6 +13,7 @@ export type Change = {
   deps: string[];
   width: number;
   delta: Delta;
+  deltaInverted: Delta;
   actions: Record<
     string,
     {
@@ -30,11 +29,10 @@ type Store = {
   playHeadX: number;
   changes: Record<string, Change>;
   changesOrder: string[];
+  preservedOrder: string[];
   activeChangeId?: string;
   activeChangeValue: string;
-  saveChanges: (newChanges: Record<string, Change>) => void;
-  saveChanges2: (cb: (store: Store) => void) => void;
-  setPlayHeadX: (x: number) => void;
+  updateStore: (cb: (store: Store) => void) => void;
   updateAppliedChangesIds: () => void;
   updateChangesOrder: (from: string, to: string) => void;
 };
@@ -58,6 +56,7 @@ export const useStore = create<
         color: '#374957',
         width: 50,
         delta: initialDelta,
+        deltaInverted: initialDelta.invert(initialDelta),
         deps: [],
         actions: {},
         highlightAsDep: false,
@@ -68,6 +67,7 @@ export const useStore = create<
         width: 50,
         delta: new Delta(),
         deps: ['bla'],
+        deltaInverted: new Delta(),
         highlightAsDep: false,
         actions: {
           discardDraft: {
@@ -81,9 +81,9 @@ export const useStore = create<
             callback: () => {
               const store = get();
 
-              const idsNoDraft = store.appliedChangesIds.slice(0, -1);
+              const appliedIdsNoDraft = store.appliedChangesIds.slice(0, -1);
               const takenCoordinates = calcCoordinates(
-                idsNoDraft.map((id) => ({
+                appliedIdsNoDraft.map((id) => ({
                   id,
                   delta: store.changes[id].delta,
                 }))
@@ -98,7 +98,6 @@ export const useStore = create<
               const deps = takenCoordinates
                 .filter((taken) => {
                   return draftCoordinates.find((draft) => {
-                    // mislim da ovaj draft treba transformirat
                     const transformedTaken = calcCoordinates([
                       {
                         id: taken.id,
@@ -140,12 +139,10 @@ export const useStore = create<
                 store.changes.draft.delta
               );
 
-              //const newChangeId = 'something' + Math.random();
-              const newChangeId = String(globalChange);
-              globalChange++;
+              const newChangeId = 'something' + Math.random();
 
-              store.saveChanges({
-                [newChangeId]: {
+              store.updateStore(({ changes }) => {
+                changes[newChangeId] = {
                   color: '#374957',
                   width: store.changes.draft.width,
                   x: store.changes.draft.x,
@@ -153,17 +150,21 @@ export const useStore = create<
                   deps,
                   highlightAsDep: false,
                   delta: draftChangeTransformed,
-                },
-                draft: {
-                  ...store.changes.draft,
-                  x: store.changes.draft.x + store.changes.draft.width + 10,
-                  deps: [...idsNoDraft, newChangeId],
-                  delta: new Delta(),
-                },
+                  deltaInverted: draftChangeTransformed.invert(baseComposed),
+                };
+                changes.draft.x =
+                  store.changes.draft.x + store.changes.draft.width + 10;
+                changes.draft.deps = [...appliedIdsNoDraft, newChangeId];
+                changes.draft.delta = new Delta();
               });
 
               set({
-                changesOrder: [...idsNoDraft, newChangeId, 'draft'],
+                changesOrder: [...appliedIdsNoDraft, newChangeId, 'draft'],
+                preservedOrder: [
+                  ...store.preservedOrder.filter((id) => id !== 'draft'),
+                  newChangeId,
+                  'draft',
+                ],
               });
             },
           },
@@ -171,134 +172,73 @@ export const useStore = create<
       },
     } as Record<string, Change>,
     changesOrder: ['bla', 'draft'],
-    setPlayHeadX: (playHeadX) => set({ playHeadX }),
-    saveChanges: (newChanges) => {
-      set((state) => {
-        return { changes: { ...state.changes, ...newChanges } };
-      });
-    },
-
-    saveChanges2: (cb) =>
+    preservedOrder: ['bla', 'draft'],
+    updateStore: (cb) =>
       set(
         produce((state) => {
           cb(state);
         })
       ),
     updateAppliedChangesIds: () => {
-      // changes ids of currently applied changes
-      const appliedChangesIds = get().appliedChangesIds;
       // changes ids "left" from playhead
       const changesIdsToApply = get().changesOrder.filter(
         (id) => get().changes[id].x < get().playHeadX
       );
-
-      if (!isEqual(appliedChangesIds, changesIdsToApply)) {
-        // something was changed (new change or swap)
-        // set new appliedChangesIds
-
-        set({
-          appliedChangesIds: changesIdsToApply,
-        });
-      }
-
       const lastChangeId = last(changesIdsToApply);
 
       if (lastChangeId !== get().activeChangeId) {
-        const deltas = appliedChangesIds.map((id, i) => {
-          return rebaseChangeToDepState(
-            id,
-            appliedChangesIds.slice(0, i),
-            get().changes
+        const changes = get().changes;
+        const deltas: Delta[] = [];
+        const appliedSoFar: string[] = [];
+
+        for (const changeId of get().preservedOrder) {
+          if (!changesIdsToApply.includes(changeId)) {
+            continue;
+          }
+
+          const changeDelta = changes[changeId].delta;
+          const allChangeDeps = changes[changeId].deps;
+          const addedIds = difference(appliedSoFar, allChangeDeps);
+          const removedIds = difference(allChangeDeps, appliedSoFar);
+
+          const addedDelta = composeDeltas(
+            addedIds.map((id) => changes[id].delta)
           );
-        });
+          const removedDelta = composeDeltas(
+            removedIds.map((id) => changes[id].deltaInverted)
+          );
+
+          const changeDelta2 = addedIds.length
+            ? addedDelta.transform(changeDelta)
+            : changeDelta;
+
+          const changeDelta3 = removedIds.length
+            ? removedDelta.transform(changeDelta2)
+            : changeDelta2;
+
+          deltas.push(changeDelta3);
+          appliedSoFar.push(changeId);
+        }
 
         const str = deltaToString(deltas);
 
         set({
           activeChangeId: lastChangeId,
           activeChangeValue: str,
+          appliedChangesIds: changesIdsToApply,
         });
       }
     },
     updateChangesOrder: (from: string, to: string) => {
-      // ako "2" prebaciš na početak, se "3" mora transformirat
-      // "1" ne jer se on applya na "bla" koji je netaknut reorderom
-      // old: record<id, index>, new: record<id, index>
-      // loop na svaki change i pogledaj dal je njegov lastDep promijenjen
-      // tako da provjeri dal je old index === new index
-
       set(
         produce((state: Store) => {
           const fromIndex = state.changesOrder.findIndex((id) => id === from);
           const toIndex = state.changesOrder.findIndex((id) => id === to);
 
-          const oldIndexes: Record<string, string> = state.changesOrder.reduce(
-            (acc, curr, index) => {
-              return {
-                ...acc,
-                [curr]: index,
-              };
-            },
-            {}
-          );
-
           // moving array item
           const elCopy = state.changesOrder[fromIndex];
           state.changesOrder.splice(fromIndex, 1); // remove from element
           state.changesOrder.splice(toIndex, 0, elCopy); // add elCopy in toIndex
-
-          const newIndexes: Record<string, string> = state.changesOrder.reduce(
-            (acc, curr, index) => {
-              return {
-                ...acc,
-                [curr]: index,
-              };
-            },
-            {}
-          );
-
-          for (const changeId of state.changesOrder) {
-            const lastDep = last(state.changes[changeId].deps);
-            if (lastDep && oldIndexes[lastDep] !== newIndexes[lastDep]) {
-              // change which dependency has changed
-
-              if (fromIndex > toIndex) {
-                // taking something from the future into the past
-
-                // transforming change
-                state.changes[changeId].delta = state.changes[
-                  from
-                ].delta.transform(state.changes[changeId].delta);
-              } else {
-                // usecase koji ne radi
-                // "1" dodat, pobrisat char di je inače 2, 3 dodat,
-                // move 2 change i vrati ju nazad
-
-                // moguće da treba dep transformirat, a ne samo changeId
-
-                // taking something applied in past and moving it in future which changed a "from" dependency
-
-                // usecase example:
-                // moving "2" to be after "1"
-                // means that "3" (which has "1" as dep) needs to transform its delta by unding "2" delta
-                // so it is inserted in index 100 rather than 101
-
-                // basically delta "from" is no longer valid
-                // it needs to be transformed by taking new dependecy state in account
-                // this is done by rebasing "from" delta to new depState
-                // and then inverting "from" delta using that depState
-                const depState = rebaseChangeToDepState(
-                  lastDep,
-                  get().appliedChangesIds.slice(0, fromIndex),
-                  state.changes
-                );
-
-                state.changes[changeId].delta = state.changes[from].delta
-                  .invert(depState)
-                  .transform(state.changes[changeId].delta);
-              }
-            }
-          }
         })
       );
 

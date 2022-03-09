@@ -18,8 +18,7 @@ export function Changes({
   // used for displaying change "ghost" so it snaps back in that position on dragEnd
   const [snapPosX, setSnapPosX] = React.useState(-1);
   const changes = useStore(useCallback((state) => state.changes, []));
-  const saveChanges = useStore(useCallback((state) => state.saveChanges, []));
-  const saveChanges2 = useStore(useCallback((state) => state.saveChanges2, []));
+  const updateStore = useStore(useCallback((state) => state.updateStore, []));
   const updateChangesOrder = useStore(
     useCallback((state) => state.updateChangesOrder, [])
   );
@@ -41,7 +40,7 @@ export function Changes({
             y={y}
             draggable
             onDragStart={() => {
-              saveChanges2((store) => {
+              updateStore((store) => {
                 for (const depId of change.deps) {
                   store.changes[depId].highlightAsDep = true;
                 }
@@ -69,34 +68,25 @@ export function Changes({
                   return;
                 }
 
-                saveChanges({
-                  [swapFrom]: {
-                    ...changes[swapFrom],
-                    x: staticChanges[swapTo].x,
-                  },
-                  [swapTo]: {
-                    ...changes[swapTo],
-                    x: staticChanges[swapFrom].x,
-                  },
+                updateStore(({ changes }) => {
+                  changes[swapFrom].x = staticChanges[swapTo].x;
+                  changes[swapTo].x = staticChanges[swapFrom].x;
                 });
 
                 updateChangesOrder(swapFrom, swapTo);
 
                 setSnapPosX(changes[swapTo].x);
               } else {
-                saveChanges({
-                  [id]: {
-                    ...change,
-                    x: pos.x,
-                  },
+                updateStore(({ changes }) => {
+                  changes[id].x = pos.x;
                 });
               }
             }}
             onDragEnd={() => {
-              saveChanges2((store) => {
-                store.changes[id].x = snapPosX;
+              updateStore(({ changes }) => {
+                changes[id].x = snapPosX;
                 for (const depId of change.deps) {
-                  store.changes[depId].highlightAsDep = false;
+                  changes[depId].highlightAsDep = false;
                 }
               });
               setSnapPosX(-1);
