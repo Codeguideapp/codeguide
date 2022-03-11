@@ -25,11 +25,11 @@ export type Change = {
 };
 
 type Store = {
-  appliedChangesIds: string[];
-  playHeadX: number;
   changes: Record<string, Change>;
-  changesOrder: string[];
+  playHeadX: number;
   preservedOrder: string[];
+  userDefinedOrder: string[];
+  appliedChangesIds: string[];
   activeChangeId?: string;
   activeChangeValue: string;
   updateStore: (cb: (store: Store) => void) => void;
@@ -88,32 +88,43 @@ export const useStore = create<
                   delta: store.changes[id].delta,
                 }))
               );
-              const draftCoordinates = calcCoordinates([
-                {
-                  id: 'draft',
-                  delta: store.changes.draft.delta,
-                },
-              ]);
 
-              const deps = takenCoordinates
-                .filter((taken) => {
+              const lastDepCoordinate = takenCoordinates
+                .reverse() // searching from the last change
+                .find((taken) => {
+                  // first transforming draft to the point when "taken" was applied
+                  const toUndo = store.preservedOrder
+                    .slice(store.preservedOrder.indexOf(taken.id) + 1)
+                    .slice(0, -1); // removing draft
+
+                  const toUndoDelta = composeDeltas(
+                    toUndo.map((id) => store.changes[id].deltaInverted)
+                  );
+                  const draftTransformed = toUndoDelta.transform(
+                    store.changes.draft.delta
+                  );
+                  const draftCoordinates = calcCoordinates([
+                    {
+                      id: 'draft',
+                      delta: draftTransformed,
+                    },
+                  ]);
+
                   return draftCoordinates.find((draft) => {
-                    const transformedTaken = calcCoordinates([
-                      {
-                        id: taken.id,
-                        delta: rebaseChangeToDepState(
-                          taken.id,
-                          store.appliedChangesIds,
-                          store.changes
-                        ),
-                      },
-                    ]);
-                    return isOverlapping(transformedTaken[0], draft);
+                    return isOverlapping(taken, draft);
                   });
-                })
-                .map((c) => c.id);
+                });
 
-              const lastDep = last(deps);
+              const lastDep = lastDepCoordinate?.id;
+
+              // taking deps from lastDeps and adding a new one.
+              // doing this because when searching for dep coordinate,
+              // there is an undo step which can delete the draft change
+              // for example adding a single char then deleting it
+              const deps = lastDep
+                ? [...store.changes[lastDep].deps, lastDep]
+                : [];
+
               const lastDepIndex = store.appliedChangesIds.findIndex(
                 (id) => id === lastDep
               );
@@ -159,7 +170,7 @@ export const useStore = create<
               });
 
               set({
-                changesOrder: [...appliedIdsNoDraft, newChangeId, 'draft'],
+                userDefinedOrder: [...appliedIdsNoDraft, newChangeId, 'draft'],
                 preservedOrder: [
                   ...store.preservedOrder.filter((id) => id !== 'draft'),
                   newChangeId,
@@ -171,7 +182,7 @@ export const useStore = create<
         },
       },
     } as Record<string, Change>,
-    changesOrder: ['bla', 'draft'],
+    userDefinedOrder: ['bla', 'draft'],
     preservedOrder: ['bla', 'draft'],
     updateStore: (cb) =>
       set(
@@ -181,12 +192,14 @@ export const useStore = create<
       ),
     updateAppliedChangesIds: () => {
       // changes ids "left" from playhead
-      const changesIdsToApply = get().changesOrder.filter(
+      const changesIdsToApply = get().userDefinedOrder.filter(
         (id) => get().changes[id].x < get().playHeadX
       );
       const lastChangeId = last(changesIdsToApply);
 
       if (lastChangeId !== get().activeChangeId) {
+        // not working: add 1, remove 1
+        // provjerit i zasto remove 1 nema bla kao dep
         const changes = get().changes;
         const deltas: Delta[] = [];
         const appliedSoFar: string[] = [];
@@ -232,13 +245,13 @@ export const useStore = create<
     updateChangesOrder: (from: string, to: string) => {
       set(
         produce((state: Store) => {
-          const fromIndex = state.changesOrder.findIndex((id) => id === from);
-          const toIndex = state.changesOrder.findIndex((id) => id === to);
+          const fromIndex = state.userDefinedOrder.indexOf(from);
+          const toIndex = state.userDefinedOrder.indexOf(to);
 
           // moving array item
-          const elCopy = state.changesOrder[fromIndex];
-          state.changesOrder.splice(fromIndex, 1); // remove from element
-          state.changesOrder.splice(toIndex, 0, elCopy); // add elCopy in toIndex
+          const elCopy = state.userDefinedOrder[fromIndex];
+          state.userDefinedOrder.splice(fromIndex, 1); // remove from element
+          state.userDefinedOrder.splice(toIndex, 0, elCopy); // add elCopy in toIndex
         })
       );
 
@@ -255,11 +268,19 @@ useStore.subscribe(
   }
 );
 
-type Coordinate = { from: number; to: number; id: string };
+type Coordinate = {
+  from: number;
+  to: number;
+  id: string;
+  op: 'insert' | 'delete';
+};
 
 function isOverlapping(first: Coordinate, second: Coordinate) {
   if (!first || !second) {
     return false;
+  }
+  if (first.op === 'insert' && second.op === 'insert') {
+    return first.to >= second.from && first.from <= second.from;
   }
   return first.to >= second.from && first.from <= second.to;
 }
@@ -273,15 +294,22 @@ function calcCoordinates(data: { delta: Delta; id: string }[]): Coordinate[] {
           if (op.retain) {
             index += op.retain;
             return null;
-          } else {
+          } else if (op.delete) {
+            return {
+              id,
+              from: index,
+              to: index,
+              op: 'delete',
+            };
+          } else if (typeof op.insert === 'string') {
             const from = index;
-            index +=
-              typeof op.insert === 'string' ? op.insert.length : op.delete || 0;
+            index += op.insert.length;
 
             return {
               id,
               from,
               to: index,
+              op: 'insert',
             };
           }
         })
@@ -302,23 +330,4 @@ function deltaToString(deltas: Delta[], initial = '') {
 
     return text + op.insert;
   }, initial);
-}
-
-// taking all changes from "changeId" dependency (everything that happened afterwards)
-// transforming changeId's delta by taking that into account
-// in other words rabasing change to current state
-function rebaseChangeToDepState(
-  changeId: string,
-  appliedIds: string[],
-  changes: Record<string, Change>
-) {
-  const { deps, delta } = changes[changeId];
-
-  const lastDep = last(deps);
-  const lastDepIndex = appliedIds.findIndex((i) => i === lastDep);
-  const changesIdFromDep = appliedIds.slice(lastDepIndex + 1);
-  const changesFromDepComposed = composeDeltas(
-    changesIdFromDep.map((id) => changes[id].delta)
-  );
-  return changesFromDepComposed.transform(delta);
 }
