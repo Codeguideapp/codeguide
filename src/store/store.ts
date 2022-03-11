@@ -1,5 +1,5 @@
 import produce from 'immer';
-import { difference, last } from 'lodash';
+import { difference, last, uniq } from 'lodash';
 import Delta from 'quill-delta';
 import create, { GetState, Mutate, SetState, StoreApi } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
@@ -89,9 +89,8 @@ export const useStore = create<
                 }))
               );
 
-              const lastDepCoordinate = takenCoordinates
-                .reverse() // searching from the last change
-                .find((taken) => {
+              const foundDeps = takenCoordinates
+                .filter((taken) => {
                   // first transforming draft to the point when "taken" was applied
                   const toUndo = store.preservedOrder
                     .slice(store.preservedOrder.indexOf(taken.id) + 1)
@@ -113,17 +112,19 @@ export const useStore = create<
                   return draftCoordinates.find((draft) => {
                     return isOverlapping(taken, draft);
                   });
-                });
+                })
+                .map(({ id }) => {
+                  return [...store.changes[id].deps, id];
+                })
+                .flat();
 
-              const lastDep = lastDepCoordinate?.id;
+              const deps = uniq(foundDeps).sort(
+                (a, b) =>
+                  store.preservedOrder.indexOf(a) -
+                  store.preservedOrder.indexOf(b)
+              );
 
-              // taking deps from lastDeps and adding a new one.
-              // doing this because when searching for dep coordinate,
-              // there is an undo step which can delete the draft change
-              // for example adding a single char then deleting it
-              const deps = lastDep
-                ? [...store.changes[lastDep].deps, lastDep]
-                : [];
+              const lastDep = last(deps);
 
               const lastDepIndex = store.appliedChangesIds.findIndex(
                 (id) => id === lastDep
@@ -303,12 +304,12 @@ function calcCoordinates(data: { delta: Delta; id: string }[]): Coordinate[] {
             };
           } else if (typeof op.insert === 'string') {
             const from = index;
-            index += op.insert.length;
+            const to = index + op.insert.length;
 
             return {
               id,
               from,
-              to: index,
+              to,
               op: 'insert',
             };
           }
