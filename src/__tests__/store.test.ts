@@ -92,7 +92,8 @@ describe('store.ts', () => {
     expect(getState().userDefinedOrder).toEqual([initId, id1, id2, id3, DRAFT]);
   });
 
-  it('should throw an error on incorrect change order', () => {
+  it('should throw an error on incorrect change order', async () => {
+    await getState().initFile('test.ts');
     const id1 = saveDraft(new Delta().retain(247).insert('1'));
     const id2 = saveDraft(new Delta().retain(248).insert('2'));
 

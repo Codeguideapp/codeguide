@@ -10,6 +10,7 @@ export type Change = {
   x: number;
   highlightAsDep: boolean;
   color: string;
+  path: string;
   deps: string[];
   width: number;
   delta: Delta;
@@ -19,7 +20,7 @@ export type Change = {
     {
       label: string;
       color: string;
-      callback: () => any;
+      callback: () => void;
     }
   >;
 };
@@ -49,41 +50,40 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
     }
 
     get().updateStore(({ changes }) => {
-      changes.draft.delta = new Delta().insert(file.oldVal);
+      changes.draft = {
+        x: 10,
+        color: '#cccccc',
+        width: 50,
+        delta: new Delta().insert(file.oldVal),
+        deps: [],
+        deltaInverted: new Delta(),
+        path,
+        highlightAsDep: false,
+        actions: {
+          discardDraft: {
+            label: 'Discard Draft',
+            color: 'red',
+            callback: () => {},
+          },
+          saveChanges: {
+            label: 'Save Changes',
+            color: 'green',
+            callback: () => {
+              saveDraft(set, get);
+            },
+          },
+        },
+      };
     });
 
     return saveDraft(set, get);
   },
   activeChangeValue: '',
   appliedChangesIds: [] as string[],
-  playHeadX: 20,
-  changes: {
-    draft: {
-      x: 100,
-      color: '#cccccc',
-      width: 50,
-      delta: new Delta(),
-      deps: [],
-      deltaInverted: new Delta(),
-      highlightAsDep: false,
-      actions: {
-        discardDraft: {
-          label: 'Discard Draft',
-          color: 'red',
-          callback: () => {},
-        },
-        saveChanges: {
-          label: 'Save Changes',
-          color: 'green',
-          callback: () => {
-            saveDraft(set, get);
-          },
-        },
-      },
-    },
-  } as Record<string, Change>,
-  userDefinedOrder: ['draft'],
-  preservedOrder: ['draft'],
+  playHeadX: 0,
+  changes: {} as Record<string, Change>,
+  userDefinedOrder: [],
+  preservedOrder: [],
   updateStore: (cb) =>
     set(
       produce((state) => {
@@ -332,6 +332,7 @@ export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
       x: store.changes.draft.x,
       actions: {},
       deps,
+      path: 'test.ts', // todo
       highlightAsDep: false,
       delta: draftChangeTransformed,
       deltaInverted: draftChangeTransformed.invert(baseComposed),
