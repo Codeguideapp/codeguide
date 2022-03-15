@@ -4,23 +4,16 @@ import type * as monaco from 'monaco-editor';
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-import { Editor } from './Editor/Editor';
+import { App } from './App/App';
 import { readOnlyTheme } from './monaco-themes/readonly';
 import reportWebVitals from './reportWebVitals';
-import { Timeline } from './Timeline/Timeline';
 
 const renderApp = () => {
   window.monaco.editor.defineTheme('readonly', readOnlyTheme);
 
   ReactDOM.render(
     <React.StrictMode>
-      <div>
-        <div className="main">
-          <Editor />
-          <div>a</div>
-        </div>
-        <Timeline />
-      </div>
+      <App />
     </React.StrictMode>,
     document.getElementById('root')
   );

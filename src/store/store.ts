@@ -4,7 +4,7 @@ import Delta from 'quill-delta';
 import create, { GetState, Mutate, SetState, StoreApi } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 
-import { diffs as fixtures } from '../__tests__/fixtures/diffs';
+import { getDiff } from '../api/api';
 
 export type Change = {
   x: number;
@@ -32,36 +32,38 @@ export type Store = {
   appliedChangesIds: string[];
   activeChangeId?: string;
   activeChangeValue: string;
+  initFile: (path: string) => Promise<string>;
   updateStore: (cb: (store: Store) => void) => void;
   updateAppliedChangesIds: () => void;
   updateChangesOrder: (from: string, to: string) => void;
   setPlayheadXToEnd: () => void;
 };
 
-const initialDelta = new Delta();
-initialDelta.insert(fixtures[0].oldVal);
-
 export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
+  initFile: async (path: string) => {
+    const diff = await getDiff(0);
+    const file = diff.find((d) => d.path === path);
+
+    if (!file) {
+      throw new Error('file not found');
+    }
+
+    get().updateStore(({ changes }) => {
+      changes.draft.delta = new Delta().insert(file.oldVal);
+    });
+
+    return saveDraft(set, get);
+  },
   activeChangeValue: '',
   appliedChangesIds: [] as string[],
   playHeadX: 20,
   changes: {
-    bla: {
-      x: 40,
-      color: '#374957',
-      width: 50,
-      delta: initialDelta,
-      deltaInverted: initialDelta.invert(initialDelta),
-      deps: [],
-      actions: {},
-      highlightAsDep: false,
-    },
     draft: {
       x: 100,
       color: '#cccccc',
       width: 50,
       delta: new Delta(),
-      deps: ['bla'],
+      deps: [],
       deltaInverted: new Delta(),
       highlightAsDep: false,
       actions: {
@@ -74,115 +76,14 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
           label: 'Save Changes',
           color: 'green',
           callback: () => {
-            get().setPlayheadXToEnd();
-
-            const store = get();
-
-            const appliedIdsNoDraft = store.appliedChangesIds.slice(0, -1);
-            const takenCoordinates = calcCoordinates(
-              appliedIdsNoDraft.map((id) => ({
-                id,
-                delta: store.changes[id].delta,
-              }))
-            );
-
-            const foundDeps = takenCoordinates
-              .filter((taken) => {
-                // first transforming draft to the point when "taken" was applied
-                const toUndo = store.preservedOrder
-                  .slice(store.preservedOrder.indexOf(taken.id) + 1)
-                  .slice(0, -1); // removing draft
-
-                const toUndoDelta = composeDeltas(
-                  toUndo.map((id) => store.changes[id].deltaInverted)
-                );
-                const draftTransformed = toUndoDelta.transform(
-                  store.changes.draft.delta
-                );
-                const draftCoordinates = calcCoordinates([
-                  {
-                    id: 'draft',
-                    delta: draftTransformed,
-                  },
-                ]);
-
-                return draftCoordinates.find((draft) => {
-                  return isOverlapping(taken, draft);
-                });
-              })
-              .map(({ id }) => {
-                return [...store.changes[id].deps, id];
-              })
-              .flat();
-
-            const deps = uniq(foundDeps).sort(
-              (a, b) =>
-                store.preservedOrder.indexOf(a) -
-                store.preservedOrder.indexOf(b)
-            );
-
-            const lastDep = last(deps);
-
-            const lastDepIndex = store.appliedChangesIds.findIndex(
-              (id) => id === lastDep
-            );
-
-            const baseIds = store.appliedChangesIds.slice(0, lastDepIndex + 1);
-            const idsToUndo = store.appliedChangesIds.slice(
-              lastDepIndex + 1,
-              store.appliedChangesIds.length - 1
-            );
-
-            const baseComposed = composeDeltas(
-              baseIds.map((id) => store.changes[id].delta)
-            );
-            const toUndoComposed = composeDeltas(
-              idsToUndo.map((id) => store.changes[id].delta)
-            );
-            const undoChanges = toUndoComposed.invert(baseComposed);
-
-            const draftChangeTransformed = undoChanges.transform(
-              store.changes.draft.delta
-            );
-
-            const newChangeId = 'something' + Math.random();
-
-            store.updateStore(({ changes }) => {
-              changes[newChangeId] = {
-                color: '#374957',
-                width: store.changes.draft.width,
-                x: store.changes.draft.x,
-                actions: {},
-                deps,
-                highlightAsDep: false,
-                delta: draftChangeTransformed,
-                deltaInverted: draftChangeTransformed.invert(baseComposed),
-              };
-              changes.draft.x =
-                store.changes.draft.x + store.changes.draft.width + 10;
-              changes.draft.deps = [...appliedIdsNoDraft, newChangeId];
-              changes.draft.delta = new Delta();
-            });
-
-            set({
-              userDefinedOrder: [...appliedIdsNoDraft, newChangeId, 'draft'],
-              preservedOrder: [
-                ...store.preservedOrder.filter((id) => id !== 'draft'),
-                newChangeId,
-                'draft',
-              ],
-            });
-
-            store.setPlayheadXToEnd();
-
-            return newChangeId;
+            saveDraft(set, get);
           },
         },
       },
     },
   } as Record<string, Change>,
-  userDefinedOrder: ['bla', 'draft'],
-  preservedOrder: ['bla', 'draft'],
+  userDefinedOrder: ['draft'],
+  preservedOrder: ['draft'],
   updateStore: (cb) =>
     set(
       produce((state) => {
@@ -197,8 +98,6 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
     const lastChangeId = last(changesIdsToApply);
 
     if (lastChangeId !== get().activeChangeId) {
-      // not working: add 1, remove 1
-      // provjerit i zasto remove 1 nema bla kao dep
       const changes = get().changes;
       const deltas: Delta[] = [];
       const appliedSoFar: string[] = [];
@@ -354,4 +253,104 @@ function deltaToString(deltas: Delta[], initial = '') {
 
     return text + op.insert;
   }, initial);
+}
+
+export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
+  get().setPlayheadXToEnd();
+
+  const store = get();
+
+  const appliedIdsNoDraft = store.appliedChangesIds.slice(0, -1);
+  const takenCoordinates = calcCoordinates(
+    appliedIdsNoDraft.map((id) => ({
+      id,
+      delta: store.changes[id].delta,
+    }))
+  );
+
+  const foundDeps = takenCoordinates
+    .filter((taken) => {
+      // first transforming draft to the point when "taken" was applied
+      const toUndo = store.preservedOrder
+        .slice(store.preservedOrder.indexOf(taken.id) + 1)
+        .slice(0, -1); // removing draft
+
+      const toUndoDelta = composeDeltas(
+        toUndo.map((id) => store.changes[id].deltaInverted)
+      );
+      const draftTransformed = toUndoDelta.transform(store.changes.draft.delta);
+      const draftCoordinates = calcCoordinates([
+        {
+          id: 'draft',
+          delta: draftTransformed,
+        },
+      ]);
+
+      return draftCoordinates.find((draft) => {
+        return isOverlapping(taken, draft);
+      });
+    })
+    .map(({ id }) => {
+      return [...store.changes[id].deps, id];
+    })
+    .flat();
+
+  const deps = uniq(foundDeps).sort(
+    (a, b) => store.preservedOrder.indexOf(a) - store.preservedOrder.indexOf(b)
+  );
+
+  const lastDep = last(deps);
+
+  const lastDepIndex = store.appliedChangesIds.findIndex(
+    (id) => id === lastDep
+  );
+
+  const baseIds = store.appliedChangesIds.slice(0, lastDepIndex + 1);
+  const idsToUndo = store.appliedChangesIds.slice(
+    lastDepIndex + 1,
+    store.appliedChangesIds.length - 1
+  );
+
+  const baseComposed = composeDeltas(
+    baseIds.map((id) => store.changes[id].delta)
+  );
+  const toUndoComposed = composeDeltas(
+    idsToUndo.map((id) => store.changes[id].delta)
+  );
+  const undoChanges = toUndoComposed.invert(baseComposed);
+
+  const draftChangeTransformed = undoChanges.transform(
+    store.changes.draft.delta
+  );
+
+  const newChangeId = 'something' + Math.random();
+
+  store.updateStore(({ changes }) => {
+    changes[newChangeId] = {
+      color: '#374957',
+      width: store.changes.draft.width,
+      x: store.changes.draft.x,
+      actions: {},
+      deps,
+      highlightAsDep: false,
+      delta: draftChangeTransformed,
+      deltaInverted: draftChangeTransformed.invert(baseComposed),
+    };
+    changes.draft.x = store.changes.draft.x + store.changes.draft.width + 10;
+    changes.draft.deps = [...appliedIdsNoDraft, newChangeId];
+    changes.draft.delta = new Delta();
+  });
+
+  set({
+    userDefinedOrder: [...appliedIdsNoDraft, newChangeId, 'draft'],
+    preservedOrder: [
+      ...store.preservedOrder.filter((id) => id !== 'draft'),
+      newChangeId,
+      'draft',
+    ],
+  });
+
+  store.setPlayheadXToEnd();
+
+  return newChangeId;
 }

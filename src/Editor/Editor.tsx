@@ -1,6 +1,3 @@
-// save draft pa se stvori novi change
-// use immer https://github.com/pmndrs/zustand#sick-of-reducers-and-changing-nested-state-use-immer
-
 import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 import React, { useCallback, useEffect, useRef } from 'react';
