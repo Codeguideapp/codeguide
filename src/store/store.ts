@@ -19,7 +19,7 @@ export type Change = {
     {
       label: string;
       color: string;
-      callback: () => void;
+      callback: () => any;
     }
   >;
 };
@@ -35,6 +35,7 @@ export type Store = {
   updateStore: (cb: (store: Store) => void) => void;
   updateAppliedChangesIds: () => void;
   updateChangesOrder: (from: string, to: string) => void;
+  setPlayheadXToEnd: () => void;
 };
 
 const initialDelta = new Delta();
@@ -73,6 +74,8 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
           label: 'Save Changes',
           color: 'green',
           callback: () => {
+            get().setPlayheadXToEnd();
+
             const store = get();
 
             const appliedIdsNoDraft = store.appliedChangesIds.slice(0, -1);
@@ -169,6 +172,10 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
                 'draft',
               ],
             });
+
+            store.setPlayheadXToEnd();
+
+            return newChangeId;
           },
         },
       },
@@ -235,6 +242,18 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
     }
   },
   updateChangesOrder: (from: string, to: string) => {
+    const store = get();
+
+    if (from === 'draft' || to === 'draft') {
+      throw new Error(`can not move draft change`);
+    }
+    if (store.changes[from].deps.includes(to)) {
+      throw new Error(`${from} is dependend on ${to}`);
+    }
+    if (store.changes[to].deps.includes(from)) {
+      throw new Error(`${to} is dependend on ${from}`);
+    }
+
     set(
       produce((state: Store) => {
         const fromIndex = state.userDefinedOrder.indexOf(from);
@@ -248,6 +267,13 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
     );
 
     get().updateAppliedChangesIds();
+  },
+  setPlayheadXToEnd: () => {
+    const { changes } = get();
+
+    set({
+      playHeadX: changes.draft.x + changes.draft.width,
+    });
   },
 });
 
