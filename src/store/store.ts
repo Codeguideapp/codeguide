@@ -1,10 +1,25 @@
 import produce from 'immer';
-import { difference, last, uniq } from 'lodash';
+import { difference, isEqual, last, uniq } from 'lodash';
 import Delta from 'quill-delta';
-import create, { GetState, Mutate, SetState, StoreApi } from 'zustand';
-import { subscribeWithSelector } from 'zustand/middleware';
+import create, { GetState, SetState } from 'zustand';
 
 import { getDiff } from '../api/api';
+import { calcCoordinates, composeDeltas, deltaToString } from './deltaUtils';
+
+export type Store = {
+  changes: Record<string, Change>;
+  playHeadX: number;
+  preservedOrder: string[];
+  userDefinedOrder: string[];
+  appliedChangesIds: string[];
+  activeChangeId?: string;
+  activeChangeValue: string;
+  initFile: (path: string) => Promise<string>;
+  updateStore: (cb: (store: Store) => void) => void;
+  applyChanges: () => void;
+  updateChangesOrder: (from: string, to: string) => void;
+  setPlayheadX: (x: number) => void;
+};
 
 export type Change = {
   x: number;
@@ -23,21 +38,6 @@ export type Change = {
       callback: () => void;
     }
   >;
-};
-
-export type Store = {
-  changes: Record<string, Change>;
-  playHeadX: number;
-  preservedOrder: string[];
-  userDefinedOrder: string[];
-  appliedChangesIds: string[];
-  activeChangeId?: string;
-  activeChangeValue: string;
-  initFile: (path: string) => Promise<string>;
-  updateStore: (cb: (store: Store) => void) => void;
-  updateAppliedChangesIds: () => void;
-  updateChangesOrder: (from: string, to: string) => void;
-  setPlayheadXToEnd: () => void;
 };
 
 export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
@@ -90,52 +90,56 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
         cb(state);
       })
     ),
-  updateAppliedChangesIds: () => {
-    // changes ids "left" from playhead
-    const changesIdsToApply = get().userDefinedOrder.filter(
-      (id) => get().changes[id].x < get().playHeadX
-    );
-    const lastChangeId = last(changesIdsToApply);
+  applyChanges: () => {
+    const {
+      userDefinedOrder,
+      changes,
+      playHeadX,
+      appliedChangesIds,
+      preservedOrder,
+    } = get();
 
-    if (lastChangeId !== get().activeChangeId) {
-      const changes = get().changes;
+    // changes ids "left" from playhead
+    const changesIdsToApply = userDefinedOrder.filter(
+      (id) => changes[id].x < playHeadX
+    );
+
+    if (!isEqual(changesIdsToApply, appliedChangesIds)) {
       const deltas: Delta[] = [];
       const appliedSoFar: string[] = [];
 
-      for (const changeId of get().preservedOrder) {
+      for (const changeId of preservedOrder) {
         if (!changesIdsToApply.includes(changeId)) {
           continue;
         }
 
-        const changeDelta = changes[changeId].delta;
-        const allChangeDeps = changes[changeId].deps;
-        const addedIds = difference(appliedSoFar, allChangeDeps);
-        const removedIds = difference(allChangeDeps, appliedSoFar);
+        let { delta, deps } = changes[changeId];
+        const addedIds = difference(appliedSoFar, deps);
+        const removedIds = difference(deps, appliedSoFar);
 
-        const addedDelta = composeDeltas(
-          addedIds.map((id) => changes[id].delta)
-        );
-        const removedDelta = composeDeltas(
-          removedIds.map((id) => changes[id].deltaInverted)
-        );
+        if (addedIds.length) {
+          const addedDelta = composeDeltas(
+            addedIds.map((id) => changes[id].delta)
+          );
 
-        const changeDelta2 = addedIds.length
-          ? addedDelta.transform(changeDelta)
-          : changeDelta;
+          delta = addedDelta.transform(delta);
+        }
 
-        const changeDelta3 = removedIds.length
-          ? removedDelta.transform(changeDelta2)
-          : changeDelta2;
+        if (removedIds.length) {
+          const removedDelta = composeDeltas(
+            removedIds.map((id) => changes[id].deltaInverted)
+          );
 
-        deltas.push(changeDelta3);
+          delta = delta.transform(removedDelta);
+        }
+
+        deltas.push(delta);
         appliedSoFar.push(changeId);
       }
 
-      const str = deltaToString(deltas);
-
       set({
-        activeChangeId: lastChangeId,
-        activeChangeValue: str,
+        activeChangeId: last(changesIdsToApply),
+        activeChangeValue: deltaToString(deltas),
         appliedChangesIds: changesIdsToApply,
       });
     }
@@ -153,116 +157,39 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
       throw new Error(`${to} is dependend on ${from}`);
     }
 
-    set(
-      produce((state: Store) => {
-        const fromIndex = state.userDefinedOrder.indexOf(from);
-        const toIndex = state.userDefinedOrder.indexOf(to);
+    store.updateStore(({ userDefinedOrder }) => {
+      const fromIndex = userDefinedOrder.indexOf(from);
+      const toIndex = userDefinedOrder.indexOf(to);
 
-        // moving array item
-        const elCopy = state.userDefinedOrder[fromIndex];
-        state.userDefinedOrder.splice(fromIndex, 1); // remove from element
-        state.userDefinedOrder.splice(toIndex, 0, elCopy); // add elCopy in toIndex
-      })
-    );
-
-    get().updateAppliedChangesIds();
-  },
-  setPlayheadXToEnd: () => {
-    const { changes } = get();
-
-    set({
-      playHeadX: changes.draft.x + changes.draft.width,
+      // moving array item
+      const elCopy = userDefinedOrder[fromIndex];
+      userDefinedOrder.splice(fromIndex, 1); // remove from element
+      userDefinedOrder.splice(toIndex, 0, elCopy); // add elCopy in toIndex
     });
+
+    store.applyChanges();
+  },
+  setPlayheadX: (x: number) => {
+    const { changes } = get();
+    const playHeadX =
+      x === Infinity ? changes.draft.x + changes.draft.width : x;
+
+    if (get().playHeadX !== playHeadX) {
+      set({ playHeadX });
+      get().applyChanges();
+    }
   },
 });
 
-export const useStore = create<
-  Store,
-  SetState<Store>,
-  GetState<Store>,
-  Mutate<StoreApi<Store>, [['zustand/subscribeWithSelector', never]]>
->(subscribeWithSelector(store));
-
-// update active changes on playhead move or on position swap
-useStore.subscribe(
-  (state) => [state.playHeadX],
-  () => {
-    useStore.getState().updateAppliedChangesIds();
-  }
-);
-
-type Coordinate = {
-  from: number;
-  to: number;
-  id: string;
-  op: 'insert' | 'delete';
-};
-
-function isOverlapping(first: Coordinate, second: Coordinate) {
-  if (!first || !second) {
-    return false;
-  }
-  if (first.op === 'insert' && second.op === 'insert') {
-    return first.to >= second.from && first.from <= second.from;
-  }
-  return first.to >= second.from && first.from <= second.to;
-}
-
-function calcCoordinates(data: { delta: Delta; id: string }[]): Coordinate[] {
-  return data
-    .map(({ delta, id }) => {
-      let index = 0;
-      return delta
-        .map((op) => {
-          if (op.retain) {
-            index += op.retain;
-            return null;
-          } else if (op.delete) {
-            return {
-              id,
-              from: index,
-              to: index,
-              op: 'delete',
-            };
-          } else if (typeof op.insert === 'string') {
-            const from = index;
-            const to = index + op.insert.length;
-
-            return {
-              id,
-              from,
-              to,
-              op: 'insert',
-            };
-          }
-        })
-        .filter((op) => op !== null);
-    })
-    .flat() as Coordinate[];
-}
-
-function composeDeltas(deltas: Delta[]) {
-  return deltas.reduce((acc, curr) => acc.compose(curr), new Delta());
-}
-
-function deltaToString(deltas: Delta[], initial = '') {
-  const composeAllDeltas = composeDeltas(deltas);
-  return composeAllDeltas.reduce((text, op) => {
-    if (!op.insert) return text;
-    if (typeof op.insert !== 'string') return text + ' ';
-
-    return text + op.insert;
-  }, initial);
-}
+export const useStore = create(store);
 
 export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
-  get().setPlayheadXToEnd();
-
+  const noDraft = (id: string) => id !== 'draft';
   const store = get();
+  store.setPlayheadX(Infinity);
 
-  const appliedIdsNoDraft = store.appliedChangesIds.slice(0, -1);
   const takenCoordinates = calcCoordinates(
-    appliedIdsNoDraft.map((id) => ({
+    store.appliedChangesIds.filter(noDraft).map((id) => ({
       id,
       delta: store.changes[id].delta,
     }))
@@ -287,7 +214,14 @@ export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
       ]);
 
       return draftCoordinates.find((draft) => {
-        return isOverlapping(taken, draft);
+        // check if it's overlapping
+        if (!taken || !draft) {
+          return false;
+        }
+        if (taken.op === 'insert' && draft.op === 'insert') {
+          return taken.to >= draft.from && taken.from <= draft.from;
+        }
+        return taken.to >= draft.from && taken.from <= draft.to;
       });
     })
     .map(({ id }) => {
@@ -325,7 +259,7 @@ export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
 
   const newChangeId = 'something' + Math.random();
 
-  store.updateStore(({ changes }) => {
+  store.updateStore(({ changes, appliedChangesIds }) => {
     changes[newChangeId] = {
       color: '#374957',
       width: store.changes.draft.width,
@@ -338,20 +272,24 @@ export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
       deltaInverted: draftChangeTransformed.invert(baseComposed),
     };
     changes.draft.x = store.changes.draft.x + store.changes.draft.width + 10;
-    changes.draft.deps = [...appliedIdsNoDraft, newChangeId];
+    changes.draft.deps = [...appliedChangesIds.filter(noDraft), newChangeId];
     changes.draft.delta = new Delta();
   });
 
   set({
-    userDefinedOrder: [...appliedIdsNoDraft, newChangeId, 'draft'],
+    userDefinedOrder: [
+      ...store.appliedChangesIds.filter(noDraft),
+      newChangeId,
+      'draft',
+    ],
     preservedOrder: [
-      ...store.preservedOrder.filter((id) => id !== 'draft'),
+      ...store.preservedOrder.filter(noDraft),
       newChangeId,
       'draft',
     ],
   });
 
-  store.setPlayheadXToEnd();
+  store.setPlayheadX(Infinity);
 
   return newChangeId;
 }
