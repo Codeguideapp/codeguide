@@ -1,4 +1,18 @@
-export const getDiff = async (pr: number) => {
+import { createCommands, diff } from '../edits';
+
+export type File = {
+  path: string;
+  oldVal: string;
+  newVal: string;
+};
+
+export const getFile = async (path: string) => {
+  // note: this can be invoked as user types, so it needs a caching layer
+  const files = await getFiles(0);
+  return files.find((f) => f.path === path);
+};
+
+export const getFiles = async (pr: number): Promise<File[]> => {
   return [
     {
       path: 'test.ts',
@@ -47,3 +61,7 @@ export const getDiff = async (pr: number) => {
     },
   ];
 };
+
+export async function getSuggestions(oldVal: string, newVal: string) {
+  return createCommands(diff(oldVal, newVal));
+}

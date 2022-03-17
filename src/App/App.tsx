@@ -29,17 +29,7 @@ export function App() {
         })
       }
     >
-      <Split
-        className="split-main"
-        gutterSize={5}
-        snapOffset={10}
-        sizes={[70, 30]}
-        minSize={[100, 100]}
-      >
-        <Editor />
-        <div>bb</div>
-      </Split>
-
+      <Editor />
       <Timeline />
     </Split>
   );

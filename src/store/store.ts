@@ -4,7 +4,7 @@ import Delta from 'quill-delta';
 import create, { GetState, SetState } from 'zustand';
 
 import { getFile, getFiles, getSuggestions } from '../api/api';
-import { DiffChunk } from '../edits';
+import { Command } from '../edits';
 import { calcCoordinates, composeDeltas, deltaToString } from './deltaUtils';
 
 export type Store = {
@@ -20,7 +20,7 @@ export type Store = {
   activeChangeId?: string;
   activeChangeValue: string;
   activePath?: string;
-  suggestions: DiffChunk[];
+  suggestions: Command[];
   initFile: (path: string) => Promise<string>;
   updateStore: (cb: (store: Store) => void) => void;
   applyChanges: () => void;
@@ -151,11 +151,15 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
         appliedSoFar.push(changeId);
       }
 
+      const activeChangeValue = deltaToString(deltas);
+
       set({
         activeChangeId: last(changesIdsToApply),
-        activeChangeValue: deltaToString(deltas),
+        activeChangeValue,
         appliedChangesIds: changesIdsToApply,
       });
+
+      get().updateSuggestions(activeChangeValue);
     }
   },
   updateChangesOrder: (from: string, to: string) => {

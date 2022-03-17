@@ -1,8 +1,10 @@
 import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 import React, { useCallback, useEffect, useRef } from 'react';
+import Split from 'react-split';
 
 import { useStore } from '../store/store';
+import { Suggestions } from './Suggestions';
 
 export function Editor() {
   const monacoListener = useRef<monaco.IDisposable>({ dispose: () => {} });
@@ -73,13 +75,22 @@ export function Editor() {
   }, [activeChangeId, activeChangeValue, updateStore, updateSuggestions]);
 
   return (
-    <div
-      ref={editorDiv}
-      id="editor"
-      style={{
-        width: '100%',
-        height: '100%',
-      }}
-    ></div>
+    <Split
+      className="split-main"
+      gutterSize={5}
+      snapOffset={10}
+      sizes={[70, 30]}
+      minSize={[100, 100]}
+    >
+      <div
+        ref={editorDiv}
+        id="editor"
+        style={{
+          width: '100%',
+          height: '100%',
+        }}
+      ></div>
+      <Suggestions editor={editor} />
+    </Split>
   );
 }

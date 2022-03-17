@@ -2,7 +2,7 @@ import * as diffLib from 'diff';
 import Delta from 'quill-delta';
 import * as Y from 'yjs';
 
-type Command =
+export type Command =
   | {
       type: 'insert';
       value: string;
