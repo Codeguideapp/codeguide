@@ -11,6 +11,9 @@ export function Editor() {
   const activeChangeId = useStore((state) => state.activeChangeId);
   const activeChangeValue = useStore((state) => state.activeChangeValue);
   const updateStore = useStore(useCallback((state) => state.updateStore, []));
+  const updateSuggestions = useStore(
+    useCallback((state) => state.updateSuggestions, [])
+  );
 
   useEffect(() => {
     if (editorDiv.current) {
@@ -21,6 +24,7 @@ export function Editor() {
         language: 'javascript',
         readOnly: readOnly,
         theme: readOnly ? 'readonly' : 'vs-dark',
+        automaticLayout: true,
       });
     }
   }, [editorDiv]);
@@ -62,17 +66,19 @@ export function Editor() {
             changes.draft.delta = changes.draft.delta.compose(delta);
           });
         });
+
+        updateSuggestions(editor.current!.getValue());
       });
     }
-  }, [activeChangeId, activeChangeValue, updateStore]);
+  }, [activeChangeId, activeChangeValue, updateStore, updateSuggestions]);
 
   return (
     <div
       ref={editorDiv}
       id="editor"
       style={{
-        width: 800,
-        height: 400,
+        width: '100%',
+        height: '100%',
       }}
     ></div>
   );

@@ -1,12 +1,17 @@
 import produce from 'immer';
-import { difference, isEqual, last, uniq } from 'lodash';
+import { debounce, difference, isEqual, last, uniq } from 'lodash';
 import Delta from 'quill-delta';
 import create, { GetState, SetState } from 'zustand';
 
-import { getDiff } from '../api/api';
+import { getFile, getFiles, getSuggestions } from '../api/api';
+import { DiffChunk } from '../edits';
 import { calcCoordinates, composeDeltas, deltaToString } from './deltaUtils';
 
 export type Store = {
+  layoutSplitRatioBottom: number;
+  layoutSplitRatioTop: number;
+  windowHeight: number;
+  windowWidth: number;
   changes: Record<string, Change>;
   playHeadX: number;
   preservedOrder: string[];
@@ -14,11 +19,14 @@ export type Store = {
   appliedChangesIds: string[];
   activeChangeId?: string;
   activeChangeValue: string;
+  activePath?: string;
+  suggestions: DiffChunk[];
   initFile: (path: string) => Promise<string>;
   updateStore: (cb: (store: Store) => void) => void;
   applyChanges: () => void;
   updateChangesOrder: (from: string, to: string) => void;
   setPlayheadX: (x: number) => void;
+  updateSuggestions: (currentVal: string) => void;
 };
 
 export type Change = {
@@ -41,16 +49,22 @@ export type Change = {
 };
 
 export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
+  windowHeight: window.innerHeight,
+  windowWidth: window.innerWidth,
+  layoutSplitRatioTop: 70,
+  layoutSplitRatioBottom: 30,
+  suggestions: [],
   initFile: async (path: string) => {
-    const diff = await getDiff(0);
-    const file = diff.find((d) => d.path === path);
+    const files = await getFiles(0);
+    const file = files.find((f) => f.path === path);
 
     if (!file) {
       throw new Error('file not found');
     }
 
-    get().updateStore(({ changes }) => {
-      changes.draft = {
+    get().updateStore((store) => {
+      store.activePath = path;
+      store.changes.draft = {
         x: 10,
         color: '#cccccc',
         width: 50,
@@ -179,9 +193,37 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
       get().applyChanges();
     }
   },
+  updateSuggestions: async (currentVal: string) => {
+    const { activePath } = get();
+    const file = activePath ? await getFile(activePath) : null;
+
+    if (!file) {
+      set({ suggestions: [] });
+      return;
+    }
+
+    const suggestions = await getSuggestions(currentVal, file.newVal);
+
+    if (activePath !== get().activePath) {
+      // path was changed in the meantine, cancel adding new suggestions
+      return;
+    }
+
+    set({ suggestions });
+  },
 });
 
 export const useStore = create(store);
+
+window.addEventListener(
+  'resize',
+  debounce(() => {
+    useStore.setState({
+      windowHeight: window.innerHeight,
+      windowWidth: window.innerWidth,
+    });
+  }, 100)
+);
 
 export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
   const noDraft = (id: string) => id !== 'draft';

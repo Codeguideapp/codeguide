@@ -1,10 +1,22 @@
 import React from 'react';
 import { Layer, Rect, Stage } from 'react-konva';
 
+import { useStore } from '../store/store';
 import { Changes } from './Changes';
 import { Playhead } from './Playhead';
 
 export const Timeline = () => {
+  const layoutSplitRatioBottom = useStore(
+    (state) => state.layoutSplitRatioBottom
+  );
+  const windowHeight = useStore((state) => state.windowHeight);
+  const stageWidth = useStore((state) => state.windowWidth);
+
+  const stageHeight = React.useMemo(
+    () => Math.ceil(windowHeight * (layoutSplitRatioBottom / 100)),
+    [layoutSplitRatioBottom, windowHeight]
+  );
+
   const PADDING = 0;
 
   const stageRef = React.useRef<any>(null);
@@ -12,8 +24,6 @@ export const Timeline = () => {
   const [layerX, setLayerX] = React.useState(0);
   //const [scrollbarX, setScrollbarX] = React.useState(PADDING);
   const [zoom, setZoom] = React.useState(1);
-
-  const stageWidth = window.innerWidth;
 
   const START_WIDTH = 3000;
   const maxZoom = stageWidth / START_WIDTH;
@@ -42,7 +52,7 @@ export const Timeline = () => {
   return (
     <Stage
       width={window.innerWidth}
-      height={300}
+      height={stageHeight}
       style={{ background: '#20262C' }}
       ref={stageRef}
       onWheel={(e) => {
@@ -74,12 +84,17 @@ export const Timeline = () => {
         }
       }}
     >
-      <Changes layerX={layerX} zoom={zoom} height={100} y={100} />
-      <Playhead layerX={layerX} zoom={zoom} height={300} />
+      <Changes
+        layerX={layerX}
+        zoom={zoom}
+        height={100}
+        y={(stageHeight - 100) / 2}
+      />
+      <Playhead layerX={layerX} zoom={zoom} height={stageHeight - 10} />
       <Layer>
         <Rect
           x={scrollbarX}
-          y={290}
+          y={stageHeight - 10}
           width={horizontalBarWidth}
           height={10}
           fill="grey"
@@ -91,7 +106,7 @@ export const Timeline = () => {
                 Math.min(pos.x, stageWidth - horizontalBarWidth - PADDING),
                 PADDING
               ),
-              y: 290,
+              y: stageHeight - 10,
             };
           }}
           onDragMove={(event) => {
