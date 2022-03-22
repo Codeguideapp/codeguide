@@ -39,3 +39,14 @@ code {
   background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFAQMAAABo7865AAAABlBMVEVHcEzMzMzyAv2sAAAAAXRSTlMAQObYZgAAABBJREFUeF5jOAMEEAIEEFwAn3kMwcB6I2AAAAAASUVORK5CYII=');
   cursor: row-resize;
 }
+
+.insert-suggestion {
+  background: rgba(49, 255, 169, 0.384);
+}
+
+.delete-suggestion {
+  background: rgba(255, 49, 49, 0.384);
+  text-decoration: line-through;
+  opacity: 0.5;
+  color: #666;
+}

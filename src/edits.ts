@@ -17,7 +17,7 @@ export type Command =
   | {
       type: 'delete';
       index: number;
-      delLength: number;
+      value: string;
     };
 
 type DiffChunk = {
@@ -82,21 +82,48 @@ export function createCommands(changes: DiffChunk[]): Command[] {
           oldValue: change.value,
           value: change.replace,
         });
+
+        index += change.value.length;
       } else {
         commands.push({
           type: 'delete',
           index,
-          delLength: change.value.length,
+          value: change.value,
         });
       }
-
-      index += change.value.length;
     } else {
       index += change.value.length;
     }
   }
 
   return commands;
+}
+
+export function undoCommand(command: Command): Command {
+  if (command.type === 'insert') {
+    return {
+      type: 'delete',
+      index: command.index,
+      value: command.value,
+    };
+  }
+  if (command.type === 'delete') {
+    return {
+      type: 'insert',
+      index: command.index,
+      value: command.value,
+    };
+  }
+  if (command.type === 'replace') {
+    return {
+      type: 'replace',
+      index: command.index,
+      value: command.oldValue,
+      oldValue: command.value,
+    };
+  }
+
+  return {} as Command; // todo
 }
 
 export function executeCommands(commands: Command[], initialValue: string) {
@@ -115,7 +142,7 @@ export function executeCommands(commands: Command[], initialValue: string) {
         changeYText.insert(command.index, command.value);
         break;
       case 'delete':
-        changeYText.delete(command.index, command.delLength);
+        changeYText.delete(command.index, command.value.length);
         break;
     }
 

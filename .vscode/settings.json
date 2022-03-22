@@ -38,5 +38,7 @@
     "javascriptreact",
     "typescript",
     "typescriptreact"
-  ]
+  ],
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.tabSize": 2
 }

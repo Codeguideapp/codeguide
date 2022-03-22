@@ -159,7 +159,9 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
         appliedChangesIds: changesIdsToApply,
       });
 
-      get().updateSuggestions(activeChangeValue);
+      if (last(changesIdsToApply) === 'draft') {
+        get().updateSuggestions(activeChangeValue);
+      }
     }
   },
   updateChangesOrder: (from: string, to: string) => {
@@ -212,6 +214,7 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
       // path was changed in the meantine, cancel adding new suggestions
       return;
     }
+    console.log({ suggestions });
 
     set({ suggestions });
   },

@@ -1,51 +1,37 @@
-import * as monaco from 'monaco-editor';
 import React from 'react';
 
+import { Command } from '../edits';
 import { useStore } from '../store/store';
 
 export const Suggestions = ({
-  editor,
+  showSuggestion,
+  applySuggestion,
+  hideSuggestion,
 }: {
-  editor: React.MutableRefObject<monaco.editor.IStandaloneCodeEditor | null>;
+  showSuggestion: (suggestion: Command) => void;
+  hideSuggestion: () => void;
+  applySuggestion: (suggestion: Command) => void;
 }) => {
   const suggestions = useStore((state) => state.suggestions);
 
   return (
     <ul>
-      {suggestions.map((suggestion) =>
-        suggestion.type === 'insert' ? (
-          <li
-            key={suggestion.index}
-            onClick={() => {
-              const pos = editor.current
-                ?.getModel()
-                ?.getPositionAt(suggestion.index);
-
-              if (!pos) return;
-
-              editor.current?.getModel()?.applyEdits([
-                {
-                  range: new monaco.Range(
-                    pos.lineNumber,
-                    pos.column,
-                    pos.lineNumber,
-                    pos.column
-                  ),
-                  text: suggestion.value,
-                },
-              ]);
-            }}
-          >
-            {suggestion.type} {suggestion.value}
-          </li>
-        ) : suggestion.type === 'replace' ? (
-          <li key={suggestion.index}>
-            {suggestion.type} {suggestion.value}
-          </li>
-        ) : (
-          <li key={suggestion.index}>{suggestion.type}</li>
-        )
-      )}
+      {suggestions.map((suggestion) => (
+        <li
+          key={suggestion.index}
+          onMouseEnter={() => {
+            showSuggestion(suggestion);
+          }}
+          onMouseLeave={() => {
+            hideSuggestion();
+          }}
+          onClick={() => {
+            applySuggestion(suggestion);
+          }}
+        >
+          {suggestion.type} {suggestion.value}
+        </li>
+      ))}
     </ul>
   );
 };
