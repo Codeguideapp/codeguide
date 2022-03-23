@@ -78,6 +78,7 @@ export function Editor() {
         readOnly: readOnly,
         theme: readOnly ? 'readonly' : 'vs-dark',
         automaticLayout: true,
+        overviewRulerLanes: 1,
       });
     }
   }, [editorDiv]);

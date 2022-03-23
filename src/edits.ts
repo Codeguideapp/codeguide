@@ -29,7 +29,7 @@ type DiffChunk = {
 };
 
 export function diff(oldVal: string, newVal: string): DiffChunk[] {
-  const diffs = diffLib.diffChars(oldVal, newVal) as (DiffChunk & {
+  const diffs = diffLib.diffWords(oldVal, newVal) as (DiffChunk & {
     _skip?: boolean;
   })[];
 

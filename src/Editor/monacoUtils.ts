@@ -93,6 +93,11 @@ export function highlightCommand(
           range,
           options: {
             className: 'insert-suggestion',
+            overviewRuler: {
+              color: 'green',
+              position: 1,
+              darkColor: 'green',
+            },
           },
         },
       ]);
