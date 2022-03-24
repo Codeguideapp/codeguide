@@ -29,7 +29,15 @@ export function App() {
         })
       }
     >
-      <Editor />
+      <div
+        style={{
+          overflow: 'hidden',
+          width: '100%',
+          height: '100%',
+        }}
+      >
+        <Editor />
+      </div>
       <Timeline />
     </Split>
   );

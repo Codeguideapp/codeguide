@@ -19,6 +19,7 @@ export type Store = {
   appliedChangesIds: string[];
   activeChangeId?: string;
   activeChangeValue: string;
+  activeResultValue: string;
   activePath?: string;
   suggestions: Command[];
   initFile: (path: string) => Promise<string>;
@@ -54,6 +55,7 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
   layoutSplitRatioTop: 70,
   layoutSplitRatioBottom: 30,
   suggestions: [],
+  activeResultValue: '',
   initFile: async (path: string) => {
     const files = await getFiles(0);
     const file = files.find((f) => f.path === path);
@@ -64,6 +66,7 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
 
     get().updateStore((store) => {
       store.activePath = path;
+      store.activeResultValue = file.newVal;
       store.changes.draft = {
         x: 10,
         color: '#cccccc',
