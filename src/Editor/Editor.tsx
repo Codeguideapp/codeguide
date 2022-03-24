@@ -19,6 +19,10 @@ export function Editor() {
   const standaloneEditor = useRef<monaco.editor.IStandaloneCodeEditor>();
   const diffEditor = useRef<monaco.editor.IDiffEditor>();
   const decorations = useRef<string[]>([]);
+  const standaloneViewstate = useRef<monaco.editor.ICodeEditorViewState | null>(
+    null
+  );
+  const diffViewstate = useRef<monaco.editor.IDiffEditorViewState | null>(null);
 
   const mux = useRef(createMutex());
   const activeChangeId = useStore((state) => state.activeChangeId);
@@ -33,6 +37,13 @@ export function Editor() {
   useEffect(() => {
     if (!editorDiffDom.current) return;
     if (!editorStandaloneDom.current) return;
+
+    if (standaloneEditor.current) {
+      standaloneViewstate.current = standaloneEditor.current.saveViewState();
+    }
+    if (diffEditor.current) {
+      diffViewstate.current = diffEditor.current.saveViewState();
+    }
 
     if (activeChangeId === 'draft') {
       diffEditor.current?.dispose();
@@ -84,6 +95,10 @@ export function Editor() {
         );
       });
 
+      if (diffViewstate.current) {
+        diffEditor.current.restoreViewState(diffViewstate.current);
+      }
+
       diffMouseDownListener.current = diffEditor.current
         .getModifiedEditor()
         .onMouseDown(diffGutterMouseHandler(diffEditor));
@@ -99,11 +114,16 @@ export function Editor() {
           readOnly: true,
         }
       );
+
+      if (standaloneViewstate.current) {
+        standaloneEditor.current.restoreViewState(standaloneViewstate.current);
+      }
     }
   }, [editorDiffDom, activeChangeId]);
 
   useEffect(() => {
     modifiedContentListener.current?.dispose();
+
     modifiedModel.setValue(activeChangeValue);
 
     if (activeChangeId === 'draft') {
