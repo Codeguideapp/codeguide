@@ -5,7 +5,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 
 import { App } from './App/App';
-import { readOnlyTheme } from './monaco-themes/readonly';
+import { readOnlyTheme } from './Editor/monaco-themes/readonly';
 import reportWebVitals from './reportWebVitals';
 
 const renderApp = () => {

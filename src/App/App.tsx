@@ -1,20 +1,13 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
 import Split from 'react-split';
 
 import { Editor } from '../Editor/Editor';
+import { FileTree } from '../FileTree/FileTree';
 import { useStore } from '../store/store';
 import { Timeline } from '../Timeline/Timeline';
 
 export function App() {
-  const initFile = useStore(useCallback((state) => state.initFile, []));
   const updateStore = useStore(useCallback((state) => state.updateStore, []));
-
-  // @ts-ignore
-  window.iin = initFile;
-
-  useEffect(() => {
-    initFile('test.ts');
-  });
 
   return (
     <Split
@@ -32,15 +25,19 @@ export function App() {
         })
       }
     >
-      <div
-        style={{
-          overflow: 'hidden',
-          width: '100%',
-          height: '100%',
-        }}
-      >
-        <Editor />
-      </div>
+      <Split className="split-horiz" direction="horizontal" sizes={[30, 70]}>
+        <FileTree />
+        <div
+          style={{
+            overflow: 'hidden',
+            width: '100%',
+            height: '100%',
+          }}
+        >
+          <Editor />
+        </div>
+      </Split>
+
       <Timeline />
     </Split>
   );

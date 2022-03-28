@@ -19,7 +19,7 @@ code {
     monospace;
 }
 
-.split-main {
+.split-horiz {
   display: flex;
   flex-direction: row;
 }
