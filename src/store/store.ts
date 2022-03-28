@@ -7,6 +7,8 @@ import { getFiles } from '../api/api';
 import { Command } from '../edits';
 import { calcCoordinates, composeDeltas, deltaToString } from './deltaUtils';
 
+const excludeDraft = (id: string) => id !== 'draft';
+
 export type Store = {
   layoutSplitRatioBottom: number;
   layoutSplitRatioTop: number;
@@ -16,7 +18,6 @@ export type Store = {
   playHeadX: number;
   preservedOrder: string[];
   userDefinedOrder: string[];
-  appliedChangesIds: string[];
   activeChangeId?: string;
   activeResultValue: string;
   activePath?: string;
@@ -63,14 +64,18 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
     }
 
     get().updateStore((store) => {
+      const deps = store.userDefinedOrder
+        .filter((id) => store.changes[id].path === path)
+        .filter(excludeDraft);
+
       store.activePath = path;
       store.activeResultValue = file.newVal;
       store.changes.draft = {
         x: store.changes?.draft?.x || 10,
         color: '#cccccc',
         width: 50,
-        delta: new Delta().insert(file.oldVal),
-        deps: [],
+        delta: deps.length ? new Delta() : new Delta().insert(file.oldVal),
+        deps,
         deltaInverted: new Delta(),
         path,
         highlightAsDep: false,
@@ -92,9 +97,20 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
     });
     get().setPlayheadX(Infinity);
   },
-  appliedChangesIds: [] as string[],
   playHeadX: 0,
-  changes: {} as Record<string, Change>,
+  changes: {
+    draft: {
+      x: 10,
+      width: 0,
+      color: '#cccccc',
+      delta: new Delta(),
+      deps: [],
+      deltaInverted: new Delta(),
+      path: '',
+      highlightAsDep: false,
+      actions: {},
+    },
+  } as Record<string, Change>,
   userDefinedOrder: ['draft'],
   preservedOrder: ['draft'],
   updateStore: (cb) =>
@@ -205,17 +221,16 @@ window.addEventListener(
 );
 
 export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
-  const noDraft = (id: string) => id !== 'draft';
   const store = get();
   store.setPlayheadX(Infinity);
 
   const activePath = store.changes.draft.path;
-  const appliedChangesIds = store.userDefinedOrder.filter(
+  const appliedIds = store.userDefinedOrder.filter(
     (id) => store.changes[id].path === activePath
   );
 
   const takenCoordinates = calcCoordinates(
-    appliedChangesIds.filter(noDraft).map((id) => ({
+    appliedIds.filter(excludeDraft).map((id) => ({
       id,
       delta: store.changes[id].delta,
     }))
@@ -261,13 +276,10 @@ export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
 
   const lastDep = last(deps);
 
-  const lastDepIndex = appliedChangesIds.findIndex((id) => id === lastDep);
+  const lastDepIndex = appliedIds.findIndex((id) => id === lastDep);
 
-  const baseIds = appliedChangesIds.slice(0, lastDepIndex + 1);
-  const idsToUndo = appliedChangesIds.slice(
-    lastDepIndex + 1,
-    appliedChangesIds.length - 1
-  );
+  const baseIds = appliedIds.slice(0, lastDepIndex + 1);
+  const idsToUndo = appliedIds.slice(lastDepIndex + 1, appliedIds.length - 1);
 
   const baseComposed = composeDeltas(
     baseIds.map((id) => store.changes[id].delta)
@@ -283,7 +295,7 @@ export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
 
   const newChangeId = 'something' + Math.random();
 
-  store.updateStore(({ changes, appliedChangesIds }) => {
+  store.updateStore(({ changes }) => {
     changes[newChangeId] = {
       color: '#374957',
       width: store.changes.draft.width,
@@ -296,18 +308,18 @@ export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
       deltaInverted: draftChangeTransformed.invert(baseComposed),
     };
     changes.draft.x = store.changes.draft.x + store.changes.draft.width + 10;
-    changes.draft.deps = [...appliedChangesIds.filter(noDraft), newChangeId];
+    changes.draft.deps = [...appliedIds.filter(excludeDraft), newChangeId];
     changes.draft.delta = new Delta();
   });
 
   set({
     userDefinedOrder: [
-      ...store.userDefinedOrder.filter(noDraft),
+      ...store.userDefinedOrder.filter(excludeDraft),
       newChangeId,
       'draft',
     ],
     preservedOrder: [
-      ...store.preservedOrder.filter(noDraft),
+      ...store.preservedOrder.filter(excludeDraft),
       newChangeId,
       'draft',
     ],
