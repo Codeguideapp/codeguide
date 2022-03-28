@@ -9,6 +9,9 @@ export function App() {
   const initFile = useStore(useCallback((state) => state.initFile, []));
   const updateStore = useStore(useCallback((state) => state.updateStore, []));
 
+  // @ts-ignore
+  window.iin = initFile;
+
   useEffect(() => {
     initFile('test.ts');
   });

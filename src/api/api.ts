@@ -15,7 +15,7 @@ export const getFile = async (path: string) => {
 export const getFiles = async (pr: number): Promise<File[]> => {
   return [
     {
-      path: 'test1.ts',
+      path: 'test.ts',
       oldVal: `
       const renderApp = () =>
         ReactDOM.render(
@@ -60,7 +60,7 @@ export const getFiles = async (pr: number): Promise<File[]> => {
         }`,
     },
     {
-      path: 'testy.ts',
+      path: 'test3.ts',
       oldVal: `        const changeTracker = textChanges.ChangeTracker.fromContext({ host, formatContext, preferences });
 
       const coalesceAndOrganizeImports = (importGroup: readonly ImportDeclaration[]) => stableSort(
@@ -87,7 +87,7 @@ export const getFiles = async (pr: number): Promise<File[]> => {
       const topLevelExportDecls = sourceFile.statements.filter(isExportDeclaration);`,
     },
     {
-      path: 'test.ts',
+      path: 'test4.ts',
       oldVal: `{
         "name": "@stoplight/elements-dev-portal",
         "version": "1.6.14",

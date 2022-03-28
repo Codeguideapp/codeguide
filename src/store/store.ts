@@ -1,9 +1,9 @@
 import produce from 'immer';
-import { debounce, difference, isEqual, last, uniq } from 'lodash';
+import { debounce, difference, last, uniq } from 'lodash';
 import Delta from 'quill-delta';
 import create, { GetState, SetState } from 'zustand';
 
-import { getFile, getFiles, getSuggestions } from '../api/api';
+import { getFiles } from '../api/api';
 import { Command } from '../edits';
 import { calcCoordinates, composeDeltas, deltaToString } from './deltaUtils';
 
@@ -18,16 +18,14 @@ export type Store = {
   userDefinedOrder: string[];
   appliedChangesIds: string[];
   activeChangeId?: string;
-  activeChangeValue: string;
   activeResultValue: string;
   activePath?: string;
   suggestions: Command[];
-  initFile: (path: string) => Promise<string>;
+  initFile: (path: string) => void;
   updateStore: (cb: (store: Store) => void) => void;
-  applyChanges: () => void;
+  getContentForChangeId: (change: string) => string;
   updateChangesOrder: (from: string, to: string) => void;
   setPlayheadX: (x: number) => void;
-  updateSuggestions: (currentVal: string) => void;
 };
 
 export type Change = {
@@ -68,7 +66,7 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
       store.activePath = path;
       store.activeResultValue = file.newVal;
       store.changes.draft = {
-        x: 10,
+        x: store.changes?.draft?.x || 10,
         color: '#cccccc',
         width: 50,
         delta: new Delta().insert(file.oldVal),
@@ -92,80 +90,60 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
         },
       };
     });
-
-    return saveDraft(set, get);
+    get().setPlayheadX(Infinity);
   },
-  activeChangeValue: '',
   appliedChangesIds: [] as string[],
   playHeadX: 0,
   changes: {} as Record<string, Change>,
-  userDefinedOrder: [],
-  preservedOrder: [],
+  userDefinedOrder: ['draft'],
+  preservedOrder: ['draft'],
   updateStore: (cb) =>
     set(
       produce((state) => {
         cb(state);
       })
     ),
-  applyChanges: () => {
-    const {
-      userDefinedOrder,
-      changes,
-      playHeadX,
-      appliedChangesIds,
-      preservedOrder,
-    } = get();
+  getContentForChangeId(changeId: string) {
+    const { changes, userDefinedOrder, preservedOrder, playHeadX } = get();
 
-    // changes ids "left" from playhead
+    const activePath = changes[changeId].path;
     const changesIdsToApply = userDefinedOrder.filter(
-      (id) => changes[id].x < playHeadX
+      (id) => changes[id].x < playHeadX && changes[id].path === activePath
     );
 
-    if (!isEqual(changesIdsToApply, appliedChangesIds)) {
-      const deltas: Delta[] = [];
-      const appliedSoFar: string[] = [];
+    const deltas: Delta[] = [];
+    const appliedSoFar: string[] = [];
 
-      for (const changeId of preservedOrder) {
-        if (!changesIdsToApply.includes(changeId)) {
-          continue;
-        }
-
-        let { delta, deps } = changes[changeId];
-        const addedIds = difference(appliedSoFar, deps);
-        const removedIds = difference(deps, appliedSoFar);
-
-        if (addedIds.length) {
-          const addedDelta = composeDeltas(
-            addedIds.map((id) => changes[id].delta)
-          );
-
-          delta = addedDelta.transform(delta);
-        }
-
-        if (removedIds.length) {
-          const removedDelta = composeDeltas(
-            removedIds.map((id) => changes[id].deltaInverted)
-          );
-
-          delta = delta.transform(removedDelta);
-        }
-
-        deltas.push(delta);
-        appliedSoFar.push(changeId);
+    for (const changeId of preservedOrder) {
+      if (!changesIdsToApply.includes(changeId)) {
+        continue;
       }
 
-      const activeChangeValue = deltaToString(deltas);
+      let { delta, deps } = changes[changeId];
+      const addedIds = difference(appliedSoFar, deps);
+      const removedIds = difference(deps, appliedSoFar);
 
-      set({
-        activeChangeId: last(changesIdsToApply),
-        activeChangeValue,
-        appliedChangesIds: changesIdsToApply,
-      });
+      if (addedIds.length) {
+        const addedDelta = composeDeltas(
+          addedIds.map((id) => changes[id].delta)
+        );
 
-      if (last(changesIdsToApply) === 'draft') {
-        get().updateSuggestions(activeChangeValue);
+        delta = addedDelta.transform(delta);
       }
+
+      if (removedIds.length) {
+        const removedDelta = composeDeltas(
+          removedIds.map((id) => changes[id].deltaInverted)
+        );
+
+        delta = delta.transform(removedDelta);
+      }
+
+      deltas.push(delta);
+      appliedSoFar.push(changeId);
     }
+
+    return deltaToString(deltas);
   },
   updateChangesOrder: (from: string, to: string) => {
     const store = get();
@@ -189,37 +167,28 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
       userDefinedOrder.splice(fromIndex, 1); // remove from element
       userDefinedOrder.splice(toIndex, 0, elCopy); // add elCopy in toIndex
     });
-
-    store.applyChanges();
   },
   setPlayheadX: (x: number) => {
-    const { changes } = get();
+    const { changes, userDefinedOrder } = get();
     const playHeadX =
       x === Infinity ? changes.draft.x + changes.draft.width : x;
 
     if (get().playHeadX !== playHeadX) {
-      set({ playHeadX });
-      get().applyChanges();
+      const activeChangeId = [...userDefinedOrder, 'draft']
+        .reverse()
+        .find((id) => changes[id].x < playHeadX);
+
+      if (activeChangeId !== get().activeChangeId) {
+        set({
+          activeChangeId,
+          playHeadX,
+        });
+      } else {
+        set({
+          playHeadX,
+        });
+      }
     }
-  },
-  updateSuggestions: async (currentVal: string) => {
-    const { activePath } = get();
-    const file = activePath ? await getFile(activePath) : null;
-
-    if (!file) {
-      set({ suggestions: [] });
-      return;
-    }
-
-    const suggestions = await getSuggestions(currentVal, file.newVal);
-
-    if (activePath !== get().activePath) {
-      // path was changed in the meantine, cancel adding new suggestions
-      return;
-    }
-    console.log({ suggestions });
-
-    set({ suggestions });
   },
 });
 
@@ -240,8 +209,13 @@ export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
   const store = get();
   store.setPlayheadX(Infinity);
 
+  const activePath = store.changes.draft.path;
+  const appliedChangesIds = store.userDefinedOrder.filter(
+    (id) => store.changes[id].path === activePath
+  );
+
   const takenCoordinates = calcCoordinates(
-    store.appliedChangesIds.filter(noDraft).map((id) => ({
+    appliedChangesIds.filter(noDraft).map((id) => ({
       id,
       delta: store.changes[id].delta,
     }))
@@ -287,14 +261,12 @@ export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
 
   const lastDep = last(deps);
 
-  const lastDepIndex = store.appliedChangesIds.findIndex(
-    (id) => id === lastDep
-  );
+  const lastDepIndex = appliedChangesIds.findIndex((id) => id === lastDep);
 
-  const baseIds = store.appliedChangesIds.slice(0, lastDepIndex + 1);
-  const idsToUndo = store.appliedChangesIds.slice(
+  const baseIds = appliedChangesIds.slice(0, lastDepIndex + 1);
+  const idsToUndo = appliedChangesIds.slice(
     lastDepIndex + 1,
-    store.appliedChangesIds.length - 1
+    appliedChangesIds.length - 1
   );
 
   const baseComposed = composeDeltas(
@@ -318,7 +290,7 @@ export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
       x: store.changes.draft.x,
       actions: {},
       deps,
-      path: 'test.ts', // todo
+      path: activePath,
       highlightAsDep: false,
       delta: draftChangeTransformed,
       deltaInverted: draftChangeTransformed.invert(baseComposed),
@@ -330,7 +302,7 @@ export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
 
   set({
     userDefinedOrder: [
-      ...store.appliedChangesIds.filter(noDraft),
+      ...store.userDefinedOrder.filter(noDraft),
       newChangeId,
       'draft',
     ],

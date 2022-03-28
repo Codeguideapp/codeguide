@@ -26,9 +26,12 @@ export function Editor() {
 
   const mux = useRef(createMutex());
   const activeChangeId = useStore((state) => state.activeChangeId);
-  const activeChangeValue = useStore((state) => state.activeChangeValue);
+  const draftPath = useStore((state) => state.changes?.draft?.path);
   const activeResultValue = useStore((state) => state.activeResultValue);
   const updateStore = useStore(useCallback((state) => state.updateStore, []));
+  const getContentForChangeId = useStore(
+    useCallback((state) => state.getContentForChangeId, [])
+  );
 
   useEffect(() => {
     originalModel.setValue(activeResultValue);
@@ -124,7 +127,9 @@ export function Editor() {
   useEffect(() => {
     modifiedContentListener.current?.dispose();
 
-    modifiedModel.setValue(activeChangeValue);
+    const content = activeChangeId ? getContentForChangeId(activeChangeId) : '';
+
+    modifiedModel.setValue(content);
 
     if (activeChangeId === 'draft') {
       modifiedContentListener.current = modifiedModel.onDidChangeContent(
@@ -150,7 +155,7 @@ export function Editor() {
         }
       );
     }
-  }, [activeChangeId, activeChangeValue, updateStore]);
+  }, [activeChangeId, updateStore, getContentForChangeId, draftPath]);
 
   return (
     <div
