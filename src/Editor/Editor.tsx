@@ -1,8 +1,9 @@
 import { createMutex } from 'lib0/mutex';
 import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 
+import { getFiles } from '../api/api';
 import { useStore } from '../store/store';
 import {
   diffGutterMouseHandler,
@@ -25,21 +26,34 @@ export function Editor() {
   const diffViewstate = useRef<monaco.editor.IDiffEditorViewState | null>(null);
 
   const mux = useRef(createMutex());
-  const activeChange = useStore((state) => state.activeChange);
-  const draftPath = useStore((state) => state.changes?.draft?.path);
-  const activeResultValue = useStore((state) => state.activeResultValue);
+  const activeChangeId = useStore((state) => state.activeChangeId);
+  const changes = useStore((state) => state.changes);
+  const activeChange = useMemo(
+    () => (activeChangeId ? changes[activeChangeId] : undefined),
+    [activeChangeId, changes]
+  );
   const updateStore = useStore(useCallback((state) => state.updateStore, []));
   const getContentForChangeId = useStore(
     useCallback((state) => state.getContentForChangeId, [])
   );
 
   useEffect(() => {
-    originalModel.setValue(activeResultValue);
-  }, [activeResultValue]);
+    const setOriginalVal = async () => {
+      if (!activeChange) return;
+      const files = await getFiles(0);
+      const file = files.find((f) => f.path === activeChange.path);
+
+      if (file) {
+        originalModel.setValue(file.newVal);
+      }
+    };
+    setOriginalVal();
+  }, [activeChange]);
 
   useEffect(() => {
     if (!editorDiffDom.current) return;
     if (!editorStandaloneDom.current) return;
+    if (!activeChange) return;
 
     if (standaloneEditor.current) {
       standaloneViewstate.current = standaloneEditor.current.saveViewState();
@@ -48,7 +62,7 @@ export function Editor() {
       diffViewstate.current = diffEditor.current.saveViewState();
     }
 
-    if (activeChange?.isDraft) {
+    if (activeChange.isDraft) {
       diffEditor.current?.dispose();
       diffListener.current?.dispose();
       diffMouseDownListener.current?.dispose();
@@ -126,7 +140,6 @@ export function Editor() {
 
   useEffect(() => {
     modifiedContentListener.current?.dispose();
-
     const content = activeChange ? getContentForChangeId(activeChange.id) : '';
 
     modifiedModel.setValue(content);
@@ -148,14 +161,15 @@ export function Editor() {
               }
 
               updateStore(({ changes }) => {
-                changes.draft.delta = changes.draft.delta.compose(delta);
+                changes[activeChange.id].delta =
+                  changes[activeChange.id].delta.compose(delta);
               });
             });
           });
         }
       );
     }
-  }, [activeChange, updateStore, getContentForChangeId, draftPath]);
+  }, [activeChange, updateStore, getContentForChangeId]);
 
   return (
     <div

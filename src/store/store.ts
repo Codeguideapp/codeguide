@@ -5,11 +5,7 @@ import Delta from 'quill-delta';
 import create, { GetState, SetState } from 'zustand';
 
 import { getFiles } from '../api/api';
-import { Command } from '../edits';
 import { calcCoordinates, composeDeltas, deltaToString } from './deltaUtils';
-
-const excludeDraftFactory = (changes: Store['changes']) => (id: string) =>
-  changes[id].isDraft === false;
 
 export type Store = {
   layoutSplitRatioBottom: number;
@@ -21,15 +17,12 @@ export type Store = {
   preservedOrder: string[];
   userDefinedOrder: string[];
   activeChangeId?: string;
-  activeChange?: Change;
-  activeResultValue: string;
-  activePath?: string;
-  suggestions: Command[];
   initFile: (path: string) => void;
   updateStore: (cb: (store: Store) => void) => void;
   getContentForChangeId: (change: string) => string;
   updateChangesOrder: (from: string, to: string) => void;
   setPlayheadX: (x: number) => void;
+  updateChangesX: () => void;
 };
 
 export type Change = {
@@ -58,8 +51,17 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
   windowWidth: window.innerWidth,
   layoutSplitRatioTop: 70,
   layoutSplitRatioBottom: 30,
-  suggestions: [],
-  activeResultValue: '',
+  updateChangesX: () => {
+    const userDefinedOrder = get().userDefinedOrder;
+
+    get().updateStore(({ changes }) => {
+      let x = 10;
+      for (const id of userDefinedOrder) {
+        changes[id].x = x;
+        x += changes[id].width + 10;
+      }
+    });
+  },
   initFile: async (path: string) => {
     const files = await getFiles(0);
     const file = files.find((f) => f.path === path);
@@ -69,20 +71,16 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
     }
 
     get().updateStore((store) => {
-      const deps = store.userDefinedOrder
-        .filter(
-          (id) =>
-            store.changes[id].path === path &&
-            store.changes[id].isDraft === false
-        )
-        .filter(excludeDraftFactory(store.changes));
+      const newId = nanoid();
+      const deps = store.userDefinedOrder.filter(
+        (id) =>
+          store.changes[id].path === path && store.changes[id].isDraft === false
+      );
 
-      store.activePath = path;
-      store.activeResultValue = file.newVal;
-      store.changes.draft = {
-        id: 'draft',
+      store.changes[newId] = {
+        id: newId,
         isDraft: true,
-        x: store.changes?.draft?.x || 10,
+        x: 0,
         color: '#cccccc',
         width: 50,
         delta: deps.length ? new Delta() : new Delta().insert(file.oldVal),
@@ -105,27 +103,16 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
           },
         },
       };
+      store.userDefinedOrder.push(newId);
+      store.preservedOrder.push(newId);
     });
+    get().updateChangesX();
     get().setPlayheadX(Infinity);
   },
   playHeadX: 0,
-  changes: {
-    draft: {
-      id: 'draft',
-      isDraft: true,
-      x: 10,
-      width: 0,
-      color: '#cccccc',
-      delta: new Delta(),
-      deps: [],
-      deltaInverted: new Delta(),
-      path: '',
-      highlightAsDep: false,
-      actions: {},
-    },
-  } as Record<string, Change>,
-  userDefinedOrder: ['draft'],
-  preservedOrder: ['draft'],
+  changes: {} as Record<string, Change>,
+  userDefinedOrder: [],
+  preservedOrder: [],
   updateStore: (cb) =>
     set(
       produce((state) => {
@@ -199,18 +186,23 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
   },
   setPlayheadX: (x: number) => {
     const { changes, userDefinedOrder } = get();
-    const playHeadX =
-      x === Infinity ? changes.draft.x + changes.draft.width : x;
+
+    const lastChangeId = last(get().userDefinedOrder);
+
+    const maxPlayheadX = lastChangeId
+      ? changes[lastChangeId].x + changes[lastChangeId].width
+      : 10;
+
+    const playHeadX = x === Infinity ? maxPlayheadX : x;
 
     if (get().playHeadX !== playHeadX) {
-      const activeChangeId = [...userDefinedOrder, 'draft']
+      const activeChangeId = [...userDefinedOrder]
         .reverse()
         .find((id) => changes[id].x < playHeadX);
 
       if (activeChangeId !== get().activeChangeId) {
         set({
           activeChangeId,
-          activeChange: activeChangeId ? changes[activeChangeId] : undefined,
           playHeadX,
         });
       } else {
@@ -238,17 +230,23 @@ export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
   const store = get();
   store.setPlayheadX(Infinity);
 
-  const excludeDraft = excludeDraftFactory(store.changes);
-  const activePath = store.changes.draft.path;
+  const activeChange = store.changes[store.activeChangeId!];
+  if (!activeChange) {
+    throw new Error('draft is not active');
+  }
+
+  const activePath = activeChange.path;
   const appliedIds = store.userDefinedOrder.filter(
     (id) => store.changes[id].path === activePath
   );
 
   const takenCoordinates = calcCoordinates(
-    appliedIds.filter(excludeDraft).map((id) => ({
-      id,
-      delta: store.changes[id].delta,
-    }))
+    appliedIds
+      .filter((id) => id !== store.activeChangeId)
+      .map((id) => ({
+        id,
+        delta: store.changes[id].delta,
+      }))
   );
 
   const foundDeps = takenCoordinates
@@ -261,10 +259,10 @@ export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
       const toUndoDelta = composeDeltas(
         toUndo.map((id) => store.changes[id].deltaInverted)
       );
-      const draftTransformed = toUndoDelta.transform(store.changes.draft.delta);
+      const draftTransformed = toUndoDelta.transform(activeChange.delta);
       const draftCoordinates = calcCoordinates([
         {
-          id: 'draft',
+          id: store.activeChangeId!,
           delta: draftTransformed,
         },
       ]);
@@ -304,45 +302,63 @@ export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
   );
   const undoChanges = toUndoComposed.invert(baseComposed);
 
-  const draftChangeTransformed = undoChanges.transform(
-    store.changes.draft.delta
-  );
+  const draftChangeTransformed = undoChanges.transform(activeChange.delta);
 
-  const newChangeId = nanoid();
+  const newDraftId = nanoid();
 
-  store.updateStore(({ changes }) => {
-    changes[newChangeId] = {
-      id: newChangeId,
-      isDraft: false,
-      color: '#374957',
-      width: store.changes.draft.width,
-      x: store.changes.draft.x,
-      actions: {},
-      deps,
+  store.updateStore(({ changes, userDefinedOrder, preservedOrder }) => {
+    const draftsOrder = store.userDefinedOrder
+      .filter((id) => store.changes[id].isDraft)
+      .map((id) => (id === activeChange.id ? newDraftId : id));
+
+    changes[activeChange.id].isDraft = false;
+    changes[activeChange.id].color = '#374957';
+    changes[activeChange.id].actions = {};
+    changes[activeChange.id].deps = deps;
+    changes[activeChange.id].delta = draftChangeTransformed;
+    changes[activeChange.id].deltaInverted =
+      draftChangeTransformed.invert(baseComposed);
+
+    changes[newDraftId] = {
+      id: newDraftId,
+      isDraft: true,
+      color: '#cccccc',
+      width: 50,
+      x: 0,
+      actions: {
+        discardDraft: {
+          label: 'Discard Draft',
+          color: 'red',
+          callback: () => {},
+        },
+        saveChanges: {
+          label: 'Save Changes',
+          color: 'green',
+          callback: () => {
+            saveDraft(set, get);
+          },
+        },
+      },
+      deps: appliedIds,
       path: activePath,
       highlightAsDep: false,
-      delta: draftChangeTransformed,
-      deltaInverted: draftChangeTransformed.invert(baseComposed),
+      delta: new Delta(),
+      deltaInverted: new Delta(),
     };
-    changes.draft.x = store.changes.draft.x + store.changes.draft.width + 10;
-    changes.draft.deps = [...appliedIds.filter(excludeDraft), newChangeId];
-    changes.draft.delta = new Delta();
+
+    userDefinedOrder.push(newDraftId);
+    preservedOrder.push(newDraftId);
+
+    userDefinedOrder = userDefinedOrder.sort(
+      (a, b) => draftsOrder.indexOf(a) - draftsOrder.indexOf(b)
+    );
+    preservedOrder = userDefinedOrder.sort(
+      (a, b) => draftsOrder.indexOf(a) - draftsOrder.indexOf(b)
+    );
   });
 
-  set({
-    userDefinedOrder: [
-      ...store.userDefinedOrder.filter(excludeDraft),
-      newChangeId,
-      'draft',
-    ],
-    preservedOrder: [
-      ...store.preservedOrder.filter(excludeDraft),
-      newChangeId,
-      'draft',
-    ],
-  });
+  get().updateChangesX();
+  store.setPlayheadX(get().changes[newDraftId].x + 10);
 
-  store.setPlayheadX(Infinity);
-
-  return newChangeId;
+  return newDraftId;
 }
