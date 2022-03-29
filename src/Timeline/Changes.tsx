@@ -60,8 +60,8 @@ export function Changes({
 
               if (swapTo && swapFrom !== swapTo) {
                 if (
-                  swapFrom === 'draft' ||
-                  swapTo === 'draft' ||
+                  changes[swapFrom].isDraft ||
+                  changes[swapTo].isDraft ||
                   change.deps.includes(swapTo) ||
                   changes[swapTo].deps.includes(swapFrom)
                 ) {

@@ -1,5 +1,6 @@
 import produce from 'immer';
 import { debounce, difference, last, uniq } from 'lodash';
+import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 import create, { GetState, SetState } from 'zustand';
 
@@ -7,7 +8,8 @@ import { getFiles } from '../api/api';
 import { Command } from '../edits';
 import { calcCoordinates, composeDeltas, deltaToString } from './deltaUtils';
 
-const excludeDraft = (id: string) => id !== 'draft';
+const excludeDraftFactory = (changes: Store['changes']) => (id: string) =>
+  changes[id].isDraft === false;
 
 export type Store = {
   layoutSplitRatioBottom: number;
@@ -19,6 +21,7 @@ export type Store = {
   preservedOrder: string[];
   userDefinedOrder: string[];
   activeChangeId?: string;
+  activeChange?: Change;
   activeResultValue: string;
   activePath?: string;
   suggestions: Command[];
@@ -30,6 +33,8 @@ export type Store = {
 };
 
 export type Change = {
+  id: string;
+  isDraft: boolean;
   x: number;
   highlightAsDep: boolean;
   color: string;
@@ -65,12 +70,18 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
 
     get().updateStore((store) => {
       const deps = store.userDefinedOrder
-        .filter((id) => store.changes[id].path === path)
-        .filter(excludeDraft);
+        .filter(
+          (id) =>
+            store.changes[id].path === path &&
+            store.changes[id].isDraft === false
+        )
+        .filter(excludeDraftFactory(store.changes));
 
       store.activePath = path;
       store.activeResultValue = file.newVal;
       store.changes.draft = {
+        id: 'draft',
+        isDraft: true,
         x: store.changes?.draft?.x || 10,
         color: '#cccccc',
         width: 50,
@@ -100,6 +111,8 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
   playHeadX: 0,
   changes: {
     draft: {
+      id: 'draft',
+      isDraft: true,
       x: 10,
       width: 0,
       color: '#cccccc',
@@ -164,7 +177,7 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
   updateChangesOrder: (from: string, to: string) => {
     const store = get();
 
-    if (from === 'draft' || to === 'draft') {
+    if (store.changes[from].isDraft || store.changes[to].isDraft) {
       throw new Error(`can not move draft change`);
     }
     if (store.changes[from].deps.includes(to)) {
@@ -197,6 +210,7 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
       if (activeChangeId !== get().activeChangeId) {
         set({
           activeChangeId,
+          activeChange: activeChangeId ? changes[activeChangeId] : undefined,
           playHeadX,
         });
       } else {
@@ -224,6 +238,7 @@ export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
   const store = get();
   store.setPlayheadX(Infinity);
 
+  const excludeDraft = excludeDraftFactory(store.changes);
   const activePath = store.changes.draft.path;
   const appliedIds = store.userDefinedOrder.filter(
     (id) => store.changes[id].path === activePath
@@ -293,10 +308,12 @@ export function saveDraft(set: SetState<Store>, get: GetState<Store>) {
     store.changes.draft.delta
   );
 
-  const newChangeId = 'something' + Math.random();
+  const newChangeId = nanoid();
 
   store.updateStore(({ changes }) => {
     changes[newChangeId] = {
+      id: newChangeId,
+      isDraft: false,
       color: '#374957',
       width: store.changes.draft.width,
       x: store.changes.draft.x,

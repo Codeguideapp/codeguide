@@ -25,7 +25,7 @@ export function Editor() {
   const diffViewstate = useRef<monaco.editor.IDiffEditorViewState | null>(null);
 
   const mux = useRef(createMutex());
-  const activeChangeId = useStore((state) => state.activeChangeId);
+  const activeChange = useStore((state) => state.activeChange);
   const draftPath = useStore((state) => state.changes?.draft?.path);
   const activeResultValue = useStore((state) => state.activeResultValue);
   const updateStore = useStore(useCallback((state) => state.updateStore, []));
@@ -48,7 +48,7 @@ export function Editor() {
       diffViewstate.current = diffEditor.current.saveViewState();
     }
 
-    if (activeChangeId === 'draft') {
+    if (activeChange?.isDraft) {
       diffEditor.current?.dispose();
       diffListener.current?.dispose();
       diffMouseDownListener.current?.dispose();
@@ -122,16 +122,16 @@ export function Editor() {
         standaloneEditor.current.restoreViewState(standaloneViewstate.current);
       }
     }
-  }, [editorDiffDom, activeChangeId]);
+  }, [editorDiffDom, activeChange]);
 
   useEffect(() => {
     modifiedContentListener.current?.dispose();
 
-    const content = activeChangeId ? getContentForChangeId(activeChangeId) : '';
+    const content = activeChange ? getContentForChangeId(activeChange.id) : '';
 
     modifiedModel.setValue(content);
 
-    if (activeChangeId === 'draft') {
+    if (activeChange?.isDraft) {
       modifiedContentListener.current = modifiedModel.onDidChangeContent(
         (e) => {
           mux.current(() => {
@@ -155,7 +155,7 @@ export function Editor() {
         }
       );
     }
-  }, [activeChangeId, updateStore, getContentForChangeId, draftPath]);
+  }, [activeChange, updateStore, getContentForChangeId, draftPath]);
 
   return (
     <div
@@ -168,7 +168,7 @@ export function Editor() {
       <div
         ref={editorDiffDom}
         style={{
-          display: activeChangeId === 'draft' ? 'block' : 'none',
+          display: activeChange?.isDraft ? 'block' : 'none',
           overflow: 'hidden',
           width: '100%',
           height: '100%',
@@ -177,7 +177,7 @@ export function Editor() {
       <div
         ref={editorStandaloneDom}
         style={{
-          display: activeChangeId === 'draft' ? 'none' : 'block',
+          display: activeChange?.isDraft ? 'none' : 'block',
           overflow: 'hidden',
           width: '100%',
           height: '100%',
