@@ -5,11 +5,13 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 
 import { App } from './App/App';
+import { defaultDarkTheme } from './Editor/monaco-themes/defaultDark';
 import { readOnlyTheme } from './Editor/monaco-themes/readonly';
 import reportWebVitals from './reportWebVitals';
 
 const renderApp = () => {
   window.monaco.editor.defineTheme('readonly', readOnlyTheme);
+  window.monaco.editor.defineTheme('defaultDark', defaultDarkTheme);
 
   ReactDOM.render(
     <React.StrictMode>

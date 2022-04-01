@@ -1,6 +1,6 @@
 import type * as monaco from 'monaco-editor';
 
-export const readOnlyTheme: monaco.editor.IStandaloneThemeData = {
+export const defaultDarkTheme: monaco.editor.IStandaloneThemeData = {
   base: 'vs-dark',
   inherit: true,
   rules: [

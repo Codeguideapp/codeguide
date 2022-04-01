@@ -2,33 +2,30 @@
  * @jest-environment jsdom
  */
 
+import { last } from 'lodash';
 import Delta from 'quill-delta';
 
-import { saveDraft as storeSaveDraft, useStore } from '../store/store';
+import { useStore } from '../store/store';
 
 describe('store.ts', () => {
-  const DRAFT = 'draft';
-
   const getState = useStore.getState;
   const initialStoreState = getState();
-  const saveDraft = (delta: Delta) => {
-    getState().setPlayheadX(Infinity);
-    getState().updateStore((state) => {
-      state.changes.draft.delta = state.changes.draft.delta.compose(delta);
-    });
 
-    return storeSaveDraft(useStore.setState, useStore.getState);
+  const getLastChangeContent = () => {
+    return getState().getFileContent(last(getState().userDefinedOrder)!);
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     useStore.setState(initialStoreState, true);
+    await getState().init();
+    getState().setPlayheadX(Infinity);
   });
 
   it('should correctly add a single char', async () => {
-    await getState().initFile('test.ts');
-    saveDraft(new Delta().retain(247).insert('1'));
+    getState().initFile('test.ts');
+    const id = getState().saveChange(new Delta().retain(247).insert('1'));
 
-    expect(getState().getContentForChangeId('draft')).toBe(`
+    expect(getState().getFileContent(id)).toBe(`
       const renderApp = () =>
         ReactDOM.render(
           <React.StrictMode>
@@ -43,12 +40,12 @@ describe('store.ts', () => {
   });
 
   it('should correctly add multiple chars', async () => {
-    await getState().initFile('test.ts');
-    saveDraft(new Delta().retain(247).insert('1'));
-    saveDraft(new Delta().retain(237).insert('2'));
-    saveDraft(new Delta().retain(249).insert('3'));
+    getState().initFile('test.ts');
+    getState().saveChange(new Delta().retain(247).insert('1'));
+    getState().saveChange(new Delta().retain(237).insert('2'));
+    const id = getState().saveChange(new Delta().retain(249).insert('3'));
 
-    expect(getState().getContentForChangeId('draft')).toBe(`
+    expect(getState().getFileContent(id)).toBe(`
       const renderApp = () =>
         ReactDOM.render(
           <React.StrictMode>
@@ -63,11 +60,10 @@ describe('store.ts', () => {
   });
 
   it('should correctly move changes', async () => {
-    await getState().initFile('test.ts');
-    const initId = saveDraft(new Delta());
-    const id1 = saveDraft(new Delta().retain(247).insert('1'));
-    const id2 = saveDraft(new Delta().retain(237).insert('2'));
-    const id3 = saveDraft(new Delta().retain(249).insert('3'));
+    const initId = getState().initFile('test.ts');
+    const id1 = getState().saveChange(new Delta().retain(247).insert('1'));
+    const id2 = getState().saveChange(new Delta().retain(237).insert('2'));
+    const id3 = getState().saveChange(new Delta().retain(249).insert('3'));
 
     const endResult = `
       const renderApp = () =>
@@ -84,37 +80,34 @@ describe('store.ts', () => {
 
     getState().updateChangesOrder(id1, id2);
 
-    expect(getState().getContentForChangeId('draft')).toBe(endResult);
-    expect(getState().userDefinedOrder).toEqual([initId, id2, id1, id3, DRAFT]);
+    expect(getState().userDefinedOrder).toEqual([initId, id2, id1, id3]);
+    expect(getLastChangeContent()).toBe(endResult);
 
     getState().updateChangesOrder(id2, id3);
 
-    expect(getState().getContentForChangeId('draft')).toBe(endResult);
-    expect(getState().userDefinedOrder).toEqual([initId, id1, id3, id2, DRAFT]);
+    expect(getState().userDefinedOrder).toEqual([initId, id1, id3, id2]);
+    expect(getLastChangeContent()).toBe(endResult);
 
     getState().updateChangesOrder(id2, id3);
 
-    expect(getState().getContentForChangeId('draft')).toBe(endResult);
-    expect(getState().userDefinedOrder).toEqual([initId, id1, id2, id3, DRAFT]);
+    expect(getState().userDefinedOrder).toEqual([initId, id1, id2, id3]);
+    expect(getLastChangeContent()).toBe(endResult);
   });
 
   it('should throw an error on incorrect change order', async () => {
-    await getState().initFile('test.ts');
-    const id1 = saveDraft(new Delta().retain(247).insert('1'));
-    const id2 = saveDraft(new Delta().retain(248).insert('2'));
+    getState().initFile('test.ts');
+    const id1 = getState().saveChange(new Delta().retain(247).insert('1'));
+    const id2 = getState().saveChange(new Delta().retain(248).insert('2'));
 
     expect(() => getState().updateChangesOrder(id1, id2)).toThrowError();
     expect(() => getState().updateChangesOrder(id2, id1)).toThrowError();
-    expect(() => getState().updateChangesOrder(id1, DRAFT)).toThrowError();
-    expect(() => getState().updateChangesOrder(id2, DRAFT)).toThrowError();
   });
 
   it('should work with deletion', async () => {
-    await getState().initFile('test.ts');
-    const initId = saveDraft(new Delta());
-    const id1 = saveDraft(new Delta().retain(247).insert('1'));
-    const id2 = saveDraft(new Delta().retain(236).delete(1));
-    const id3 = saveDraft(new Delta().retain(247).insert('3'));
+    const initId = getState().initFile('test.ts');
+    const id1 = getState().saveChange(new Delta().retain(247).insert('1'));
+    const id2 = getState().saveChange(new Delta().retain(236).delete(1));
+    const id3 = getState().saveChange(new Delta().retain(247).insert('3'));
 
     const endResult = `
       const renderApp = () =>
@@ -129,28 +122,29 @@ describe('store.ts', () => {
       )13
       `;
 
-    expect(getState().userDefinedOrder).toEqual([initId, id1, id2, id3, DRAFT]);
-    expect(getState().getContentForChangeId('draft')).toBe(endResult);
+    expect(getState().userDefinedOrder).toEqual([initId, id1, id2, id3]);
+    expect(getLastChangeContent()).toBe(endResult);
 
     expect(() => getState().updateChangesOrder(id1, id3)).toThrowError();
 
     getState().updateChangesOrder(id1, id2);
 
-    expect(getState().userDefinedOrder).toEqual([initId, id2, id1, id3, DRAFT]);
-    expect(getState().getContentForChangeId('draft')).toBe(endResult);
+    expect(getState().userDefinedOrder).toEqual([initId, id2, id1, id3]);
+    expect(getLastChangeContent()).toBe(endResult);
 
     getState().updateChangesOrder(id2, id3);
 
-    expect(getState().userDefinedOrder).toEqual([initId, id1, id3, id2, DRAFT]);
-    expect(getState().getContentForChangeId('draft')).toBe(endResult);
+    expect(getState().userDefinedOrder).toEqual([initId, id1, id3, id2]);
+    expect(getLastChangeContent()).toBe(endResult);
   });
 
   it('should work with new lines', async () => {
-    await getState().initFile('test.ts');
-    const initId = saveDraft(new Delta());
-    const id1 = saveDraft(new Delta().retain(247).insert('1'));
-    const id2 = saveDraft(new Delta().retain(239).insert('\n        '));
-    const id3 = saveDraft(new Delta().retain(257).insert('3'));
+    const initId = getState().initFile('test.ts');
+    const id1 = getState().saveChange(new Delta().retain(247).insert('1'));
+    const id2 = getState().saveChange(
+      new Delta().retain(239).insert('\n        ')
+    );
+    const id3 = getState().saveChange(new Delta().retain(257).insert('3'));
 
     const endResult = `
       const renderApp = () =>
@@ -166,27 +160,26 @@ describe('store.ts', () => {
       )13
       `;
 
-    expect(getState().getContentForChangeId('draft')).toBe(endResult);
+    expect(getLastChangeContent()).toBe(endResult);
 
     expect(() => getState().updateChangesOrder(id1, id3)).toThrowError();
 
     getState().updateChangesOrder(id1, id2);
 
-    expect(getState().userDefinedOrder).toEqual([initId, id2, id1, id3, DRAFT]);
-    expect(getState().getContentForChangeId('draft')).toBe(endResult);
+    expect(getState().userDefinedOrder).toEqual([initId, id2, id1, id3]);
+    expect(getLastChangeContent()).toBe(endResult);
 
     getState().updateChangesOrder(id2, id3);
 
-    expect(getState().userDefinedOrder).toEqual([initId, id1, id3, id2, DRAFT]);
-    expect(getState().getContentForChangeId('draft')).toBe(endResult);
+    expect(getState().userDefinedOrder).toEqual([initId, id1, id3, id2]);
+    expect(getLastChangeContent()).toBe(endResult);
   });
 
   it('should work with multiple deps', async () => {
-    await getState().initFile('test.ts');
-    const initId = saveDraft(new Delta());
-    const id1 = saveDraft(new Delta().retain(247).insert('1'));
-    const id2 = saveDraft(new Delta().retain(237).insert('2'));
-    const id3 = saveDraft(
+    const initId = getState().initFile('test.ts');
+    const id1 = getState().saveChange(new Delta().retain(247).insert('1'));
+    const id2 = getState().saveChange(new Delta().retain(237).insert('2'));
+    const id3 = getState().saveChange(
       new Delta().retain(238).insert('3').retain(11).insert('3')
     );
 
@@ -203,17 +196,17 @@ describe('store.ts', () => {
       )13
       `;
 
-    expect(getState().getContentForChangeId('draft')).toBe(endResult);
+    expect(getLastChangeContent()).toBe(endResult);
 
     getState().updateChangesOrder(id1, id2);
 
-    expect(getState().userDefinedOrder).toEqual([initId, id2, id1, id3, DRAFT]);
-    expect(getState().getContentForChangeId('draft')).toBe(endResult);
+    expect(getState().userDefinedOrder).toEqual([initId, id2, id1, id3]);
+    expect(getLastChangeContent()).toBe(endResult);
 
     getState().updateChangesOrder(id1, id2);
 
-    expect(getState().userDefinedOrder).toEqual([initId, id1, id2, id3, DRAFT]);
-    expect(getState().getContentForChangeId('draft')).toBe(endResult);
+    expect(getState().userDefinedOrder).toEqual([initId, id1, id2, id3]);
+    expect(getLastChangeContent()).toBe(endResult);
 
     expect(() => getState().updateChangesOrder(id1, id3)).toThrowError();
     expect(() => getState().updateChangesOrder(id2, id3)).toThrowError();

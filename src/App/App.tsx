@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import Split from 'react-split';
 
 import { Editor } from '../Editor/Editor';
@@ -8,12 +8,15 @@ import { Timeline } from '../Timeline/Timeline';
 
 export function App() {
   const updateStore = useStore(useCallback((state) => state.updateStore, []));
+  const init = useStore(useCallback((state) => state.init, []));
+
+  useEffect(() => init(), [init]);
 
   return (
     <Split
       className="split"
       direction="vertical"
-      gutterSize={5}
+      gutterSize={2}
       snapOffset={10}
       style={{ height: '100%' }}
       sizes={[70, 30]}
@@ -25,7 +28,12 @@ export function App() {
         })
       }
     >
-      <Split className="split-horiz" direction="horizontal" sizes={[30, 70]}>
+      <Split
+        className="split-horiz"
+        direction="horizontal"
+        sizes={[20, 80]}
+        gutterSize={2}
+      >
         <FileTree />
         <div
           style={{

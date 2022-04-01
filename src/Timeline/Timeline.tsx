@@ -5,6 +5,8 @@ import { useStore } from '../store/store';
 import { Changes } from './Changes';
 import { Playhead } from './Playhead';
 
+const topBarHeight = 18;
+
 export const Timeline = () => {
   const layoutSplitRatioBottom = useStore(
     (state) => state.layoutSplitRatioBottom
@@ -13,7 +15,8 @@ export const Timeline = () => {
   const stageWidth = useStore((state) => state.windowWidth);
 
   const stageHeight = React.useMemo(
-    () => Math.ceil(windowHeight * (layoutSplitRatioBottom / 100)),
+    () =>
+      Math.ceil(windowHeight * (layoutSplitRatioBottom / 100)) - topBarHeight,
     [layoutSplitRatioBottom, windowHeight]
   );
 
@@ -50,79 +53,82 @@ export const Timeline = () => {
 
   var scaleBy = 1.04;
   return (
-    <Stage
-      width={window.innerWidth}
-      height={stageHeight}
-      style={{ background: '#20262C' }}
-      ref={stageRef}
-      onWheel={(e) => {
-        e.evt.preventDefault();
-        if (e.evt.ctrlKey) {
-          const oldZoom = zoom;
-          const pointer = stageRef.current.getPointerPosition();
+    <div>
+      <div className="timeline-top" style={{ height: topBarHeight }}></div>
+      <Stage
+        width={window.innerWidth}
+        height={stageHeight}
+        style={{ background: '#1F2428' }}
+        ref={stageRef}
+        onWheel={(e) => {
+          e.evt.preventDefault();
+          if (e.evt.ctrlKey) {
+            const oldZoom = zoom;
+            const pointer = stageRef.current.getPointerPosition();
 
-          const mousePointTo = (pointer.x - layerX) / oldZoom;
-          const newScale = Math.max(
-            e.evt.deltaY < 0 ? oldZoom * scaleBy : oldZoom / scaleBy,
-            maxZoom
-          );
+            const mousePointTo = (pointer.x - layerX) / oldZoom;
+            const newScale = Math.max(
+              e.evt.deltaY < 0 ? oldZoom * scaleBy : oldZoom / scaleBy,
+              maxZoom
+            );
 
-          setZoom(newScale);
-          const newLayerX = pointer.x - mousePointTo * newScale;
-          if (newLayerX < 0) {
-            // only moving to "the right"
-            setLayerX(newLayerX);
-          }
-        } else if (zoom !== maxZoom) {
-          const dx = e.evt.deltaX;
-
-          const minX = -(canvasWidth - stageWidth);
-          const maxX = 0;
-
-          const x = Math.max(minX, Math.min(layerX - dx, maxX));
-          setLayerX(x);
-        }
-      }}
-    >
-      <Changes
-        layerX={layerX}
-        zoom={zoom}
-        height={100}
-        y={(stageHeight - 100) / 2}
-      />
-      <Playhead layerX={layerX} zoom={zoom} height={stageHeight - 10} />
-      <Layer>
-        <Rect
-          x={scrollbarX}
-          y={stageHeight - 10}
-          width={horizontalBarWidth}
-          height={10}
-          fill="grey"
-          opacity={0.8}
-          draggable
-          dragBoundFunc={(pos) => {
-            return {
-              x: Math.max(
-                Math.min(pos.x, stageWidth - horizontalBarWidth - PADDING),
-                PADDING
-              ),
-              y: stageHeight - 10,
-            };
-          }}
-          onDragMove={(event) => {
-            const pos = event.target.getPosition();
-
-            const availableWidth =
-              stageWidth - PADDING * 2 - horizontalBarWidth;
-
-            if (availableWidth > 0) {
-              const delta = (pos.x - PADDING) / availableWidth;
-
-              setLayerX(-(canvasWidth - stageWidth) * delta);
+            setZoom(newScale);
+            const newLayerX = pointer.x - mousePointTo * newScale;
+            if (newLayerX < 0) {
+              // only moving to "the right"
+              setLayerX(newLayerX);
             }
-          }}
+          } else if (zoom !== maxZoom) {
+            const dx = e.evt.deltaX;
+
+            const minX = -(canvasWidth - stageWidth);
+            const maxX = 0;
+
+            const x = Math.max(minX, Math.min(layerX - dx, maxX));
+            setLayerX(x);
+          }
+        }}
+      >
+        <Changes
+          layerX={layerX}
+          zoom={zoom}
+          height={100}
+          y={(stageHeight - 100) / 2}
         />
-      </Layer>
-    </Stage>
+        <Playhead layerX={layerX} zoom={zoom} height={stageHeight - 10} />
+        <Layer>
+          <Rect
+            x={scrollbarX}
+            y={stageHeight - 10}
+            width={horizontalBarWidth}
+            height={10}
+            fill="grey"
+            opacity={0.8}
+            draggable
+            dragBoundFunc={(pos) => {
+              return {
+                x: Math.max(
+                  Math.min(pos.x, stageWidth - horizontalBarWidth - PADDING),
+                  PADDING
+                ),
+                y: stageHeight - 10,
+              };
+            }}
+            onDragMove={(event) => {
+              const pos = event.target.getPosition();
+
+              const availableWidth =
+                stageWidth - PADDING * 2 - horizontalBarWidth;
+
+              if (availableWidth > 0) {
+                const delta = (pos.x - PADDING) / availableWidth;
+
+                setLayerX(-(canvasWidth - stageWidth) * delta);
+              }
+            }}
+          />
+        </Layer>
+      </Stage>
+    </div>
   );
 };

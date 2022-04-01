@@ -36,17 +36,14 @@ export function calcCoordinates(
             return {
               id,
               from: index,
-              to: index,
+              to: index + op.delete,
               op: 'delete',
             };
           } else if (typeof op.insert === 'string') {
-            const from = index;
-            const to = index + op.insert.length;
-
             return {
               id,
-              from,
-              to,
+              from: index,
+              to: index + op.insert.length,
               op: 'insert',
             };
           }

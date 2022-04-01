@@ -41,9 +41,9 @@ export function Changes({
             draggable
             onDragStart={() => {
               updateStore((store) => {
-                for (const depId of change.deps) {
-                  store.changes[depId].highlightAsDep = true;
-                }
+                // for (const depId of change.deps) {
+                //   store.changes[depId].highlightAsDep = true;
+                // }
               });
 
               setSnapPosX(change.x);
@@ -60,8 +60,6 @@ export function Changes({
 
               if (swapTo && swapFrom !== swapTo) {
                 if (
-                  changes[swapFrom].isDraft ||
-                  changes[swapTo].isDraft ||
                   change.deps.includes(swapTo) ||
                   changes[swapTo].deps.includes(swapFrom)
                 ) {
@@ -85,9 +83,9 @@ export function Changes({
             onDragEnd={() => {
               updateStore(({ changes }) => {
                 changes[id].x = snapPosX;
-                for (const depId of change.deps) {
-                  changes[depId].highlightAsDep = false;
-                }
+                // for (const depId of change.deps) {
+                //   changes[depId].highlightAsDep = false;
+                // }
               });
               setSnapPosX(-1);
             }}
