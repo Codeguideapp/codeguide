@@ -4,7 +4,7 @@ import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 import create, { GetState, SetState } from 'zustand';
 
-import { File, getFiles } from '../api/api';
+import { File } from '../api/api';
 import { calcCoordinates, composeDeltas, deltaToString } from './deltaUtils';
 
 export type Store = {
@@ -20,12 +20,12 @@ export type Store = {
   activePath?: string;
   canEdit: boolean;
   files: File[];
-  init: () => void;
-  initFile: (path: string) => string;
+  addFile: (file: File) => string;
   updateStore: (cb: (store: Store) => void) => void;
   getFileContent: (change: string) => string;
   updateChangesOrder: (from: string, to: string) => void;
   setPlayheadX: (x: number) => void;
+  setActivePath: (path: string) => void;
   updateChangesX: () => void;
   saveChange: (delta: Delta) => string;
 };
@@ -56,16 +56,6 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
   layoutSplitRatioBottom: 30,
   canEdit: true,
   files: [],
-  init: async () => {
-    const files = await getFiles(0);
-
-    set({
-      files,
-    });
-    get().updateStore((store) => {
-      store.files = files;
-    });
-  },
   saveChange: (delta) => {
     const newDraftId = nanoid();
     const store = get();
@@ -181,15 +171,10 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
       }
     });
   },
-  initFile: (path: string) => {
-    const file = get().files.find((f) => f.path === path);
-    if (!file) throw new Error('file not found');
-
+  addFile: (file) => {
     const id = nanoid();
 
     get().updateStore((store) => {
-      store.activePath = path;
-
       const change: Change = {
         id,
         actions: {},
@@ -205,6 +190,7 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
       store.changes[id] = change;
       store.userDefinedOrder.push(id);
       store.preservedOrder.push(id);
+      store.files.push(file);
     });
     get().updateChangesX();
     get().setPlayheadX(Infinity);
@@ -322,6 +308,16 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
         });
       }
     }
+  },
+  setActivePath: (path) => {
+    const file = get().files.find((f) => f.path === path);
+    if (!file) {
+      throw new Error(`could not find ${path}`);
+    }
+
+    set({
+      activePath: path,
+    });
   },
 });
 

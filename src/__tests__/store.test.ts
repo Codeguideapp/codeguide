@@ -5,6 +5,7 @@
 import { last } from 'lodash';
 import Delta from 'quill-delta';
 
+import { getFiles } from '../api/api';
 import { useStore } from '../store/store';
 
 describe('store.ts', () => {
@@ -17,12 +18,13 @@ describe('store.ts', () => {
 
   beforeEach(async () => {
     useStore.setState(initialStoreState, true);
-    await getState().init();
-    getState().setPlayheadX(Infinity);
   });
 
   it('should correctly add a single char', async () => {
-    getState().initFile('test.ts');
+    const files = await getFiles(0);
+    getState().addFile(files[0]);
+    getState().setActivePath(files[0].path);
+
     const id = getState().saveChange(new Delta().retain(247).insert('1'));
 
     expect(getState().getFileContent(id)).toBe(`
@@ -40,7 +42,10 @@ describe('store.ts', () => {
   });
 
   it('should correctly add multiple chars', async () => {
-    getState().initFile('test.ts');
+    const files = await getFiles(0);
+    getState().addFile(files[0]);
+    getState().setActivePath(files[0].path);
+
     getState().saveChange(new Delta().retain(247).insert('1'));
     getState().saveChange(new Delta().retain(237).insert('2'));
     const id = getState().saveChange(new Delta().retain(249).insert('3'));
@@ -60,7 +65,10 @@ describe('store.ts', () => {
   });
 
   it('should correctly move changes', async () => {
-    const initId = getState().initFile('test.ts');
+    const files = await getFiles(0);
+    const initId = getState().addFile(files[0]);
+    getState().setActivePath(files[0].path);
+
     const id1 = getState().saveChange(new Delta().retain(247).insert('1'));
     const id2 = getState().saveChange(new Delta().retain(237).insert('2'));
     const id3 = getState().saveChange(new Delta().retain(249).insert('3'));
@@ -95,7 +103,10 @@ describe('store.ts', () => {
   });
 
   it('should throw an error on incorrect change order', async () => {
-    getState().initFile('test.ts');
+    const files = await getFiles(0);
+    getState().addFile(files[0]);
+    getState().setActivePath(files[0].path);
+
     const id1 = getState().saveChange(new Delta().retain(247).insert('1'));
     const id2 = getState().saveChange(new Delta().retain(248).insert('2'));
 
@@ -104,7 +115,10 @@ describe('store.ts', () => {
   });
 
   it('should work with deletion', async () => {
-    const initId = getState().initFile('test.ts');
+    const files = await getFiles(0);
+    const initId = getState().addFile(files[0]);
+    getState().setActivePath(files[0].path);
+
     const id1 = getState().saveChange(new Delta().retain(247).insert('1'));
     const id2 = getState().saveChange(new Delta().retain(236).delete(1));
     const id3 = getState().saveChange(new Delta().retain(247).insert('3'));
@@ -139,7 +153,10 @@ describe('store.ts', () => {
   });
 
   it('should work with new lines', async () => {
-    const initId = getState().initFile('test.ts');
+    const files = await getFiles(0);
+    const initId = getState().addFile(files[0]);
+    getState().setActivePath(files[0].path);
+
     const id1 = getState().saveChange(new Delta().retain(247).insert('1'));
     const id2 = getState().saveChange(
       new Delta().retain(239).insert('\n        ')
@@ -176,7 +193,10 @@ describe('store.ts', () => {
   });
 
   it('should work with multiple deps', async () => {
-    const initId = getState().initFile('test.ts');
+    const files = await getFiles(0);
+    const initId = getState().addFile(files[0]);
+    getState().setActivePath(files[0].path);
+
     const id1 = getState().saveChange(new Delta().retain(247).insert('1'));
     const id2 = getState().saveChange(new Delta().retain(237).insert('2'));
     const id3 = getState().saveChange(

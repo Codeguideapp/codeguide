@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect } from 'react';
 import Split from 'react-split';
+import useSWR from 'swr';
 
+import { getFiles } from '../api/api';
 import { Editor } from '../Editor/Editor';
 import { FileTree } from '../FileTree/FileTree';
 import { useStore } from '../store/store';
@@ -8,9 +10,19 @@ import { Timeline } from '../Timeline/Timeline';
 
 export function App() {
   const updateStore = useStore(useCallback((state) => state.updateStore, []));
-  const init = useStore(useCallback((state) => state.init, []));
+  const addFile = useStore(useCallback((state) => state.addFile, []));
+  const { data, error } = useSWR('/0', (url) => getFiles(0));
 
-  useEffect(() => init(), [init]);
+  useEffect(() => {
+    if (!data) return;
+
+    for (const file of data) {
+      addFile(file);
+    }
+  }, [data, addFile]);
+
+  if (error) return <div>failed to load</div>;
+  if (!data) return <div>loading...</div>;
 
   return (
     <Split
