@@ -1,5 +1,3 @@
-import { createCommands, diff } from '../edits';
-
 export type File = {
   path: string;
   oldVal: string;
@@ -200,7 +198,3 @@ export const getFiles = async (pr: number): Promise<File[]> => {
     },
   ];
 };
-
-export async function getSuggestions(oldVal: string, newVal: string) {
-  return createCommands(diff(oldVal, newVal));
-}

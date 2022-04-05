@@ -1,11 +1,13 @@
 import produce from 'immer';
-import { debounce, difference, last, uniq } from 'lodash';
+import { debounce, difference, findLast, last, uniq } from 'lodash';
 import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 import create, { GetState, SetState } from 'zustand';
 
-import { File } from '../api/api';
+import { File, getFiles } from '../api/api';
 import { calcCoordinates, composeDeltas, deltaToString } from './deltaUtils';
+
+type DiffResult = { before: string; after: string };
 
 export type Store = {
   layoutSplitRatioBottom: number;
@@ -19,7 +21,6 @@ export type Store = {
   activeChangeId?: string;
   activePath?: string;
   canEdit: boolean;
-  files: File[];
   addFile: (file: File) => string;
   updateStore: (cb: (store: Store) => void) => void;
   getFileContent: (change: string) => string;
@@ -28,17 +29,17 @@ export type Store = {
   setActivePath: (path: string) => void;
   updateChangesX: () => void;
   saveChange: (delta: Delta) => string;
+  getDiffByChangeId: (changeId: string) => Promise<DiffResult>;
+  getDiffByPath: (path: string) => Promise<DiffResult>;
 };
 
-export type Change = {
+interface ChangeBase {
   id: string;
   x: number;
   color: string;
   path: string;
   deps: string[];
   width: number;
-  delta: Delta;
-  deltaInverted: Delta;
   actions: Record<
     string,
     {
@@ -47,7 +48,28 @@ export type Change = {
       callback: () => void;
     }
   >;
-};
+}
+
+interface AddFileChange extends ChangeBase {
+  type: 'added';
+  originalVal: string;
+  delta: Delta; // todo remove
+  deltaInverted: Delta;
+}
+
+interface ModifiedFileChange extends ChangeBase {
+  type: 'modified';
+  delta: Delta;
+  deltaInverted: Delta;
+}
+
+interface DeleteFileChange extends ChangeBase {
+  type: 'deleted';
+  delta: Delta; // todo remove
+  deltaInverted: Delta;
+}
+
+export type Change = AddFileChange | ModifiedFileChange | DeleteFileChange;
 
 export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
   windowHeight: window.innerHeight,
@@ -55,7 +77,6 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
   layoutSplitRatioTop: 70,
   layoutSplitRatioBottom: 30,
   canEdit: true,
-  files: [],
   saveChange: (delta) => {
     const newDraftId = nanoid();
     const store = get();
@@ -129,6 +150,7 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
 
     store.updateStore(({ changes, userDefinedOrder, preservedOrder }) => {
       changes[newDraftId] = {
+        type: 'modified',
         id: newDraftId,
         color: '#374957',
         width: 50,
@@ -175,7 +197,9 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
     const id = nanoid();
 
     get().updateStore((store) => {
-      const change: Change = {
+      const change: AddFileChange = {
+        type: 'added',
+        originalVal: file.oldVal,
         id,
         actions: {},
         color: '#0074bb',
@@ -190,7 +214,6 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
       store.changes[id] = change;
       store.userDefinedOrder.push(id);
       store.preservedOrder.push(id);
-      store.files.push(file);
     });
     get().updateChangesX();
     get().setPlayheadX(Infinity);
@@ -289,35 +312,83 @@ export const store = (set: SetState<Store>, get: GetState<Store>): Store => ({
       : 0;
 
     const playHeadX = x === Infinity ? maxPlayheadX : x;
+    const canEdit = playHeadX >= canEditTreshold;
 
-    if (get().playHeadX !== playHeadX) {
-      const activeChangeId = [...userDefinedOrder]
-        .reverse()
-        .find((id) => changes[id].x < playHeadX);
+    const appliedIds = userDefinedOrder.filter(
+      (id) => changes[id].x < playHeadX
+    );
+    const activeChangeId = last(appliedIds);
 
-      if (activeChangeId !== get().activeChangeId) {
-        set({
-          activeChangeId,
-          playHeadX,
-          canEdit: playHeadX >= canEditTreshold,
-        });
-      } else {
-        set({
-          playHeadX,
-          canEdit: playHeadX >= canEditTreshold,
-        });
-      }
+    if (activeChangeId !== get().activeChangeId) {
+      set({
+        activeChangeId,
+        playHeadX,
+        canEdit,
+      });
+    } else {
+      set({
+        playHeadX,
+        canEdit,
+      });
     }
   },
   setActivePath: (path) => {
-    const file = get().files.find((f) => f.path === path);
-    if (!file) {
-      throw new Error(`could not find ${path}`);
-    }
-
     set({
       activePath: path,
     });
+  },
+  getDiffByChangeId: async (changeId: string) => {
+    const { changes, userDefinedOrder, getFileContent } = get();
+
+    if (!changeId || !changes[changeId]) {
+      throw new Error('invalid changeId');
+    }
+
+    const activeChange = changes[changeId];
+    const files = await getFiles(0);
+
+    const file = files.find((f) => f.path === activeChange.path);
+    if (!file) {
+      throw new Error(`missing file for ${activeChange.path}`);
+    }
+
+    const previousChange = userDefinedOrder
+      .slice(0, userDefinedOrder.indexOf(activeChange.id))
+      .reverse()
+      .map((id) => changes[id])
+      .find((change) => change.path === activeChange.path);
+
+    const before = previousChange ? getFileContent(previousChange.id) : '';
+    const after = getFileContent(activeChange.id);
+
+    return { before, after };
+  },
+  getDiffByPath: async (path: string) => {
+    const { changes, userDefinedOrder, getFileContent } = get();
+
+    if (!path) {
+      throw new Error(`invalid ${path}`);
+    }
+
+    const files = await getFiles(0);
+
+    const file = files.find((f) => f.path === path);
+    if (!file) {
+      throw new Error(`missing file for ${path}`);
+    }
+
+    const previousChangeId = findLast(
+      userDefinedOrder,
+      (id) => changes[id].path === path
+    );
+
+    const before = previousChangeId
+      ? getFileContent(previousChangeId)
+      : file.oldVal;
+
+    const after = file.newVal;
+
+    return { before, after };
   },
 });
 

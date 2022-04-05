@@ -1,17 +1,23 @@
 import React, { useCallback } from 'react';
+import useSWR from 'swr';
 
+import { getFiles } from '../api/api';
 import { useStore } from '../store/store';
 
 export function FileTree() {
   const setActivePath = useStore(
     useCallback((state) => state.setActivePath, [])
   );
-  const files = useStore((state) => state.files);
+  const { data } = useSWR('/test', () => getFiles(0));
+
+  if (!data) {
+    return <div>loading...</div>;
+  }
 
   return (
     <div>
       <ul>
-        {files.map((file) => {
+        {data.map((file) => {
           return (
             <li onClick={() => setActivePath(file.path)} key={file.path}>
               {file.path}
