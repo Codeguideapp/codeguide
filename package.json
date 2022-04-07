@@ -55,7 +55,6 @@
     "eslint-plugin-simple-import-sort": "^7.0.0",
     "jest": "^27.0.6",
     "prettier-eslint": "^13.0.0",
-    "ts-essentials": "^9.1.2",
     "ts-jest": "^27.0.5"
   },
   "jest": {
