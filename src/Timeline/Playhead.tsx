@@ -1,7 +1,7 @@
-import { useCallback } from 'react';
+import { useAtom } from 'jotai';
 import { Group, Layer, Rect } from 'react-konva';
 
-import { useStore } from '../store/store';
+import { playheadXAtom, setPlayheadXAtom } from '../atoms/playhead';
 
 export function Playhead({
   layerX,
@@ -12,8 +12,8 @@ export function Playhead({
   zoom: number;
   height: number;
 }) {
-  const playHeadX = useStore((state) => state.playHeadX);
-  const setPlayheadX = useStore(useCallback((state) => state.setPlayheadX, []));
+  const [playHeadX] = useAtom(playheadXAtom);
+  const [, setPlayheadX] = useAtom(setPlayheadXAtom);
 
   return (
     <Layer x={layerX} scaleX={zoom}>

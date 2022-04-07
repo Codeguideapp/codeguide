@@ -6,14 +6,14 @@ import { last } from 'lodash';
 import Delta from 'quill-delta';
 
 import { getFiles } from '../api/api';
-import { useStore } from '../store/store';
+import { useStore } from '../atoms/types';
 
 describe('store.ts', () => {
   const getState = useStore.getState;
   const initialStoreState = getState();
 
   const getLastChangeContent = () => {
-    return getState().getFileContent(last(getState().userDefinedOrder)!);
+    return getState().getFileContent(last(getState().changesOrder)!);
   };
 
   beforeEach(async () => {
@@ -88,17 +88,17 @@ describe('store.ts', () => {
 
     getState().updateChangesOrder(id1, id2);
 
-    expect(getState().userDefinedOrder).toEqual([initId, id2, id1, id3]);
+    expect(getState().changesOrder).toEqual([initId, id2, id1, id3]);
     expect(getLastChangeContent()).toBe(endResult);
 
     getState().updateChangesOrder(id2, id3);
 
-    expect(getState().userDefinedOrder).toEqual([initId, id1, id3, id2]);
+    expect(getState().changesOrder).toEqual([initId, id1, id3, id2]);
     expect(getLastChangeContent()).toBe(endResult);
 
     getState().updateChangesOrder(id2, id3);
 
-    expect(getState().userDefinedOrder).toEqual([initId, id1, id2, id3]);
+    expect(getState().changesOrder).toEqual([initId, id1, id2, id3]);
     expect(getLastChangeContent()).toBe(endResult);
   });
 
@@ -136,19 +136,19 @@ describe('store.ts', () => {
       )13
       `;
 
-    expect(getState().userDefinedOrder).toEqual([initId, id1, id2, id3]);
+    expect(getState().changesOrder).toEqual([initId, id1, id2, id3]);
     expect(getLastChangeContent()).toBe(endResult);
 
     expect(() => getState().updateChangesOrder(id1, id3)).toThrowError();
 
     getState().updateChangesOrder(id1, id2);
 
-    expect(getState().userDefinedOrder).toEqual([initId, id2, id1, id3]);
+    expect(getState().changesOrder).toEqual([initId, id2, id1, id3]);
     expect(getLastChangeContent()).toBe(endResult);
 
     getState().updateChangesOrder(id2, id3);
 
-    expect(getState().userDefinedOrder).toEqual([initId, id1, id3, id2]);
+    expect(getState().changesOrder).toEqual([initId, id1, id3, id2]);
     expect(getLastChangeContent()).toBe(endResult);
   });
 
@@ -183,12 +183,12 @@ describe('store.ts', () => {
 
     getState().updateChangesOrder(id1, id2);
 
-    expect(getState().userDefinedOrder).toEqual([initId, id2, id1, id3]);
+    expect(getState().changesOrder).toEqual([initId, id2, id1, id3]);
     expect(getLastChangeContent()).toBe(endResult);
 
     getState().updateChangesOrder(id2, id3);
 
-    expect(getState().userDefinedOrder).toEqual([initId, id1, id3, id2]);
+    expect(getState().changesOrder).toEqual([initId, id1, id3, id2]);
     expect(getLastChangeContent()).toBe(endResult);
   });
 
@@ -220,12 +220,12 @@ describe('store.ts', () => {
 
     getState().updateChangesOrder(id1, id2);
 
-    expect(getState().userDefinedOrder).toEqual([initId, id2, id1, id3]);
+    expect(getState().changesOrder).toEqual([initId, id2, id1, id3]);
     expect(getLastChangeContent()).toBe(endResult);
 
     getState().updateChangesOrder(id1, id2);
 
-    expect(getState().userDefinedOrder).toEqual([initId, id1, id2, id3]);
+    expect(getState().changesOrder).toEqual([initId, id1, id2, id3]);
     expect(getLastChangeContent()).toBe(endResult);
 
     expect(() => getState().updateChangesOrder(id1, id3)).toThrowError();

@@ -1,18 +1,30 @@
+import { useAtom } from 'jotai';
 import * as monaco from 'monaco-editor';
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import useSWR from 'swr';
 
-import { useStore } from '../store/store';
-import { modifiedModel, originalModel } from './monacoUtils';
+import {
+  activeChangeIdAtom,
+  changesAtom,
+  changesOrderAtom,
+} from '../atoms/changes';
+import { getDiffByChangeId } from '../utils/diffUtils';
+import { modifiedModel, originalModel } from '../utils/monaco';
 
 export function EditorReadMode() {
   const editorDiffDom = useRef<HTMLDivElement>(null);
   const diffEditor = useRef<monaco.editor.IDiffEditor>();
-  const activeChangeId = useStore((state) => state.activeChangeId);
-  const getDiffByChangeId = useStore(
-    useCallback((state) => state.getDiffByChangeId, [])
+  const [activeChangeId] = useAtom(activeChangeIdAtom);
+  const [changes] = useAtom(changesAtom);
+  const [changesOrder] = useAtom(changesOrderAtom);
+
+  const { data } = useSWR(activeChangeId, (activeChangeId) =>
+    getDiffByChangeId({
+      activeChange: changes[activeChangeId],
+      changes,
+      changesOrder,
+    })
   );
-  const { data } = useSWR(activeChangeId, getDiffByChangeId);
 
   useEffect(() => {
     // initializing editor

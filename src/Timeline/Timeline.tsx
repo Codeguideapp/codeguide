@@ -1,23 +1,25 @@
+import { useAtom } from 'jotai';
 import React from 'react';
 import { Layer, Rect, Stage } from 'react-konva';
 
-import { useStore } from '../store/store';
+import {
+  layoutSplitRatioAtom,
+  windowHeightAtom,
+  windowWidthAtom,
+} from '../atoms/layout';
 import { Changes } from './Changes';
 import { Playhead } from './Playhead';
 
 const topBarHeight = 18;
 
 export const Timeline = () => {
-  const layoutSplitRatioBottom = useStore(
-    (state) => state.layoutSplitRatioBottom
-  );
-  const windowHeight = useStore((state) => state.windowHeight);
-  const stageWidth = useStore((state) => state.windowWidth);
+  const [layoutSplitRatio] = useAtom(layoutSplitRatioAtom);
+  const [windowHeight] = useAtom(windowHeightAtom);
+  const [stageWidth] = useAtom(windowWidthAtom);
 
   const stageHeight = React.useMemo(
-    () =>
-      Math.ceil(windowHeight * (layoutSplitRatioBottom / 100)) - topBarHeight,
-    [layoutSplitRatioBottom, windowHeight]
+    () => Math.ceil(windowHeight * (layoutSplitRatio[0] / 100)) - topBarHeight,
+    [layoutSplitRatio, windowHeight]
   );
 
   const PADDING = 0;

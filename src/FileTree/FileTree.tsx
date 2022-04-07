@@ -1,13 +1,12 @@
-import React, { useCallback } from 'react';
+import { useAtom } from 'jotai';
+import React from 'react';
 import useSWR from 'swr';
 
 import { getFiles } from '../api/api';
-import { useStore } from '../store/store';
+import { activePathAtom } from '../atoms/files';
 
 export function FileTree() {
-  const setActivePath = useStore(
-    useCallback((state) => state.setActivePath, [])
-  );
+  const [, setActivePath] = useAtom(activePathAtom);
   const { data } = useSWR('/test', () => getFiles(0));
 
   if (!data) {

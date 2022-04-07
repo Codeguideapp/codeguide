@@ -1,13 +1,91 @@
 import './index.css';
 
+import { useAtom } from 'jotai';
+import { debounce } from 'lodash';
 import type * as monaco from 'monaco-editor';
-import React from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import Split from 'react-split';
+import useSWR from 'swr';
 
-import { App } from './App/App';
+import { getFiles } from './api/api';
+import { addFileAtom } from './atoms/files';
+import {
+  layoutSplitRatioAtom,
+  windowHeightAtom,
+  windowWidthAtom,
+} from './atoms/layout';
+import { Editor } from './Editor/Editor';
 import { defaultDarkTheme } from './Editor/monaco-themes/defaultDark';
 import { readOnlyTheme } from './Editor/monaco-themes/readonly';
+import { FileTree } from './FileTree/FileTree';
 import reportWebVitals from './reportWebVitals';
+import { Timeline } from './Timeline/Timeline';
+
+function App() {
+  const [, setlLayoutSplitRatio] = useAtom(layoutSplitRatioAtom);
+  const [, setWindowHeight] = useAtom(windowHeightAtom);
+  const [, setWindowWidth] = useAtom(windowWidthAtom);
+  const [, addFile] = useAtom(addFileAtom);
+
+  const { data, error } = useSWR('/0', (url) => getFiles(0));
+
+  useEffect(() => {
+    window.addEventListener(
+      'resize',
+      debounce(() => {
+        setWindowWidth(window.innerHeight);
+        setWindowHeight(window.innerWidth);
+      }, 100)
+    );
+  }, [setWindowHeight, setWindowWidth]);
+
+  useEffect(() => {
+    if (!data) return;
+
+    for (const file of data) {
+      addFile(file);
+    }
+  }, [data, addFile]);
+
+  if (error) return <div>failed to load</div>;
+  if (!data) return <div>loading...</div>;
+
+  return (
+    <Split
+      className="split"
+      direction="vertical"
+      gutterSize={2}
+      snapOffset={10}
+      style={{ height: '100%' }}
+      sizes={[70, 30]}
+      minSize={[100, 100]}
+      onDrag={([top, bottom]) => {
+        setlLayoutSplitRatio([bottom, top]);
+      }}
+    >
+      <Split
+        className="split-horiz"
+        direction="horizontal"
+        sizes={[20, 80]}
+        gutterSize={2}
+      >
+        <FileTree />
+        <div
+          style={{
+            overflow: 'hidden',
+            width: '100%',
+            height: '100%',
+          }}
+        >
+          <Editor />
+        </div>
+      </Split>
+
+      <Timeline />
+    </Split>
+  );
+}
 
 const renderApp = () => {
   window.monaco.editor.defineTheme('readonly', readOnlyTheme);

@@ -1,11 +1,12 @@
+import { useAtom } from 'jotai';
 import React from 'react';
 
-import { useStore } from '../store/store';
+import { canEditAtom } from '../atoms/playhead';
 import { EditorEditMode } from './EditorEditMode';
 import { EditorReadMode } from './EditorReadMode';
 
 export function Editor() {
-  const canEdit = useStore((state) => state.canEdit);
+  const [canEdit] = useAtom(canEditAtom);
 
   return canEdit ? <EditorEditMode /> : <EditorReadMode />;
 }

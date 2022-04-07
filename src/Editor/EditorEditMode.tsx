@@ -1,15 +1,19 @@
+import { useAtom } from 'jotai';
 import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import useSWR from 'swr';
 
-import { composeDeltas } from '../store/deltaUtils';
-import { useStore } from '../store/store';
+import { changesAtom, changesOrderAtom } from '../atoms/changes';
+import { activePathAtom } from '../atoms/files';
+import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
+import { composeDeltas } from '../utils/deltaUtils';
+import { getDiffByPath } from '../utils/diffUtils';
 import {
   diffGutterMouseHandler,
   modifiedModel,
   originalModel,
-} from './monacoUtils';
+} from '../utils/monaco';
 
 export function EditorEditMode() {
   const modifiedContentListener = useRef<monaco.IDisposable>();
@@ -18,13 +22,18 @@ export function EditorEditMode() {
   const editorDiffDom = useRef<HTMLDivElement>(null);
   const diffEditor = useRef<monaco.editor.IDiffEditor>();
   const decorations = useRef<string[]>([]);
-  const activePath = useStore((state) => state.activePath);
-  const saveChange = useStore(useCallback((state) => state.saveChange, []));
-  const getDiffByPath = useStore(
-    useCallback((state) => state.getDiffByPath, [])
-  );
+  const [activePath] = useAtom(activePathAtom);
+  const [, saveChange] = useAtom(saveDeltaAtom);
+  const [changes] = useAtom(changesAtom);
+  const [changesOrder] = useAtom(changesOrderAtom);
 
-  const { data } = useSWR(activePath, getDiffByPath);
+  const { data } = useSWR(activePath, (activePath) =>
+    getDiffByPath({
+      path: activePath,
+      changes,
+      changesOrder,
+    })
+  );
 
   useEffect(() => {
     // initializing editor

@@ -1,8 +1,12 @@
+import { useAtom } from 'jotai';
 import React from 'react';
-import { useCallback } from 'react';
 import { Group, Layer, Rect } from 'react-konva';
 
-import { useStore } from '../store/store';
+import {
+  changesAtom,
+  swapChangesAtom,
+  updateChangesAtom,
+} from '../atoms/changes';
 
 export function Changes({
   layerX,
@@ -17,11 +21,9 @@ export function Changes({
 }) {
   // used for displaying change "ghost" so it snaps back in that position on dragEnd
   const [snapPosX, setSnapPosX] = React.useState(-1);
-  const changes = useStore(useCallback((state) => state.changes, []));
-  const updateStore = useStore(useCallback((state) => state.updateStore, []));
-  const updateChangesOrder = useStore(
-    useCallback((state) => state.updateChangesOrder, [])
-  );
+  const [changes] = useAtom(changesAtom);
+  const [, updateChanges] = useAtom(updateChangesAtom);
+  const [, swapChanges] = useAtom(swapChangesAtom);
 
   // changes but updated only if ordering is changed
   const staticChanges = React.useMemo(
@@ -40,12 +42,6 @@ export function Changes({
             y={y}
             draggable
             onDragStart={() => {
-              updateStore((store) => {
-                // for (const depId of change.deps) {
-                //   store.changes[depId].highlightAsDep = true;
-                // }
-              });
-
               setSnapPosX(change.x);
             }}
             onDragMove={(event) => {
@@ -66,26 +62,23 @@ export function Changes({
                   return;
                 }
 
-                updateStore(({ changes }) => {
+                updateChanges((changes) => {
                   changes[swapFrom].x = staticChanges[swapTo].x;
                   changes[swapTo].x = staticChanges[swapFrom].x;
                 });
 
-                updateChangesOrder(swapFrom, swapTo);
+                swapChanges({ from: swapFrom, to: swapTo });
 
                 setSnapPosX(changes[swapTo].x);
               } else {
-                updateStore(({ changes }) => {
+                updateChanges((changes) => {
                   changes[id].x = pos.x;
                 });
               }
             }}
             onDragEnd={() => {
-              updateStore(({ changes }) => {
+              updateChanges((changes) => {
                 changes[id].x = snapPosX;
-                // for (const depId of change.deps) {
-                //   changes[depId].highlightAsDep = false;
-                // }
               });
               setSnapPosX(-1);
             }}
@@ -114,7 +107,7 @@ export function Changes({
       })}
 
       {snapPosX !== -1 && (
-        <Rect x={snapPosX} y={y} width={100} height={height} stroke="black" />
+        <Rect x={snapPosX} y={y} width={50} height={height} stroke="black" />
       )}
     </Layer>
   );
