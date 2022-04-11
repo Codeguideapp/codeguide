@@ -1,14 +1,14 @@
 import { useAtom } from 'jotai';
+import { findLast } from 'lodash';
 import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 import React, { useEffect, useRef } from 'react';
-import useSWR from 'swr';
 
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
-import { activePathAtom } from '../atoms/files';
+import { activeFileAtom } from '../atoms/files';
 import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
 import { composeDeltas } from '../utils/deltaUtils';
-import { getDiffByPath } from '../utils/diffUtils';
+import { getFileContent } from '../utils/getFileContent';
 import {
   diffGutterMouseHandler,
   modifiedModel,
@@ -22,18 +22,12 @@ export function EditorEditMode() {
   const editorDiffDom = useRef<HTMLDivElement>(null);
   const diffEditor = useRef<monaco.editor.IDiffEditor>();
   const decorations = useRef<string[]>([]);
-  const [activePath] = useAtom(activePathAtom);
+  const [activeFile] = useAtom(activeFileAtom);
   const [, saveChange] = useAtom(saveDeltaAtom);
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
-
-  const { data } = useSWR(activePath, (activePath) =>
-    getDiffByPath({
-      path: activePath,
-      changes,
-      changesOrder,
-    })
-  );
+  const changesRef = useRef(changes);
+  const changesOrderRef = useRef(changesOrder);
 
   useEffect(() => {
     // initializing editor
@@ -97,26 +91,37 @@ export function EditorEditMode() {
       diffListener.current?.dispose();
       diffMouseDownListener.current?.dispose();
       modifiedContentListener.current?.dispose();
+      modifiedModel.setValue('');
+      originalModel.setValue('');
     };
   }, [editorDiffDom]);
 
   useEffect(() => {
     modifiedContentListener.current?.dispose();
 
-    if (!activePath) {
+    if (!activeFile) {
       originalModel.setValue('');
       modifiedModel.setValue('');
       return;
     }
 
-    if (!data) {
-      originalModel.setValue('loading...');
-      modifiedModel.setValue('loading...');
-      return;
-    }
+    const previousChangeId = findLast(
+      changesOrderRef.current,
+      (id) => changesRef.current[id].path === activeFile.path
+    );
 
-    originalModel.setValue(data.after);
-    modifiedModel.setValue(data.before);
+    const before = previousChangeId
+      ? getFileContent({
+          changeId: previousChangeId,
+          changes: changesRef.current,
+          changesOrder: changesOrderRef.current,
+        })
+      : activeFile.oldVal;
+
+    const after = activeFile.newVal;
+
+    originalModel.setValue(after);
+    modifiedModel.setValue(before);
 
     modifiedContentListener.current = modifiedModel.onDidChangeContent((e) => {
       const deltas: Delta[] = [];
@@ -133,7 +138,7 @@ export function EditorEditMode() {
 
       saveChange(composeDeltas(deltas));
     });
-  }, [data, activePath, saveChange]);
+  }, [activeFile, saveChange]);
 
   return <div ref={editorDiffDom} className={'monaco-edit'}></div>;
 }

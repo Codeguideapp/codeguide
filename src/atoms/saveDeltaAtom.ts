@@ -6,20 +6,20 @@ import Delta from 'quill-delta';
 
 import { composeDeltas } from '../utils/deltaUtils';
 import { changesAtom, changesOrderAtom } from './changes';
-import { activePathAtom } from './files';
+import { activeFileAtom } from './files';
 import { setPlayheadXAtom } from './playhead';
 
 export const saveDeltaAtom = atom(null, (get, set, delta: Delta) => {
   const newDraftId = nanoid();
 
   const changes = get(changesAtom);
-  const activePath = get(activePathAtom);
+  const activeFile = get(activeFileAtom);
   const changesOrder = get(changesOrderAtom);
 
-  if (!activePath) throw new Error('no file is active');
+  if (!activeFile) throw new Error('no file is active');
 
   const appliedIds = changesOrder.filter(
-    (id) => changes[id].path === activePath
+    (id) => changes[id].path === activeFile.path
   );
 
   const takenCoordinates = calcCoordinates(
@@ -97,7 +97,7 @@ export const saveDeltaAtom = atom(null, (get, set, delta: Delta) => {
         },
       },
       deps,
-      path: activePath,
+      path: activeFile.path,
       delta: draftChangeTransformed,
       deltaInverted: draftChangeTransformed.invert(baseComposed),
     };

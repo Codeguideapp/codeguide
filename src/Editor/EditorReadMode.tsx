@@ -1,14 +1,13 @@
 import { useAtom } from 'jotai';
 import * as monaco from 'monaco-editor';
 import React, { useEffect, useRef } from 'react';
-import useSWR from 'swr';
 
 import {
   activeChangeIdAtom,
   changesAtom,
   changesOrderAtom,
 } from '../atoms/changes';
-import { getDiffByChangeId } from '../utils/diffUtils';
+import { getFileContent } from '../utils/getFileContent';
 import { modifiedModel, originalModel } from '../utils/monaco';
 
 export function EditorReadMode() {
@@ -18,13 +17,39 @@ export function EditorReadMode() {
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
 
-  const { data } = useSWR(activeChangeId, (activeChangeId) =>
-    getDiffByChangeId({
-      activeChange: changes[activeChangeId],
+  useEffect(() => {
+    if (!activeChangeId) {
+      originalModel.setValue('');
+      modifiedModel.setValue('');
+      return;
+    }
+
+    const activeChange = changes[activeChangeId];
+    const previousChange = changesOrder
+      .slice(0, changesOrder.indexOf(activeChangeId))
+      .reverse()
+      .map((id) => changes[id])
+      .find((change) => change.path === activeChange.path);
+
+    const before = previousChange
+      ? getFileContent({
+          changeId: previousChange.id,
+          changes,
+          changesOrder,
+        })
+      : activeChange.type === 'deleted'
+      ? activeChange.originalVal
+      : '';
+
+    const after = getFileContent({
+      changeId: activeChangeId,
       changes,
       changesOrder,
-    })
-  );
+    });
+
+    originalModel.setValue(after);
+    modifiedModel.setValue(before);
+  }, [changes, changesOrder, activeChangeId]);
 
   useEffect(() => {
     // initializing editor
@@ -49,20 +74,11 @@ export function EditorReadMode() {
     });
 
     return () => {
+      modifiedModel.setValue('');
+      originalModel.setValue('');
       diffEditor.current?.dispose();
     };
   }, [editorDiffDom]);
-
-  useEffect(() => {
-    if (!data) {
-      originalModel.setValue('loading...');
-      modifiedModel.setValue('loading...');
-      return;
-    }
-
-    originalModel.setValue(data.after);
-    modifiedModel.setValue(data.before);
-  }, [data]);
 
   return <div ref={editorDiffDom} className={'monaco-preview'}></div>;
 }

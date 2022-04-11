@@ -5,7 +5,7 @@ import { Changes } from './types';
 
 export const changesAtom = atom<Changes>(produce({}, () => {}));
 export const changesOrderAtom = atom<string[]>([]);
-export const activeChangeIdAtom = atom<string | undefined>(undefined);
+export const activeChangeIdAtom = atom<string | null>(null);
 
 export const swapChangesAtom = atom(
   null,

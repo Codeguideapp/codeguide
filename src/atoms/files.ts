@@ -3,13 +3,20 @@ import { atom } from 'jotai';
 import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 
-import { File } from '../api/api';
+import { File, getFiles } from '../api/api';
 import { changesAtom, changesOrderAtom } from './changes';
 import { setPlayheadXAtom } from './playhead';
 
-export const activePathAtom = atom<string | undefined>(undefined);
+export const activeFileAtom = atom<File | undefined>(undefined);
+export const fileChangesAtom = atom<File[]>([]);
 
-export const addFileAtom = atom(null, (get, set, file: File) => {
+export const setFileChangesAtom = atom(null, async (get, set, pr: number) => {
+  const files = await getFiles(pr);
+
+  set(fileChangesAtom, files);
+});
+
+export const stageFileAtom = atom(null, (get, set, file: File) => {
   const changes = get(changesAtom);
   const changesOrder = get(changesOrderAtom);
 
@@ -19,12 +26,17 @@ export const addFileAtom = atom(null, (get, set, file: File) => {
 
   const newChanges = produce(changes, (changesDraft) => {
     changesDraft[id] = {
-      type: 'added',
+      type: file.type,
       originalVal: file.oldVal,
       id,
       actions: {},
       color: '#0074bb',
-      delta: new Delta().insert(file.oldVal),
+      delta:
+        file.type === 'added'
+          ? new Delta().insert(file.newVal)
+          : file.type === 'deleted'
+          ? new Delta().delete(file.oldVal.length)
+          : new Delta().insert(file.oldVal),
       deltaInverted: new Delta(),
       deps: [],
       path: file.path,

@@ -1,7 +1,7 @@
 import type Delta from 'quill-delta';
 
 export type Change = AddFileChange | ModifiedFileChange | DeleteFileChange;
-export type Changes = Record<string, Readonly<Change>>;
+export type Changes = Record<string, Readonly<Change>>; // changes is updated using immer so the result object can be read only
 interface ChangeBase {
   id: string;
   x: number;
@@ -21,7 +21,6 @@ interface ChangeBase {
 
 interface AddFileChange extends ChangeBase {
   type: 'added';
-  originalVal: string;
   delta: Delta; // todo remove
   deltaInverted: Delta;
 }
@@ -34,6 +33,7 @@ interface ModifiedFileChange extends ChangeBase {
 
 interface DeleteFileChange extends ChangeBase {
   type: 'deleted';
+  originalVal: string;
   delta: Delta; // todo remove
   deltaInverted: Delta;
 }

@@ -24,7 +24,7 @@ export const setPlayheadXAtom = atom(null, (get, set, x: number) => {
   const canEdit = newPlayHeadX >= canEditTreshold;
 
   const appliedIds = changesOrder.filter((id) => changes[id].x < newPlayHeadX);
-  const activeChangeId = last(appliedIds);
+  const activeChangeId = last(appliedIds) || null;
 
   set(playheadXAtom, newPlayHeadX);
   set(activeChangeIdAtom, activeChangeId);

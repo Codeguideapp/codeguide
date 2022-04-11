@@ -6,10 +6,8 @@ import type * as monaco from 'monaco-editor';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Split from 'react-split';
-import useSWR from 'swr';
 
-import { getFiles } from './api/api';
-import { addFileAtom } from './atoms/files';
+import { setFileChangesAtom } from './atoms/files';
 import {
   layoutSplitRatioAtom,
   windowHeightAtom,
@@ -26,9 +24,7 @@ function App() {
   const [, setlLayoutSplitRatio] = useAtom(layoutSplitRatioAtom);
   const [, setWindowHeight] = useAtom(windowHeightAtom);
   const [, setWindowWidth] = useAtom(windowWidthAtom);
-  const [, addFile] = useAtom(addFileAtom);
-
-  const { data, error } = useSWR('/0', (url) => getFiles(0));
+  const [, setFileChanges] = useAtom(setFileChangesAtom);
 
   useEffect(() => {
     window.addEventListener(
@@ -41,15 +37,9 @@ function App() {
   }, [setWindowHeight, setWindowWidth]);
 
   useEffect(() => {
-    if (!data) return;
-
-    for (const file of data) {
-      addFile(file);
-    }
-  }, [data, addFile]);
-
-  if (error) return <div>failed to load</div>;
-  if (!data) return <div>loading...</div>;
+    // initial
+    setFileChanges(0);
+  }, [setFileChanges]);
 
   return (
     <Split
