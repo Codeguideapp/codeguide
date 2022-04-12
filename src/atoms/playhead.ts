@@ -23,7 +23,9 @@ export const setPlayheadXAtom = atom(null, (get, set, x: number) => {
   const newPlayHeadX = x === Infinity ? maxPlayheadX : x;
   const canEdit = newPlayHeadX >= canEditTreshold;
 
-  const appliedIds = changesOrder.filter((id) => changes[id].x < newPlayHeadX);
+  const appliedIds = changesOrder.filter(
+    (id) => changes[id].x < newPlayHeadX && !changes[id].isFileDepChange
+  );
   const activeChangeId = last(appliedIds) || null;
 
   set(playheadXAtom, newPlayHeadX);

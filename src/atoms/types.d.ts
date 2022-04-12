@@ -3,6 +3,7 @@ import type Delta from 'quill-delta';
 export type Change = AddFileChange | ModifiedFileChange | DeleteFileChange;
 export type Changes = Record<string, Readonly<Change>>; // changes is updated using immer so the result object can be read only
 interface ChangeBase {
+  isFileDepChange: boolean;
   id: string;
   x: number;
   color: string;

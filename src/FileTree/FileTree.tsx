@@ -61,22 +61,49 @@ export function FileTree() {
           );
         })}
       </ul>
-      <div>modified</div>
+      <div>changed files</div>
       <ul>
         {modifiedFiles?.map((file) => {
-          return (
-            <li
-              onClick={() => {
-                if (!Object.values(changes).find((c) => c.path === file.path)) {
-                  stageFile(file);
-                }
-                setActiveFile(file);
-              }}
-              key={file.path}
-            >
-              {file.path}
-            </li>
-          );
+          switch (file.type) {
+            case 'modified':
+              return (
+                <li
+                  onClick={() => {
+                    if (
+                      !Object.values(changes).find((c) => c.path === file.path)
+                    ) {
+                      stageFile({ file, isFileDepChange: true });
+                    }
+
+                    setActiveFile(file);
+                  }}
+                  key={file.path}
+                >
+                  {file.path}
+                </li>
+              );
+            default:
+              return (
+                <li key={file.path}>
+                  <span
+                    onClick={() => {
+                      if (
+                        !Object.values(changes).find(
+                          (c) => c.path === file.path
+                        )
+                      ) {
+                        stageFile({ file });
+                      }
+
+                      setActiveFile(file);
+                    }}
+                  >
+                    +
+                  </span>
+                  include {file.path}
+                </li>
+              );
+          }
         })}
       </ul>
     </div>

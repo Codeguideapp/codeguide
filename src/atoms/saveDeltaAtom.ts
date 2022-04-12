@@ -79,6 +79,7 @@ export const saveDeltaAtom = atom(null, (get, set, delta: Delta) => {
 
   const newChanges = produce(changes, (changesDraft) => {
     changesDraft[newDraftId] = {
+      isFileDepChange: false,
       type: 'modified',
       id: newDraftId,
       color: '#374957',
@@ -104,6 +105,9 @@ export const saveDeltaAtom = atom(null, (get, set, delta: Delta) => {
 
     let x = 10;
     for (const id of newChangesOrder) {
+      if (changesDraft[id].isFileDepChange) {
+        continue;
+      }
       changesDraft[id].x = x;
       x += changesDraft[id].width + 10;
     }
