@@ -10,6 +10,7 @@
     "@types/node": "^12.0.0",
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
+    "antd": "^4.19.5",
     "diff": "^5.0.0",
     "immer": "^9.0.12",
     "jotai": "^1.6.2",

@@ -4,7 +4,7 @@ import { last } from 'lodash';
 import { activeChangeIdAtom, changesAtom, changesOrderAtom } from './changes';
 
 export const playheadXAtom = atom(0);
-export const canEditAtom = atom(false);
+export const canEditAtom = atom(true);
 
 export const setPlayheadXAtom = atom(null, (get, set, x: number) => {
   const changes = get(changesAtom);

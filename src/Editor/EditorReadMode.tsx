@@ -37,8 +37,6 @@ export function EditorReadMode() {
           changes,
           changesOrder,
         })
-      : activeChange.type === 'deleted'
-      ? activeChange.originalVal
       : '';
 
     const after = getFileContent({

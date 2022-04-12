@@ -23,7 +23,7 @@ export function EditorEditMode() {
   const diffEditor = useRef<monaco.editor.IDiffEditor>();
   const decorations = useRef<string[]>([]);
   const [activeFile] = useAtom(activeFileAtom);
-  const [, saveChange] = useAtom(saveDeltaAtom);
+  const [, saveDelta] = useAtom(saveDeltaAtom);
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
   const changesRef = useRef(changes);
@@ -136,9 +136,9 @@ export function EditorEditMode() {
           deltas.push(delta);
         });
 
-      saveChange(composeDeltas(deltas));
+      saveDelta(composeDeltas(deltas));
     });
-  }, [activeFile, saveChange]);
+  }, [activeFile, saveDelta]);
 
   return <div ref={editorDiffDom} className={'monaco-edit'}></div>;
 }

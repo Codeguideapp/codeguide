@@ -1,3 +1,5 @@
+import { Tree } from 'antd';
+import { DataNode } from 'antd/lib/tree';
 import { useAtom } from 'jotai';
 import React, { useMemo, useState } from 'react';
 import useSWR from 'swr';
@@ -8,15 +10,18 @@ import {
   changesAtom,
   changesOrderAtom,
 } from '../atoms/changes';
-import { activeFileAtom, fileChangesAtom, stageFileAtom } from '../atoms/files';
+import { activeFileAtom, fileChangesAtom } from '../atoms/files';
+import { setPlayheadXAtom } from '../atoms/playhead';
+
+const { DirectoryTree } = Tree;
 
 export function FileTree() {
   const [, setActiveFile] = useAtom(activeFileAtom);
   const [changes] = useAtom(changesAtom);
-  const [, stageFile] = useAtom(stageFileAtom);
   const [fileChanges] = useAtom(fileChangesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
   const [activeChangeId] = useAtom(activeChangeIdAtom);
+  const [, setPlayheadX] = useAtom(setPlayheadXAtom);
   const [activeDir, setActiveDir] = useState('/');
 
   const hiddenFiles = useMemo(() => {
@@ -39,11 +44,24 @@ export function FileTree() {
   }, [fileChanges, changesOrder, changes, activeChangeId]);
 
   const { data } = useSWR(activeDir, () => getFiles(0));
-  const modifiedFiles = data;
 
-  const dirFiles = useMemo(() => {
-    return data?.filter((file) => hiddenFiles[file.path]);
-  }, [data, hiddenFiles]);
+  const modifiedFiles = useMemo(() => {
+    const treeData: DataNode[] = [];
+
+    for (const file of data || []) {
+      treeData.push({
+        key: file.path,
+        title: file.path,
+        isLeaf: true,
+      });
+    }
+
+    return treeData;
+  }, [data]);
+
+  const directory = useMemo(() => {
+    return modifiedFiles.filter((file) => hiddenFiles[file.key]);
+  }, [modifiedFiles, hiddenFiles]);
 
   if (!data) {
     return <div>loading...</div>;
@@ -52,60 +70,26 @@ export function FileTree() {
   return (
     <div>
       <div>directory</div>
-      <ul>
-        {dirFiles?.map((file) => {
-          return (
-            <li key={file.path} onClick={() => setActiveDir(file.path)}>
-              {file.path}
-            </li>
-          );
-        })}
-      </ul>
+      <br />
+      <DirectoryTree
+        treeData={directory}
+        onSelect={(selected) => {
+          const file = data.find((f) => f.path === selected[0]);
+          setActiveFile(file);
+          setPlayheadX(Infinity);
+        }}
+      />
+      <br />
       <div>changed files</div>
-      <ul>
-        {modifiedFiles?.map((file) => {
-          switch (file.type) {
-            case 'modified':
-              return (
-                <li
-                  onClick={() => {
-                    if (
-                      !Object.values(changes).find((c) => c.path === file.path)
-                    ) {
-                      stageFile({ file, isFileDepChange: true });
-                    }
-
-                    setActiveFile(file);
-                  }}
-                  key={file.path}
-                >
-                  {file.path}
-                </li>
-              );
-            default:
-              return (
-                <li key={file.path}>
-                  <span
-                    onClick={() => {
-                      if (
-                        !Object.values(changes).find(
-                          (c) => c.path === file.path
-                        )
-                      ) {
-                        stageFile({ file });
-                      }
-
-                      setActiveFile(file);
-                    }}
-                  >
-                    +
-                  </span>
-                  include {file.path}
-                </li>
-              );
-          }
-        })}
-      </ul>
+      <br />
+      <DirectoryTree
+        treeData={modifiedFiles}
+        onSelect={(selected) => {
+          const file = data.find((f) => f.path === selected[0]);
+          setActiveFile(file);
+          setPlayheadX(Infinity);
+        }}
+      />
     </div>
   );
 }

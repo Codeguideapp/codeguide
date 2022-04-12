@@ -1,11 +1,6 @@
-import produce from 'immer';
 import { atom } from 'jotai';
-import { nanoid } from 'nanoid';
-import Delta from 'quill-delta';
 
 import { File, getFiles } from '../api/api';
-import { changesAtom, changesOrderAtom } from './changes';
-import { setPlayheadXAtom } from './playhead';
 
 export const activeFileAtom = atom<File | undefined>(undefined);
 export const fileChangesAtom = atom<File[]>([]);
@@ -15,56 +10,3 @@ export const setFileChangesAtom = atom(null, async (get, set, pr: number) => {
 
   set(fileChangesAtom, files);
 });
-
-export const stageFileAtom = atom(
-  null,
-  (
-    get,
-    set,
-    { file, isFileDepChange = false }: { file: File; isFileDepChange?: boolean }
-  ) => {
-    const changes = get(changesAtom);
-    const changesOrder = get(changesOrderAtom);
-
-    const id = nanoid();
-
-    const newChangesOrder = isFileDepChange
-      ? [id, ...changesOrder]
-      : [...changesOrder, id];
-
-    const newChanges = produce(changes, (changesDraft) => {
-      changesDraft[id] = {
-        isFileDepChange,
-        type: file.type,
-        originalVal: file.oldVal,
-        id,
-        actions: {},
-        color: '#0074bb',
-        delta:
-          file.type === 'added'
-            ? new Delta().insert(file.newVal)
-            : file.type === 'deleted'
-            ? new Delta().delete(file.oldVal.length)
-            : new Delta().insert(file.oldVal),
-        deltaInverted: new Delta(),
-        deps: [],
-        path: file.path,
-        width: isFileDepChange ? 0 : 50,
-        x: 0,
-      };
-
-      let x = 10;
-      for (const id of newChangesOrder) {
-        if (changesDraft[id].isFileDepChange) {
-          continue;
-        }
-        changesDraft[id].x = x;
-        x += changesDraft[id].width + 10;
-      }
-    });
-
-    set(changesAtom, newChanges);
-    set(changesOrderAtom, newChangesOrder);
-    set(setPlayheadXAtom, Infinity);
-  }
-);

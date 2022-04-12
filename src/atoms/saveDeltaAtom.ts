@@ -4,22 +4,77 @@ import { uniq } from 'lodash';
 import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 
-import { composeDeltas } from '../utils/deltaUtils';
+import { composeDeltas, deltaToString } from '../utils/deltaUtils';
 import { changesAtom, changesOrderAtom } from './changes';
 import { activeFileAtom } from './files';
 import { setPlayheadXAtom } from './playhead';
 
+// todo: find ways to refactor
+
 export const saveDeltaAtom = atom(null, (get, set, delta: Delta) => {
   const newDraftId = nanoid();
 
-  const changes = get(changesAtom);
-  const activeFile = get(activeFileAtom);
-  const changesOrder = get(changesOrderAtom);
+  const file = get(activeFileAtom);
+  let changes = get(changesAtom);
+  let changesOrder = get(changesOrderAtom);
 
-  if (!activeFile) throw new Error('no file is active');
+  if (!file) throw new Error('no file is active');
+
+  const isFileFirstChange =
+    Object.values(changes).find(({ path }) => path === file.path) === undefined;
+
+  if (
+    (file.type === 'modified' || file.type === 'deleted') &&
+    isFileFirstChange
+  ) {
+    // in case this is the first change for a file
+    // we need to add an initial "isFileDepChange" change
+    const id = nanoid();
+
+    const newChangesOrder = [id, ...changesOrder];
+    const newChanges = produce(changes, (changesDraft) => {
+      changesDraft[id] = {
+        isFileDepChange: true,
+        type: 'modified',
+        id,
+        actions: {},
+        color: '#0074bb',
+        delta: new Delta().insert(file.oldVal),
+        deltaInverted: new Delta(),
+        deps: [],
+        path: file.path,
+        width: 0,
+        x: 0,
+      };
+    });
+
+    set(changesAtom, newChanges);
+    set(changesOrderAtom, newChangesOrder);
+    changes = get(changesAtom);
+    changesOrder = get(changesOrderAtom);
+  }
+
+  let changeType = file.type;
+  if (file.type === 'added') {
+    if (isFileFirstChange) {
+      changeType = 'added';
+    } else {
+      changeType = 'modified';
+    }
+  } else if (file.type === 'deleted') {
+    const deltas = Object.values(changes)
+      .filter(({ path }) => path === file.path)
+      .map((c) => c.delta);
+
+    if (deltaToString([...deltas, delta]) === '') {
+      changeType = 'deleted';
+    } else {
+      changeType = 'modified';
+    }
+  }
 
   const appliedIds = changesOrder.filter(
-    (id) => changes[id].path === activeFile.path
+    (id) => changes[id].path === file.path
   );
 
   const takenCoordinates = calcCoordinates(
@@ -32,7 +87,7 @@ export const saveDeltaAtom = atom(null, (get, set, delta: Delta) => {
   const foundDeps = takenCoordinates
     .filter((taken) => {
       // first transforming draft to the point when "taken" was applied
-      const toUndo = changesOrder.slice(changesOrder.indexOf(taken.id) + 1);
+      const toUndo = appliedIds.slice(appliedIds.indexOf(taken.id) + 1);
 
       const toUndoDelta = composeDeltas(
         toUndo.map((id) => changes[id].deltaInverted)
@@ -80,9 +135,9 @@ export const saveDeltaAtom = atom(null, (get, set, delta: Delta) => {
   const newChanges = produce(changes, (changesDraft) => {
     changesDraft[newDraftId] = {
       isFileDepChange: false,
-      type: 'modified',
+      type: changeType,
       id: newDraftId,
-      color: '#374957',
+      color: changeType === 'modified' ? '#374957' : '#0074bb',
       width: 50,
       x: 0,
       actions: {
@@ -98,7 +153,7 @@ export const saveDeltaAtom = atom(null, (get, set, delta: Delta) => {
         },
       },
       deps,
-      path: activeFile.path,
+      path: file.path,
       delta: draftChangeTransformed,
       deltaInverted: draftChangeTransformed.invert(baseComposed),
     };
