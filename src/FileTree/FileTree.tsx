@@ -64,11 +64,11 @@ export function FileTree() {
   }, [modifiedFiles, hiddenFiles]);
 
   if (!data) {
-    return <div>loading...</div>;
+    return <div className="file-tree">loading...</div>;
   }
 
   return (
-    <div>
+    <div className="file-tree">
       <div>directory</div>
       <br />
       <DirectoryTree

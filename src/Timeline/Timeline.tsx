@@ -10,7 +10,10 @@ import {
 import { Changes } from './Changes';
 import { Playhead } from './Playhead';
 
-const topBarHeight = 18;
+const topBarHeight = 19;
+const mainTopHeight = 46;
+const gutterSize = 1;
+const topOffset = topBarHeight + mainTopHeight + gutterSize;
 
 export const Timeline = () => {
   const [layoutSplitRatio] = useAtom(layoutSplitRatioAtom);
@@ -18,7 +21,7 @@ export const Timeline = () => {
   const [stageWidth] = useAtom(windowWidthAtom);
 
   const stageHeight = React.useMemo(
-    () => Math.ceil(windowHeight * (layoutSplitRatio[0] / 100)) - topBarHeight,
+    () => Math.ceil(windowHeight * (layoutSplitRatio[0] / 100)) - topOffset,
     [layoutSplitRatio, windowHeight]
   );
 
@@ -58,9 +61,9 @@ export const Timeline = () => {
     <div>
       <div className="timeline-top" style={{ height: topBarHeight }}></div>
       <Stage
+        className="timeline"
         width={window.innerWidth}
         height={stageHeight}
-        style={{ background: '#1F2428' }}
         ref={stageRef}
         onWheel={(e) => {
           e.evt.preventDefault();

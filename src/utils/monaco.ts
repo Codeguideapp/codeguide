@@ -1,7 +1,11 @@
 import * as monaco from 'monaco-editor';
 
-export const modifiedModel = monaco.editor.createModel('', 'text/plain');
-export const originalModel = monaco.editor.createModel('', 'text/plain');
+export const modifiedModel = monaco.editor.createModel('', 'typescript');
+export const originalModel = monaco.editor.createModel('', 'typescript');
+monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+  noSemanticValidation: true,
+  noSyntaxValidation: true,
+});
 
 export const diffGutterMouseHandler =
   (diffEditor: React.MutableRefObject<monaco.editor.IDiffEditor | undefined>) =>

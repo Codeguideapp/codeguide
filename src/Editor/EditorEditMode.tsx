@@ -26,8 +26,6 @@ export function EditorEditMode() {
   const [, saveDelta] = useAtom(saveDeltaAtom);
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
-  const changesRef = useRef(changes);
-  const changesOrderRef = useRef(changesOrder);
 
   useEffect(() => {
     // initializing editor
@@ -37,17 +35,14 @@ export function EditorEditMode() {
     diffListener.current?.dispose();
     diffMouseDownListener.current?.dispose();
 
-    diffEditor.current = window.monaco.editor.createDiffEditor(
-      editorDiffDom.current,
-      {
-        automaticLayout: true,
-        theme: 'defaultDark',
-        originalEditable: true,
-        readOnly: true,
-        glyphMargin: true,
-        ignoreTrimWhitespace: false,
-      }
-    );
+    diffEditor.current = monaco.editor.createDiffEditor(editorDiffDom.current, {
+      automaticLayout: true,
+      theme: 'defaultDark',
+      originalEditable: true,
+      readOnly: true,
+      glyphMargin: true,
+      ignoreTrimWhitespace: false,
+    });
 
     diffEditor.current.setModel({
       original: modifiedModel,
@@ -106,22 +101,26 @@ export function EditorEditMode() {
     }
 
     const previousChangeId = findLast(
-      changesOrderRef.current,
-      (id) => changesRef.current[id].path === activeFile.path
+      changesOrder,
+      (id) => changes[id].path === activeFile.path
     );
 
     const before = previousChangeId
       ? getFileContent({
           changeId: previousChangeId,
-          changes: changesRef.current,
-          changesOrder: changesOrderRef.current,
+          changes,
+          changesOrder,
         })
       : activeFile.oldVal;
 
     const after = activeFile.newVal;
 
-    originalModel.setValue(after);
-    modifiedModel.setValue(before);
+    if (originalModel.getValue() !== after) {
+      originalModel.setValue(after);
+    }
+    if (modifiedModel.getValue() !== before) {
+      modifiedModel.setValue(before);
+    }
 
     modifiedContentListener.current = modifiedModel.onDidChangeContent((e) => {
       const deltas: Delta[] = [];
@@ -138,7 +137,7 @@ export function EditorEditMode() {
 
       saveDelta(composeDeltas(deltas));
     });
-  }, [activeFile, saveDelta]);
+  }, [activeFile, changesOrder, saveDelta]); // not watching changes as dep, because it is covered by changesOrder
 
-  return <div ref={editorDiffDom} className={'monaco-edit'}></div>;
+  return <div ref={editorDiffDom} className="monaco edit-mode"></div>;
 }

@@ -2,7 +2,7 @@ import './index.css';
 
 import { useAtom } from 'jotai';
 import { debounce } from 'lodash';
-import type * as monaco from 'monaco-editor';
+import * as monaco from 'monaco-editor';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Split from 'react-split';
@@ -15,7 +15,6 @@ import {
 } from './atoms/layout';
 import { Editor } from './Editor/Editor';
 import { defaultDarkTheme } from './Editor/monaco-themes/defaultDark';
-import { readOnlyTheme } from './Editor/monaco-themes/readonly';
 import { FileTree } from './FileTree/FileTree';
 import reportWebVitals from './reportWebVitals';
 import { Timeline } from './Timeline/Timeline';
@@ -30,8 +29,8 @@ function App() {
     window.addEventListener(
       'resize',
       debounce(() => {
-        setWindowWidth(window.innerHeight);
-        setWindowHeight(window.innerWidth);
+        setWindowWidth(window.innerWidth);
+        setWindowHeight(window.innerHeight);
       }, 100)
     );
   }, [setWindowHeight, setWindowWidth]);
@@ -42,44 +41,42 @@ function App() {
   }, [setFileChanges]);
 
   return (
-    <Split
-      className="split"
-      direction="vertical"
-      gutterSize={2}
-      snapOffset={10}
-      style={{ height: '100%' }}
-      sizes={[70, 30]}
-      minSize={[100, 100]}
-      onDrag={([top, bottom]) => {
-        setlLayoutSplitRatio([bottom, top]);
-      }}
-    >
+    <div className="main">
+      <div className="top"></div>
       <Split
-        className="split-horiz"
-        direction="horizontal"
-        sizes={[20, 80]}
-        gutterSize={2}
+        className="split"
+        direction="vertical"
+        gutterSize={1}
+        snapOffset={10}
+        style={{ height: '100%' }}
+        sizes={[65, 35]}
+        minSize={[100, 100]}
+        onDrag={([top, bottom]) => {
+          setlLayoutSplitRatio([bottom, top]);
+        }}
       >
-        <FileTree />
-        <div
-          style={{
-            overflow: 'hidden',
-            width: '100%',
-            height: '100%',
-          }}
+        <Split
+          className="split-horiz"
+          direction="horizontal"
+          sizes={[20, 80]}
+          gutterSize={1}
         >
-          <Editor />
-        </div>
-      </Split>
+          <div className="main-left">
+            <div className="left-menu"></div>
+            <FileTree />
+          </div>
 
-      <Timeline />
-    </Split>
+          <Editor />
+        </Split>
+
+        <Timeline />
+      </Split>
+    </div>
   );
 }
 
 const renderApp = () => {
-  window.monaco.editor.defineTheme('readonly', readOnlyTheme);
-  window.monaco.editor.defineTheme('defaultDark', defaultDarkTheme);
+  monaco.editor.defineTheme('defaultDark', defaultDarkTheme);
 
   ReactDOM.render(
     <React.StrictMode>
@@ -88,20 +85,8 @@ const renderApp = () => {
     document.getElementById('root')
   );
 };
-// to avoid dealing with monaco and webpack I am using amd version
-// taken from https://github.com/microsoft/monaco-editor-samples/blob/main/browser-amd-editor/index.html
-// monaco is loaded in index.html and monacoReady event is triggered when loaded
-declare global {
-  interface Window {
-    monacoLoaded: boolean;
-    monaco: typeof monaco;
-  }
-}
-if (window.monacoLoaded) {
-  renderApp();
-} else {
-  document.addEventListener('monacoReady', renderApp);
-}
+
+renderApp();
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))

@@ -55,16 +55,13 @@ export function EditorReadMode() {
 
     diffEditor.current?.dispose();
 
-    diffEditor.current = window.monaco.editor.createDiffEditor(
-      editorDiffDom.current,
-      {
-        automaticLayout: true,
-        theme: 'defaultDark',
-        originalEditable: false,
-        readOnly: true,
-        ignoreTrimWhitespace: false,
-      }
-    );
+    diffEditor.current = monaco.editor.createDiffEditor(editorDiffDom.current, {
+      automaticLayout: true,
+      theme: 'defaultDark',
+      originalEditable: false,
+      readOnly: true,
+      ignoreTrimWhitespace: false,
+    });
 
     diffEditor.current.setModel({
       original: modifiedModel,
@@ -78,5 +75,5 @@ export function EditorReadMode() {
     };
   }, [editorDiffDom]);
 
-  return <div ref={editorDiffDom} className={'monaco-preview'}></div>;
+  return <div ref={editorDiffDom} className="monaco read-mode"></div>;
 }

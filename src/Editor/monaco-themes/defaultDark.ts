@@ -10,6 +10,6 @@ export const defaultDarkTheme: monaco.editor.IStandaloneThemeData = {
     },
   ],
   colors: {
-    'editor.background': '#181A1C',
+    'editor.background': `#181A1C`,
   },
 };
