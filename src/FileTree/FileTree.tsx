@@ -31,13 +31,13 @@ export function FileTree() {
 
     let isFileAdded: Record<string, boolean> = {};
     for (const file of fileChanges) {
-      const { path, type } = file;
-      isFileAdded[path] = type === 'modified' || type === 'deleted';
+      const { path, status } = file;
+      isFileAdded[path] = status === 'modified' || status === 'deleted';
     }
 
     for (const id of appliedIds) {
-      const { path, type } = changes[id];
-      isFileAdded[path] = type === 'modified' || type === 'added';
+      const { path, status } = changes[id];
+      isFileAdded[path] = status === 'modified' || status === 'added';
     }
 
     return isFileAdded;

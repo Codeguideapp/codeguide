@@ -1,5 +1,5 @@
 export type File = {
-  type: 'added' | 'modified' | 'deleted';
+  status: 'added' | 'modified' | 'deleted';
   path: string;
   oldVal: string;
   newVal: string;
@@ -16,7 +16,7 @@ export const getFiles = async (pr: number): Promise<File[]> => {
   return [
     {
       path: 'test.ts',
-      type: 'modified',
+      status: 'modified',
       oldVal: `
       const renderApp = () =>
         ReactDOM.render(
@@ -44,19 +44,19 @@ export const getFiles = async (pr: number): Promise<File[]> => {
     },
     {
       path: 'added.ts',
-      type: 'added',
+      status: 'added',
       oldVal: '',
       newVal: `added file`,
     },
     {
       path: 'deleted.ts',
-      type: 'deleted',
+      status: 'deleted',
       oldVal: 'deleted file',
       newVal: ``,
     },
     {
       path: 'test2.ts',
-      type: 'modified',
+      status: 'modified',
       oldVal: `protected _createMouseTarget(e: EditorMouseEvent, testEventTarget: boolean): IMouseTarget {
           return this.mouseTargetFactory.createMouseTarget(this.viewHelper.getLastRenderData(), e.editorPos, e.pos, testEventTarget ? e.target : null);
         }`,
@@ -75,7 +75,7 @@ export const getFiles = async (pr: number): Promise<File[]> => {
     },
     {
       path: 'test3.ts',
-      type: 'modified',
+      status: 'modified',
       oldVal: `        const changeTracker = textChanges.ChangeTracker.fromContext({ host, formatContext, preferences });
 
       const coalesceAndOrganizeImports = (importGroup: readonly ImportDeclaration[]) => stableSort(
@@ -103,7 +103,7 @@ export const getFiles = async (pr: number): Promise<File[]> => {
     },
     {
       path: 'test4.ts',
-      type: 'modified',
+      status: 'modified',
       oldVal: `{
         "name": "@stoplight/elements-dev-portal",
         "version": "1.6.14",

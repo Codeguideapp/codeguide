@@ -24,7 +24,7 @@ export const saveDeltaAtom = atom(null, (get, set, delta: Delta) => {
     Object.values(changes).find(({ path }) => path === file.path) === undefined;
 
   if (
-    (file.type === 'modified' || file.type === 'deleted') &&
+    (file.status === 'modified' || file.status === 'deleted') &&
     isFileFirstChange
   ) {
     // in case this is the first change for a file
@@ -35,7 +35,7 @@ export const saveDeltaAtom = atom(null, (get, set, delta: Delta) => {
     const newChanges = produce(changes, (changesDraft) => {
       changesDraft[id] = {
         isFileDepChange: true,
-        type: 'modified',
+        status: 'modified',
         id,
         actions: {},
         color: '#0074bb',
@@ -54,14 +54,14 @@ export const saveDeltaAtom = atom(null, (get, set, delta: Delta) => {
     changesOrder = get(changesOrderAtom);
   }
 
-  let changeType = file.type;
-  if (file.type === 'added') {
+  let changeType = file.status;
+  if (file.status === 'added') {
     if (isFileFirstChange) {
       changeType = 'added';
     } else {
       changeType = 'modified';
     }
-  } else if (file.type === 'deleted') {
+  } else if (file.status === 'deleted') {
     const deltas = Object.values(changes)
       .filter(({ path }) => path === file.path)
       .map((c) => c.delta);
@@ -135,7 +135,7 @@ export const saveDeltaAtom = atom(null, (get, set, delta: Delta) => {
   const newChanges = produce(changes, (changesDraft) => {
     changesDraft[newDraftId] = {
       isFileDepChange: false,
-      type: changeType,
+      status: changeType,
       id: newDraftId,
       color: changeType === 'modified' ? '#374957' : '#0074bb',
       width: 50,
