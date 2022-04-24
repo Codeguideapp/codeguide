@@ -49,9 +49,10 @@ export function FileTree() {
     const treeData: DataNode[] = [];
 
     for (const file of data || []) {
+      const last = file.path.split('/').pop();
       treeData.push({
         key: file.path,
-        title: file.path,
+        title: last,
         isLeaf: true,
       });
     }

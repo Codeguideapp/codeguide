@@ -1,3 +1,5 @@
+import { Octokit } from 'octokit';
+
 export type File = {
   status: 'added' | 'modified' | 'deleted';
   path: string;
@@ -11,13 +13,65 @@ export const getFile = async (path: string) => {
   return files.find((f) => f.path === path);
 };
 
+const octokit = new Octokit({
+  auth: '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',
+});
+
 export const getFiles = async (pr: number): Promise<File[]> => {
-  await new Promise((r) => setTimeout(r, 1000));
+  const files: File[] = [];
+
+  const owner = 'stoplightio';
+  const repo = 'elements';
+  const pull_number = 1693;
+
+  const prReq = await octokit.request(
+    `GET /repos/${owner}/${repo}/pulls/${pull_number}`,
+    {
+      owner,
+      repo,
+      pull_number,
+    }
+  );
+  const baseSha = prReq.data.base.sha;
+
+  const filesReq = await octokit.request(
+    `GET /repos/${owner}/${repo}/pulls/${pull_number}/files`,
+    {
+      owner,
+      repo,
+      pull_number,
+    }
+  );
+
+  for (const file of filesReq.data) {
+    const oldVal = await fetch(
+      `https://raw.githubusercontent.com/${owner}/${repo}/${baseSha}/${encodeURIComponent(
+        file.filename
+      )}`
+    ).then((r) => r.text());
+
+    //console.log(file);
+    const newVal = await fetch(
+      `https://raw.githubusercontent.com/${owner}/${repo}/${
+        prReq.data.merge_commit_sha
+      }/${encodeURIComponent(file.filename)}`
+    ).then((r) => r.text());
+
+    files.push({
+      path: file.filename,
+      status: file.status,
+      oldVal,
+      newVal,
+    });
+  }
+
+  return files;
+
   return [
     {
       path: 'test.ts',
       status: 'modified',
-      oldVal: `
+      oldVal: `ggg
       const renderApp = () =>
         ReactDOM.render(
           <React.StrictMode>
@@ -38,9 +92,37 @@ export const getFiles = async (pr: number): Promise<File[]> => {
               <Something />
             </div>
           </React.>,
+        document.getElementById('hhhh')
+      )
+      `,
+    },
+    {
+      path: 'testbla.ts',
+      status: 'modified',
+      oldVal: `
+      const renderApp = () =>
+        ReactDOM.render(
+          <React.StrictMode>
+            <div>
+              <Editor />
+              <App />
+            </div>
+          </React.StrictMode>,
         document.getElementById('root')
       )
       `,
+      newVal: `
+      const renderApp = () =>
+        ReactDOM.render(
+          <Raaeact.StricttMode>
+            <div>
+            </div>
+          </React.StrictMode>,
+          kako smo
+        document.getElementById('hhhh')
+      )
+      
+      p`,
     },
     {
       path: 'added.ts',
