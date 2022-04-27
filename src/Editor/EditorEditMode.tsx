@@ -1,6 +1,6 @@
 import { Card } from 'antd';
 import { useAtom } from 'jotai';
-import { findLast } from 'lodash';
+import { findLast, last } from 'lodash';
 import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 import React, { useEffect, useRef, useState } from 'react';
@@ -8,247 +8,274 @@ import Split from 'react-split';
 
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
-import { layoutSplitRatioAtom, windowHeightAtom } from '../atoms/layout';
 import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
 import { composeDeltas } from '../utils/deltaUtils';
 import { getFileContent } from '../utils/getFileContent';
-import { modifiedModel, originalModel } from '../utils/monaco';
+import { modifiedModel, originalModel, previewModel } from '../utils/monaco';
 
-const topOffset = 45 + 21;
+// fix highlight linija kad ima children
+
 const lineHeight = 18;
 
 type DiffMarker = {
   op: 'replace' | 'insert' | 'delete';
-  rangeInModified: monaco.Range;
-  rangeInOriginal: monaco.Range;
-}[];
+  newVal: string;
+  modRange: monaco.Range;
+  children: DiffMarker[];
+};
+
+const calcDiff = (
+  diffEditor: monaco.editor.IStandaloneDiffEditor,
+  setDiffMarkers: React.Dispatch<React.SetStateAction<DiffMarker[]>>
+) => {
+  const lineChanges = diffEditor.getLineChanges();
+
+  let markers: DiffMarker[] = [];
+
+  if (lineChanges) {
+    for (const lineChange of lineChanges) {
+      let children: DiffMarker[] = [];
+
+      if (lineChange.charChanges) {
+        let charOffset = 0;
+
+        for (const charChange of lineChange.charChanges) {
+          const isDeletion = charChange.originalEndLineNumber === 0;
+          const isInsertion = charChange.modifiedEndLineNumber === 0;
+
+          if (isInsertion && isDeletion) {
+            // can happen when entire file is deleted/added
+            // for some reason charChanges exists, but all ranges are 0
+            continue;
+          }
+          if (isDeletion) {
+            children.push({
+              op: 'delete',
+              modRange: new monaco.Range(
+                charChange.modifiedStartLineNumber,
+                charChange.modifiedStartColumn,
+                charChange.modifiedEndLineNumber,
+                charChange.modifiedEndColumn
+              ),
+              newVal: originalModel.getValueInRange(
+                new monaco.Range(
+                  charChange.originalStartLineNumber,
+                  charChange.originalStartColumn,
+                  charChange.originalEndLineNumber,
+                  charChange.originalEndColumn
+                )
+              ),
+              children: [],
+            });
+          } else if (isInsertion) {
+            let newVal = originalModel.getValueInRange(
+              new monaco.Range(
+                charChange.originalStartLineNumber,
+                charChange.originalStartColumn,
+                charChange.originalEndLineNumber,
+                charChange.originalEndColumn
+              )
+            );
+            const maxColumn = originalModel.getLineMaxColumn(
+              charChange.originalEndLineNumber
+            );
+
+            if (
+              maxColumn === charChange.originalEndColumn &&
+              lineChange.originalEndLineNumber !==
+                charChange.originalEndLineNumber
+            ) {
+              newVal = newVal + originalModel.getEOL();
+            }
+
+            const insertInLine = diffEditor.getDiffLineInformationForOriginal(
+              charChange.originalEndLineNumber
+            )!.equivalentLineNumber;
+
+            const insertInColumn = charChange.originalStartColumn - charOffset;
+
+            children.push({
+              op: 'insert',
+              modRange: new monaco.Range(
+                insertInLine,
+                insertInColumn,
+                insertInLine,
+                insertInColumn
+              ),
+              newVal,
+              children: [],
+            });
+
+            charOffset =
+              charOffset +
+              charChange.originalEndColumn -
+              charChange.originalStartColumn;
+          } else {
+            children.push({
+              op: 'replace',
+              modRange: new monaco.Range(
+                charChange.modifiedStartLineNumber,
+                charChange.modifiedStartColumn,
+                charChange.modifiedEndLineNumber,
+                charChange.modifiedEndColumn
+              ),
+              newVal: originalModel.getValueInRange(
+                new monaco.Range(
+                  charChange.originalStartLineNumber,
+                  charChange.originalStartColumn,
+                  charChange.originalEndLineNumber,
+                  charChange.originalEndColumn
+                )
+              ),
+              children: [],
+            });
+          }
+        }
+      }
+
+      const isDeletion = lineChange.originalEndLineNumber === 0;
+      const isInsertion = lineChange.modifiedEndLineNumber === 0;
+
+      if (isInsertion) {
+        let newVal = originalModel.getValueInRange(
+          new monaco.Range(
+            lineChange.originalStartLineNumber,
+            1,
+            lineChange.originalEndLineNumber + 1,
+            1
+          )
+        );
+
+        const eqEnd = diffEditor.getDiffLineInformationForOriginal(
+          lineChange.originalEndLineNumber + 1
+        )!.equivalentLineNumber;
+
+        if (modifiedModel.getLineCount() < eqEnd) {
+          // it wont be able to add it at the end since the line doesn't exist
+          // add EOL at the beginning
+          newVal = originalModel.getEOL() + newVal;
+        }
+
+        markers.push({
+          op: 'insert',
+          modRange: new monaco.Range(eqEnd, 1, eqEnd, 1),
+          newVal,
+          children,
+        });
+      } else if (isDeletion) {
+        markers.push({
+          op: 'delete',
+          modRange: new monaco.Range(
+            lineChange.modifiedStartLineNumber,
+            1,
+            lineChange.modifiedEndLineNumber + 1,
+            1
+          ),
+          newVal: '',
+          children,
+        });
+      } else {
+        let newVal = originalModel.getValueInRange(
+          new monaco.Range(
+            lineChange.originalStartLineNumber,
+            1,
+            lineChange.originalEndLineNumber + 1,
+            1
+          )
+        );
+
+        const eqStart = diffEditor.getDiffLineInformationForOriginal(
+          lineChange.originalStartLineNumber
+        )!.equivalentLineNumber;
+
+        const eqEnd = diffEditor.getDiffLineInformationForOriginal(
+          lineChange.originalEndLineNumber + 1
+        )!.equivalentLineNumber;
+
+        markers.push({
+          op: 'replace',
+          modRange: new monaco.Range(eqStart, 1, eqEnd, 1),
+          newVal,
+          children,
+        });
+      }
+    }
+  }
+
+  setDiffMarkers(markers);
+};
 
 export function EditorEditMode() {
   const modifiedContentListener = useRef<monaco.IDisposable>();
   const diffListener = useRef<monaco.IDisposable>();
   const diffMouseDownListener = useRef<monaco.IDisposable>();
-  const rightEditorDom = useRef<HTMLDivElement>(null);
-  const editorDiffDom = useRef<HTMLDivElement>(null);
+  const monacoDom = useRef<HTMLDivElement>(null);
+  const diffEditorRef = useRef<monaco.editor.IStandaloneDiffEditor>();
   const editor = useRef<monaco.editor.IStandaloneCodeEditor>();
-  //const decorations = useRef<string[]>([]);
+  const decorations = useRef<string[]>([]);
   const [activeFile] = useAtom(activeFileAtom);
   const [, saveDelta] = useAtom(saveDeltaAtom);
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
-  const [layoutSplitRatio] = useAtom(layoutSplitRatioAtom);
-  const [windowHeight] = useAtom(windowHeightAtom);
-  const editorHeight = React.useMemo(
-    () =>
-      Math.ceil(windowHeight * (layoutSplitRatio[1] / 100)) - topOffset + 35,
-    [layoutSplitRatio, windowHeight]
-  );
 
-  const [lineNumbers, setLineNumbers] = useState(editorHeight);
-  const [diffMarkers, setDiffMarkers] = useState<DiffMarker>([]);
+  const highlightUndo = useRef<
+    {
+      range: monaco.Range;
+      text: string;
+    }[]
+  >([]);
+
+  const [diffMarkers, setDiffMarkers] = useState<DiffMarker[]>([]);
   const [originalColored, setOriginalColored] = useState<string[]>([]);
 
   useEffect(() => {
     // initializing editor
-    if (!editorDiffDom.current) return;
+    if (!monacoDom.current) return;
 
     editor.current?.dispose();
     diffListener.current?.dispose();
     diffMouseDownListener.current?.dispose();
 
-    editor.current = monaco.editor.create(editorDiffDom.current, {
+    editor.current = monaco.editor.create(monacoDom.current, {
       automaticLayout: true,
       theme: 'defaultDark',
       glyphMargin: true,
       lineHeight,
-      suggest: {},
+      smoothScrolling: true,
     });
 
-    const diffEditor = monaco.editor.createDiffEditor(
+    diffEditorRef.current = monaco.editor.createDiffEditor(
       document.createElement('div'),
       {
         automaticLayout: true,
         theme: 'defaultDark',
         glyphMargin: true,
         lineHeight,
+        ignoreTrimWhitespace: false,
       }
     );
 
-    diffEditor.setModel({
+    diffEditorRef.current.setModel({
       original: originalModel,
       modified: modifiedModel,
     });
 
     editor.current.setModel(modifiedModel);
 
-    const calcDiff = () => {
-      const lineChanges = diffEditor.getLineChanges();
-
-      let markers: {
-        op: 'replace' | 'insert' | 'delete';
-        rangeInModified: monaco.Range;
-        rangeInOriginal: monaco.Range;
-      }[] = [];
-      if (lineChanges) {
-        for (const lineChange of lineChanges) {
-          let op: 'replace' | 'insert' | 'delete' = 'replace';
-
-          if (lineChange.charChanges) {
-            for (const charChange of lineChange.charChanges) {
-              if (charChange.originalEndLineNumber === 0) {
-                op = 'delete';
-              } else if (
-                charChange.modifiedStartColumn ===
-                  charChange.modifiedEndColumn &&
-                charChange.modifiedStartLineNumber ===
-                  charChange.modifiedEndLineNumber
-              ) {
-                op = 'insert';
-              } else if (charChange.modifiedEndColumn === 0) {
-                op = 'delete';
-              } else {
-                op = 'replace';
-              }
-
-              markers.push({
-                op,
-                rangeInModified: new monaco.Range(
-                  charChange.modifiedStartLineNumber,
-                  charChange.modifiedStartColumn,
-                  charChange.modifiedEndLineNumber,
-                  charChange.modifiedEndColumn
-                ),
-                rangeInOriginal: new monaco.Range(
-                  charChange.originalStartLineNumber,
-                  charChange.originalStartColumn,
-                  charChange.originalEndLineNumber,
-                  charChange.originalEndColumn
-                ),
-              });
-            }
-          } else {
-            op = 'replace';
-
-            if (lineChange.modifiedEndLineNumber === 0) {
-              op = 'insert';
-            } else if (lineChange.modifiedEndLineNumber === 0) {
-              op = 'delete';
-            }
-            if (lineChange.originalEndLineNumber === 0) {
-              op = 'delete';
-            }
-
-            markers.push({
-              op,
-              rangeInModified:
-                lineChange.modifiedEndLineNumber === 0 // if 0, it is not found in modified, insert at the modifiedStartLineNumber
-                  ? new monaco.Range(
-                      lineChange.modifiedStartLineNumber,
-                      1,
-                      lineChange.modifiedStartLineNumber,
-                      1
-                    )
-                  : new monaco.Range(
-                      lineChange.modifiedStartLineNumber,
-                      1,
-                      lineChange.modifiedEndLineNumber + 1,
-                      1
-                    ),
-              rangeInOriginal: new monaco.Range(
-                lineChange.originalStartLineNumber,
-                1,
-                lineChange.originalEndLineNumber + 1,
-                1
-              ),
-            });
-          }
-        }
-      }
-
-      // // sort
-      // markers.sort((left, right) =>
-      //   monaco.Range.compareRangesUsingStarts(
-      //     left.rangeInModified,
-      //     right.rangeInModified
-      //   )
-      // );
-
-      setDiffMarkers(markers);
-
-      // for (const change of lineChanges) {
-
-      //   for (const charChange of change.charChanges || []) {
-      //     const modifiedChangedVal = originalModel.getValueInRange(
-      //       new monaco.Range(
-      //         charChange.modifiedStartLineNumber,
-      //         charChange.modifiedStartColumn,
-      //         charChange.modifiedEndLineNumber,
-      //         charChange.modifiedEndColumn
-      //       )
-      //     );
-
-      //     const originalChangedVal = modifiedModel.getValueInRange(
-      //       new monaco.Range(
-      //         charChange.originalStartLineNumber,
-      //         charChange.originalStartColumn,
-      //         charChange.originalEndLineNumber,
-      //         charChange.originalEndColumn
-      //       )
-      //     );
-
-      //     if (modifiedChangedVal) {
-      //       console.log('added', modifiedChangedVal);
-      //     }
-      //     if (originalChangedVal) {
-      //       console.log('deleted', originalChangedVal);
-      //     }
-      //   }
-
-      //   console.log(change);
-      // }
-    };
-    calcDiff();
-    diffListener.current = diffEditor.onDidUpdateDiff(calcDiff);
-    // diffListener.current = diffEditor.current.onDidUpdateDiff(() => {
-    //   if (!diffEditor.current) return;
-
-    //   const modifiedEditor = diffEditor.current.getModifiedEditor();
-    //   const lineChanges = diffEditor.current.getLineChanges() || [];
-    //   const ranges = lineChanges.map(
-    //     (l) =>
-    //       new monaco.Range(
-    //         l.modifiedStartLineNumber,
-    //         0,
-    //         l.modifiedEndLineNumber,
-    //         1
-    //       )
-    //   );
-
-    //   decorations.current = modifiedEditor.deltaDecorations(
-    //     decorations.current,
-    //     ranges.map((range) => {
-    //       return {
-    //         range,
-    //         options: {
-    //           glyphMarginClassName: 'diffglyph',
-    //         },
-    //       };
-    //     })
-    //   );
-    // });
-
-    // diffMouseDownListener.current = diffEditor.current
-    //   .getModifiedEditor()
-    //   .onMouseDown(diffGutterMouseHandler(diffEditor));
+    diffListener.current = diffEditorRef.current.onDidUpdateDiff((e) => {
+      if (!diffEditorRef.current) return;
+      calcDiff(diffEditorRef.current, setDiffMarkers);
+    });
 
     return () => {
       editor.current?.dispose();
+      diffEditorRef.current?.dispose();
       diffListener.current?.dispose();
-      //diffMouseDownListener.current?.dispose();
       modifiedContentListener.current?.dispose();
       modifiedModel.setValue('');
       originalModel.setValue('');
     };
-  }, [editorDiffDom]);
+  }, [monacoDom]);
 
   useEffect(() => {
     modifiedContentListener.current?.dispose();
@@ -275,7 +302,6 @@ export function EditorEditMode() {
         }
 
         setOriginalColored(spanPerLine);
-        //console.log(spanPerLine);
       });
 
     const previousChangeId = findLast(
@@ -296,13 +322,14 @@ export function EditorEditMode() {
     if (modifiedModel.getValue() !== current) {
       modifiedModel.setValue(current);
     }
+    if (previewModel.getValue() !== current) {
+      previewModel.setValue(current);
+    }
     if (originalModel.getValue() !== goal) {
       originalModel.setValue(goal);
     }
-    setLineNumbers(modifiedModel.getLineCount());
 
     modifiedContentListener.current = modifiedModel.onDidChangeContent((e) => {
-      setLineNumbers(modifiedModel.getLineCount());
       const deltas: Delta[] = [];
 
       e.changes
@@ -319,14 +346,144 @@ export function EditorEditMode() {
     });
   }, [activeFile, changesOrder, saveDelta]); // not watching changes as dep, because it is covered by changesOrder
 
-  // useEffect(() => {
-  //   editor.current?.onDidScrollChange((e) => {
-  //     // @ts-ignore
-  //     rightEditorDom.current?.scrollTo({ top: e.scrollTop });
-  //   });
+  const diffMarkerMouseEnterHandle = (marker: DiffMarker) => () => {
+    const viewstate = editor.current?.saveViewState();
 
-  //   if (!rightEditorDom.current) return;
-  // }, []);
+    editor.current?.updateOptions({
+      scrollbar: {
+        vertical: 'hidden',
+        horizontal: 'hidden',
+      },
+    });
+
+    const modifiedValue = modifiedModel.getValue();
+    const previewValue = previewModel.getValue();
+    if (modifiedValue !== previewValue) {
+      previewModel.setValue(modifiedValue);
+    }
+
+    editor.current?.setModel(previewModel);
+
+    if (viewstate) {
+      editor.current?.restoreViewState(viewstate);
+    }
+
+    if (marker.op === 'insert' || marker.op === 'replace') {
+      previewModel.applyEdits([
+        {
+          range: marker.modRange,
+          text: marker.newVal,
+        },
+      ]);
+
+      const startOffset = previewModel.getOffsetAt(
+        new monaco.Position(
+          marker.modRange.startLineNumber,
+          marker.modRange.startColumn
+        )
+      );
+      const endOffset = startOffset + marker.newVal.length;
+      const endPos = previewModel.getPositionAt(endOffset);
+
+      const range = new monaco.Range(
+        marker.modRange.startLineNumber,
+        marker.modRange.startColumn,
+        endPos.lineNumber,
+        endPos.column
+      );
+
+      highlightUndo.current = [
+        {
+          range,
+          text: '',
+        },
+      ];
+
+      decorations.current = editor.current!.deltaDecorations(
+        decorations.current,
+        [
+          {
+            range,
+            options: {
+              className: `${marker.op}-highlight`,
+            },
+          },
+        ]
+      );
+
+      editor.current?.revealRangeInCenterIfOutsideViewport(
+        range,
+        monaco.editor.ScrollType.Smooth
+      );
+    } else if (marker.op === 'delete') {
+      const oldVal = originalModel.getValueInRange(marker.modRange);
+      // previewModel.applyEdits([
+      //   {
+      //     range: marker.modRange,
+      //     text: '',
+      //   },
+      // ]);
+
+      decorations.current = editor.current!.deltaDecorations(
+        decorations.current,
+        [
+          {
+            range: marker.modRange,
+            options: {
+              className: 'delete-highlight',
+            },
+          },
+        ]
+      );
+
+      highlightUndo.current = [
+        {
+          range: marker.modRange,
+          text: oldVal,
+        },
+      ];
+
+      editor.current?.revealRangeInCenterIfOutsideViewport(
+        marker.modRange,
+        monaco.editor.ScrollType.Smooth
+      );
+    }
+  };
+
+  const diffMarkerMouseLeaveHandle = (marker: DiffMarker) => () => {
+    previewModel.applyEdits(highlightUndo.current);
+    highlightUndo.current = [];
+
+    const viewstate = editor.current?.saveViewState();
+    editor.current?.setModel(modifiedModel);
+    if (viewstate) {
+      editor.current?.restoreViewState(viewstate);
+    }
+
+    const modifiedValue = modifiedModel.getValue();
+    const previewValue = previewModel.getValue();
+    if (modifiedValue !== previewValue) {
+      previewModel.setValue(modifiedValue);
+    }
+
+    editor.current?.updateOptions({
+      scrollbar: {
+        vertical: 'auto',
+        horizontal: 'auto',
+      },
+    });
+  };
+
+  const diffMarkerClickHandle = (marker: DiffMarker) => () => {
+    if (marker.op === 'insert' || marker.op === 'replace') {
+      modifiedModel.applyEdits([
+        {
+          range: marker.modRange,
+          text: marker.newVal,
+        },
+      ]);
+    }
+  };
 
   return (
     <Split
@@ -335,9 +492,8 @@ export function EditorEditMode() {
       sizes={[60, 40]}
       gutterSize={1}
     >
-      <div ref={editorDiffDom} className="monaco edit-mode"></div>
+      <div ref={monacoDom} className="monaco edit-mode"></div>
       <div
-        ref={rightEditorDom}
         style={{
           position: 'relative',
           height: '100%',
@@ -346,33 +502,37 @@ export function EditorEditMode() {
         }}
       >
         {diffMarkers.map((marker, i) => (
-          <div
-            key={i}
-            style={{ width: 200, border: '1px solid red', margin: 20 }}
-          >
-            <div style={{ margin: 0 }}>
-              {marker.op === 'delete'
-                ? 'deleted ' +
-                  modifiedModel.getValueInRange(marker.rangeInModified)
-                : marker.op === 'replace'
-                ? 'replace ' +
-                  modifiedModel.getValueInRange(marker.rangeInModified) +
-                  'with ' +
-                  originalModel.getValueInRange(marker.rangeInOriginal)
-                : 'insert ' +
-                  originalModel.getValueInRange(marker.rangeInOriginal)}
+          <div key={i}>
+            <div
+              style={{ width: 200, border: '1px solid red', margin: 20 }}
+              onMouseEnter={diffMarkerMouseEnterHandle(marker)}
+              onMouseLeave={diffMarkerMouseLeaveHandle(marker)}
+              onClick={diffMarkerClickHandle(marker)}
+            >
+              <div style={{ margin: 0 }}>
+                {marker.op} {marker.newVal}
+              </div>
             </div>
+            {marker.children.map((child, cI) => (
+              <div
+                key={`${i}-${cI}`}
+                style={{
+                  width: 200,
+                  border: '1px solid blue',
+                  margin: 5,
+                  marginLeft: 30,
+                }}
+                onMouseEnter={diffMarkerMouseEnterHandle(child)}
+                onMouseLeave={diffMarkerMouseLeaveHandle(child)}
+                onClick={diffMarkerClickHandle(child)}
+              >
+                <div style={{ margin: 0 }}>
+                  {child.op} {child.newVal}
+                </div>
+              </div>
+            ))}
           </div>
         ))}
-
-        <div
-          style={{
-            position: 'absolute',
-            width: 5,
-            height: 5,
-            top: (lineNumbers - 1) * 18 + editorHeight,
-          }}
-        ></div>
       </div>
     </Split>
   );

@@ -1,6 +1,7 @@
 import * as monaco from 'monaco-editor';
 
 export const modifiedModel = monaco.editor.createModel('', 'typescript');
+export const previewModel = monaco.editor.createModel('', 'typescript');
 export const originalModel = monaco.editor.createModel('', 'typescript');
 monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
   noSemanticValidation: true,
