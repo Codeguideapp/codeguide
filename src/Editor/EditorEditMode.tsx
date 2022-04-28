@@ -369,52 +369,104 @@ export function EditorEditMode() {
     }
 
     if (marker.op === 'insert' || marker.op === 'replace') {
-      const newDecorations = [];
+      if (marker.children.length === 0) {
+        highlightUndo.current = previewModel.applyEdits(
+          [
+            {
+              range: marker.modRange,
+              text: marker.newVal,
+            },
+          ],
+          true
+        );
 
-      previewModel.applyEdits([
-        {
-          range: marker.modRange,
-          text: marker.newVal,
-        },
-      ]);
+        const highlightRange = getHighLightRange(marker);
 
-      const highlightRange = getHighLightRange(marker);
+        editor.current?.revealRangeInCenterIfOutsideViewport(
+          highlightRange,
+          monaco.editor.ScrollType.Smooth
+        );
 
-      highlightUndo.current = [
-        {
-          range: highlightRange,
-          text: '',
-        },
-      ];
+        decorations.current = editor.current!.deltaDecorations(
+          decorations.current,
+          [
+            {
+              range: highlightRange,
+              options: {
+                className: `${
+                  marker.children.length === 0 ? 'highlight-no-child' : ''
+                } ${marker.op}-highlight`,
+              },
+            },
+          ]
+        );
+      } else {
+        decorations.current = editor.current!.deltaDecorations(
+          decorations.current,
+          []
+        );
 
-      newDecorations.push({
-        range: highlightRange,
-        options: {
-          className: `${
-            marker.children.length === 0 ? 'highlight-no-child' : ''
-          } ${marker.op}-highlight`,
-        },
-      });
+        const iterate = [...marker.children.reverse()];
+        for (const child of iterate) {
+          const edit = previewModel.applyEdits(
+            [
+              {
+                range: child.modRange,
+                text: child.newVal,
+              },
+            ],
+            true
+          );
 
-      editor.current?.revealRangeInCenterIfOutsideViewport(
-        highlightRange,
-        monaco.editor.ScrollType.Smooth
-      );
+          const cRange = getHighLightRange(child);
 
-      for (const child of marker.children) {
-        const childRange = getHighLightRange(child);
-        newDecorations.push({
-          range: childRange,
-          options: {
-            className: `child-highlight ${child.op}-highlight`,
-          },
-        });
+          decorations.current.push(
+            ...editor.current!.deltaDecorations(
+              [],
+              [
+                {
+                  range: cRange,
+                  options: {
+                    className: `child-highlight ${child.op}-highlight`,
+                  },
+                },
+              ]
+            )
+          );
+
+          editor.current?.revealRangeInCenterIfOutsideViewport(
+            edit[0].range,
+            monaco.editor.ScrollType.Smooth
+          );
+        }
+
+        decorations.current.push(
+          ...editor.current!.deltaDecorations(
+            [],
+            [
+              {
+                range: getHighLightRange(marker),
+                options: {
+                  className: `${
+                    marker.children.length === 0 ? 'highlight-no-child' : ''
+                  } ${marker.op}-highlight`,
+                },
+              },
+            ]
+          )
+        );
+
+        // adding evertying in line range for proper undo
+        highlightUndo.current = previewModel.applyEdits(
+          [
+            {
+              range: getHighLightRange(marker),
+              text: marker.newVal,
+            },
+          ],
+          true
+        );
       }
-
-      decorations.current = editor.current!.deltaDecorations(
-        decorations.current,
-        newDecorations
-      );
     } else if (marker.op === 'delete') {
       const oldVal = originalModel.getValueInRange(marker.modRange);
       // previewModel.applyEdits([
