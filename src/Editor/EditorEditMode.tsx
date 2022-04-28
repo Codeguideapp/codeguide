@@ -369,6 +369,8 @@ export function EditorEditMode() {
     }
 
     if (marker.op === 'insert' || marker.op === 'replace') {
+      const newDecorations = [];
+
       previewModel.applyEdits([
         {
           range: marker.modRange,
@@ -376,44 +378,42 @@ export function EditorEditMode() {
         },
       ]);
 
-      const startOffset = previewModel.getOffsetAt(
-        new monaco.Position(
-          marker.modRange.startLineNumber,
-          marker.modRange.startColumn
-        )
-      );
-      const endOffset = startOffset + marker.newVal.length;
-      const endPos = previewModel.getPositionAt(endOffset);
-
-      const range = new monaco.Range(
-        marker.modRange.startLineNumber,
-        marker.modRange.startColumn,
-        endPos.lineNumber,
-        endPos.column
-      );
+      const highlightRange = getHighLightRange(marker);
 
       highlightUndo.current = [
         {
-          range,
+          range: highlightRange,
           text: '',
         },
       ];
 
-      decorations.current = editor.current!.deltaDecorations(
-        decorations.current,
-        [
-          {
-            range,
-            options: {
-              className: `${marker.op}-highlight`,
-            },
-          },
-        ]
-      );
+      newDecorations.push({
+        range: highlightRange,
+        options: {
+          className: `${
+            marker.children.length === 0 ? 'highlight-no-child' : ''
+          } ${marker.op}-highlight`,
+        },
+      });
 
       editor.current?.revealRangeInCenterIfOutsideViewport(
-        range,
+        highlightRange,
         monaco.editor.ScrollType.Smooth
+      );
+
+      for (const child of marker.children) {
+        const childRange = getHighLightRange(child);
+        newDecorations.push({
+          range: childRange,
+          options: {
+            className: `child-highlight ${child.op}-highlight`,
+          },
+        });
+      }
+
+      decorations.current = editor.current!.deltaDecorations(
+        decorations.current,
+        newDecorations
       );
     } else if (marker.op === 'delete') {
       const oldVal = originalModel.getValueInRange(marker.modRange);
@@ -502,25 +502,16 @@ export function EditorEditMode() {
         }}
       >
         {diffMarkers.map((marker, i) => (
-          <div key={i}>
-            <div
-              style={{ width: 200, border: '1px solid red', margin: 20 }}
-              onMouseEnter={diffMarkerMouseEnterHandle(marker)}
-              onMouseLeave={diffMarkerMouseLeaveHandle(marker)}
-              onClick={diffMarkerClickHandle(marker)}
-            >
-              <div style={{ margin: 0 }}>
-                {marker.op} {marker.newVal}
-              </div>
-            </div>
+          <div key={i} style={{ background: 'rgb(40 49 56)', padding: 10 }}>
             {marker.children.map((child, cI) => (
               <div
                 key={`${i}-${cI}`}
                 style={{
-                  width: 200,
-                  border: '1px solid blue',
-                  margin: 5,
-                  marginLeft: 30,
+                  width: '100%',
+                  height: 50,
+                  overflow: 'auto',
+                  background: '#374957',
+                  marginTop: 10,
                 }}
                 onMouseEnter={diffMarkerMouseEnterHandle(child)}
                 onMouseLeave={diffMarkerMouseLeaveHandle(child)}
@@ -531,9 +522,52 @@ export function EditorEditMode() {
                 </div>
               </div>
             ))}
+
+            {marker.children.length !== 1 && (
+              <div
+                style={{
+                  width: '100%',
+                  height: 50,
+                  marginTop: 10,
+                  overflow: 'auto',
+                  background: '#374957',
+                }}
+                onMouseEnter={diffMarkerMouseEnterHandle(marker)}
+                onMouseLeave={diffMarkerMouseLeaveHandle(marker)}
+                onClick={diffMarkerClickHandle(marker)}
+              >
+                <div style={{ margin: 0 }}>
+                  {marker.children.length === 0 ? (
+                    <div>
+                      {marker.op} {marker.newVal}
+                    </div>
+                  ) : (
+                    <div>all</div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
     </Split>
+  );
+}
+
+function getHighLightRange(marker: DiffMarker) {
+  const startOffset = previewModel.getOffsetAt(
+    new monaco.Position(
+      marker.modRange.startLineNumber,
+      marker.modRange.startColumn
+    )
+  );
+  const endOffset = startOffset + marker.newVal.length;
+  const endPos = previewModel.getPositionAt(endOffset);
+
+  return new monaco.Range(
+    marker.modRange.startLineNumber,
+    marker.modRange.startColumn,
+    endPos.lineNumber,
+    endPos.column
   );
 }

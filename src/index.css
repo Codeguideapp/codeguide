@@ -117,22 +117,22 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   border-left: 1px solid #000;
 }
 
-.insert-highlight {
-  background: green;
+.child-highlight {
+  z-index: 1;
 }
-.replace-highlight {
-  background: rgb(101, 101, 255);
+.highlight-no-child.insert-highlight {
+  background: rgba(213, 255, 116, 0.4);
+}
+.highlight-no-child.replace-highlight {
+  background: rgba(213, 255, 116, 0.4);
 }
 .delete-highlight {
-  background: red;
-}
-.replace-highlight-del {
-  background: var(--vscode-editor-background);
+  background: rgba(255, 0, 0, 0.5);
   z-index: 1;
   opacity: 0.7;
   position: relative;
 }
-.replace-highlight-del:before {
+.delete-highlight:before {
   position: absolute;
   content: '';
   left: 0;
@@ -140,4 +140,12 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   right: 0;
   border-top: 1px solid;
   border-color: var(--vscode-editor-foreground);
+  opacity: 0.5;
+}
+
+.insert-highlight {
+  background: rgba(155, 185, 85, 0.2);
+}
+.replace-highlight {
+  background: rgba(155, 185, 85, 0.2);
 }

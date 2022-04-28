@@ -98,6 +98,22 @@ export const getFiles = async (pr: number): Promise<File[]> => {
       `,
     },
     {
+      path: 'onclick',
+      status: 'modified',
+      oldVal: `
+        onClick={() => setIsFullScreen(!isFullScreen)}
+        `,
+      newVal: `
+        onClick={() => {
+          setIsFullScreen(!isFullScreen);
+  
+          if (visNetwork.current) {
+            visNetwork.current.fit();
+          }
+        }}
+        `,
+    },
+    {
       path: 'testbla.ts',
       status: 'modified',
       oldVal: `
