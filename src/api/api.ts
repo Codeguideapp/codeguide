@@ -67,8 +67,43 @@ export const getFiles = async (pr: number): Promise<File[]> => {
   // }
 
   // return files;
-
   return [
+    {
+      path: 'indent-tabs.ts',
+      status: 'modified',
+      oldVal: `-
+\t<Text color="body" role="heading">
+\t\tExample
+\t\tSecond
+\t</Text>
+`,
+      newVal: `-
+{examplesSelect || (
+\t\t\t\t<Text color="body" role="heading">
+\t\t\t\t\tExample
+\t\t\t\t\tSecond
+\t\t\t\t</Text>
+)}
+`,
+    },
+    {
+      path: 'indent-spaces.ts',
+      status: 'modified',
+      oldVal: `-
+<Text color="body" role="heading">
+  Example
+  Second
+</Text>
+`,
+      newVal: `-
+{examplesSelect || (
+  <Text color="body" role="heading">
+    Example
+    Second
+  </Text>
+)}
+`,
+    },
     {
       path: 'test.ts',
       status: 'modified',

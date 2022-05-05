@@ -144,8 +144,8 @@ body .monaco-diff-editor.side-by-side .editor.modified {
 }
 
 .insert-highlight {
-  background: rgba(155, 185, 85, 0.2);
+  background: rgba(213, 255, 116, 0.4);
 }
 .replace-highlight {
-  background: rgba(155, 185, 85, 0.2);
+  background: rgba(213, 255, 116, 0.4);
 }
