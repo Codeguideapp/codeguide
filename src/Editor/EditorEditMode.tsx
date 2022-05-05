@@ -242,7 +242,10 @@ export function EditorEditMode() {
     });
   };
 
-  const diffMarkerClickHandle = (marker: DiffMarker) => () => {};
+  const diffMarkerClickHandle = (marker: DiffMarker) => () => {
+    modifiedModel.applyEdits(getMonacoEdits(marker.delta, modifiedModel));
+    editor.current?.setModel(modifiedModel);
+  };
 
   return (
     <Split
