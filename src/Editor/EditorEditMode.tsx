@@ -9,10 +9,10 @@ import { DiffMarker, DiffMarkers, getDiffMarkers } from '../api/diffMarkers';
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
 import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
-import { composeDeltas } from '../utils/deltaUtils';
 import { getFileContent } from '../utils/getFileContent';
 import {
   getMonacoEdits,
+  getTabChar,
   modifiedModel,
   originalModel,
   previewModel,
@@ -53,6 +53,7 @@ export function EditorEditMode() {
       theme: 'defaultDark',
       glyphMargin: true,
       smoothScrolling: true,
+      tabSize: 2,
     });
 
     editor.current.setModel(modifiedModel);
@@ -117,32 +118,28 @@ export function EditorEditMode() {
       originalModel.setValue(goal);
     }
 
-    modifiedModel.detectIndentation(true, 2);
-    const { insertSpaces, indentSize } = modifiedModel.getOptions();
-    const tabChar = insertSpaces ? ' '.repeat(indentSize) : '\t';
-
     const markers = getDiffMarkers(
       modifiedModel.getValue(),
       originalModel.getValue(),
-      tabChar
+      getTabChar(modifiedModel)
     );
 
     setDiffMarkers(markers);
 
     modifiedContentListener.current = modifiedModel.onDidChangeContent((e) => {
-      const deltas: Delta[] = [];
+      let saved = new Delta();
 
       e.changes
-        .sort((c1, c2) => c2.rangeOffset - c1.rangeOffset)
+        .sort((c1, c2) => c1.rangeOffset - c2.rangeOffset)
         .forEach((change) => {
           const delta = new Delta();
           delta.retain(change.rangeOffset);
           delta.delete(change.rangeLength);
           delta.insert(change.text);
-          deltas.push(delta);
-        });
+          saveDelta(saved.transform(delta));
 
-      saveDelta(composeDeltas(deltas));
+          saved = saved.compose(delta);
+        });
     });
   }, [activeFile, changesOrder, saveDelta, setDiffMarkers]); // not watching changes as dep, because it is covered by changesOrder
 
@@ -243,7 +240,8 @@ export function EditorEditMode() {
   };
 
   const diffMarkerClickHandle = (marker: DiffMarker) => () => {
-    modifiedModel.applyEdits(getMonacoEdits(marker.delta, modifiedModel));
+    const edits = getMonacoEdits(marker.delta, modifiedModel);
+    modifiedModel.applyEdits(edits);
     editor.current?.setModel(modifiedModel);
   };
 

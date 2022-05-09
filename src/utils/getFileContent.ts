@@ -2,9 +2,18 @@ import { difference } from 'lodash';
 import Delta from 'quill-delta';
 
 import { Change } from '../atoms/types';
-import { composeDeltas, deltaToString } from './deltaUtils';
+import { deltaToString } from './deltaUtils';
 
-export function getFileContent({
+export function getFileContent(params: {
+  changeId: string;
+  changesOrder: string[];
+  changes: Record<string, Change>;
+}) {
+  const deltas = getDeltas(params).map((d) => d.delta);
+  return deltaToString(deltas);
+}
+
+export function getDeltas({
   changeId,
   changesOrder,
   changes,
@@ -24,7 +33,10 @@ export function getFileContent({
     pathFilteredIds.indexOf(change.id) + 1
   );
 
-  const deltas: Delta[] = [];
+  const deltas: {
+    id: string;
+    delta: Delta;
+  }[] = [];
   const appliedSoFar: string[] = [];
 
   for (const changeId of changesOrder) {
@@ -34,25 +46,16 @@ export function getFileContent({
 
     let { delta, deps } = changes[changeId];
     const addedIds = difference(appliedSoFar, deps);
-    const removedIds = difference(deps, appliedSoFar);
 
-    if (addedIds.length) {
-      const addedDelta = composeDeltas(addedIds.map((id) => changes[id].delta));
-
+    for (const id of addedIds) {
+      const index = appliedSoFar.indexOf(id);
+      const addedDelta = deltas[index].delta;
       delta = addedDelta.transform(delta);
     }
 
-    if (removedIds.length) {
-      const removedDelta = composeDeltas(
-        removedIds.map((id) => changes[id].deltaInverted)
-      );
-
-      delta = delta.transform(removedDelta);
-    }
-
-    deltas.push(delta);
+    deltas.push({ id: changeId, delta });
     appliedSoFar.push(changeId);
   }
 
-  return deltaToString(deltas);
+  return deltas;
 }

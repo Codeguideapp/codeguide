@@ -11,7 +11,8 @@ interface BaseDiffMarker {
   modifiedOffset: number;
   originalOffset: number;
   operation: 'replace' | 'insert' | 'delete';
-  value: string;
+  newValue: string;
+  oldValue: string;
   delta: Delta;
 }
 
@@ -58,7 +59,8 @@ export function getDiffMarkers(
           modifiedOffset,
           originalOffset,
           operation: 'delete',
-          value,
+          newValue: '',
+          oldValue: value,
           delta: new Delta([
             { retain: modifiedOffset },
             { delete: value.length },
@@ -83,7 +85,8 @@ export function getDiffMarkers(
           modifiedOffset,
           originalOffset,
           operation: 'replace',
-          value,
+          newValue: value,
+          oldValue: prev[1],
           delta: new Delta([
             { retain: modifiedOffset },
             { delete: prev[1].length },
@@ -99,7 +102,8 @@ export function getDiffMarkers(
           originalOffset,
           operation: 'insert',
           delta: new Delta([{ retain: modifiedOffset }, { insert: value }]),
-          value,
+          newValue: value,
+          oldValue: '',
         };
         if (isIndent(value, tab)) {
           markers[id] = {
@@ -196,7 +200,7 @@ function separateTabsAndNewLines(markers: DiffMarkers, tab: string) {
   let i = 0;
   for (const marker of markersArr) {
     const nextMarker = markersArr[i + 1];
-    const oldVal = marker.value;
+    const oldVal = marker.newValue;
     let matched = oldVal.match(re);
 
     if (
@@ -207,7 +211,7 @@ function separateTabsAndNewLines(markers: DiffMarkers, tab: string) {
       const tabs = matched[0].slice(1, matched[0].length); // removing matched /n at the beginning
       const newInsertVal = oldVal.slice(0, oldVal.length - tabs.length); // removing tab(s) at the end
 
-      marker.value = newInsertVal;
+      marker.newValue = newInsertVal;
       marker.delta = new Delta([
         { retain: marker.modifiedOffset },
         { insert: newInsertVal },
@@ -220,7 +224,8 @@ function separateTabsAndNewLines(markers: DiffMarkers, tab: string) {
         originalOffset: marker.originalOffset + newInsertVal.length,
         operation: 'insert',
         delta: new Delta([{ retain: marker.modifiedOffset }, { insert: tabs }]),
-        value: tabs,
+        newValue: tabs,
+        oldValue: '',
         type: 'indent',
         indentVal: tabs.split(tab).length - 1,
       };
