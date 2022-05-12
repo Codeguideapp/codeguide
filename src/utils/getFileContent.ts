@@ -50,6 +50,7 @@ export function getDeltas({
     for (const id of addedIds) {
       const index = appliedSoFar.indexOf(id);
       const addedDelta = deltas[index].delta;
+      // it doesnt work correctly because addedDelta also needs to be transformed sometimes
       delta = addedDelta.transform(delta);
     }
 

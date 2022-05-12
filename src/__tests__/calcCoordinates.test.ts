@@ -51,4 +51,21 @@ describe('calcCoordinates', () => {
       { id: '3', from: 7, to: 8, op: 'insert' },
     ]);
   });
+
+  it('should calc coordinates multiple insert', () => {
+    let delta = new Delta();
+    delta = delta.compose(new Delta().insert('gandalf'));
+    delta = delta.compose(new Delta().retain(8).insert('the'));
+
+    const res = calcCoordinates([
+      {
+        id: '1',
+        delta,
+      },
+    ]);
+    expect(res).toEqual([
+      { id: '1', from: 0, to: 7, op: 'insert' },
+      { id: '1', from: 8, to: 11, op: 'insert' },
+    ]);
+  });
 });

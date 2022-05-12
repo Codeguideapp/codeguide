@@ -5,11 +5,21 @@ import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 
 import { composeDeltas, deltaToString } from '../utils/deltaUtils';
+import { getDeltas } from '../utils/getFileContent';
 import { changesAtom, changesOrderAtom } from './changes';
 import { activeFileAtom } from './files';
 import { setPlayheadXAtom } from './playhead';
 
 // todo: find ways to refactor
+
+// calc current taken coordinates:
+
+// insert crvena delta 0 - 5
+// delete plava  delta 1 - 3, crvena sad 0 - 2
+// insert zelena delta 0 - 2, plava 3 - 5, crvena 2 - 4
+
+// kako transforimat deltu da bude u stanju nakon dep?
+// undo do dep,
 
 export const saveDeltaAtom = atom(null, (get, set, delta: Delta) => {
   const newDraftId = nanoid();
@@ -84,15 +94,25 @@ export const saveDeltaAtom = atom(null, (get, set, delta: Delta) => {
     }))
   );
 
+  const deltasToNow = getDeltas({
+    changeId: appliedIds[appliedIds.length - 1],
+    changes,
+    changesOrder: appliedIds,
+  });
+
   const foundDeps = takenCoordinates
     .filter((taken) => {
       // first transforming draft to the point when "taken" was applied
-      const toUndo = appliedIds.slice(appliedIds.indexOf(taken.id) + 1);
-
-      const toUndoDelta = composeDeltas(
-        toUndo.map((id) => changes[id].deltaInverted)
+      const toUndo = deltasToNow.slice(
+        deltasToNow.findIndex((d) => d.id === taken.id) + 1
       );
-      const draftTransformed = toUndoDelta.transform(delta);
+
+      let draftTransformed = delta;
+      for (const { delta } of toUndo) {
+        const undoChange = delta.invert(new Delta());
+        draftTransformed = undoChange.transform(draftTransformed);
+      }
+
       const draftCoordinates = calcCoordinates([
         {
           id: newDraftId,
@@ -123,12 +143,24 @@ export const saveDeltaAtom = atom(null, (get, set, delta: Delta) => {
   const baseIds = appliedIds.filter((id) => deps.includes(id));
   const idsToUndo = appliedIds.filter((id) => !deps.includes(id));
 
+  // todo: refactor
+  const toUndo = idsToUndo
+    .map((id) => deltasToNow.find((d) => d.id === id))
+    .sort((a, b) => {
+      return (
+        calcCoordinates([{ delta: a!.delta, id: 'a' }])[0].from -
+        calcCoordinates([{ delta: b!.delta, id: 'b' }])[0].from
+      );
+    })
+    .map((r) => r!.id);
+
   const baseComposed = composeDeltas(baseIds.map((id) => changes[id].delta));
-  const toUndoComposed = composeDeltas(
-    idsToUndo.map((id) => changes[id].delta)
-  );
-  const undoChanges = toUndoComposed.invert(baseComposed);
-  const draftChangeTransformed = undoChanges.transform(delta);
+
+  let draftChangeTransformed = delta;
+  for (const idToUndo of toUndo) {
+    const undoChange = changes[idToUndo].delta.invert(baseComposed);
+    draftChangeTransformed = undoChange.transform(draftChangeTransformed);
+  }
 
   const newChangesOrder = [...changesOrder, newDraftId];
 
@@ -192,19 +224,23 @@ export function calcCoordinates(
             index += op.retain;
             return null;
           } else if (op.delete) {
-            return {
+            const toReturn = {
               id,
               from: index,
               to: index + op.delete,
               op: 'delete',
             };
+            index -= op.delete;
+            return toReturn;
           } else if (typeof op.insert === 'string') {
-            return {
+            const toReturn = {
               id,
               from: index,
               to: index + op.insert.length,
               op: 'insert',
             };
+            index += op.insert.length;
+            return toReturn;
           }
           return null;
         })

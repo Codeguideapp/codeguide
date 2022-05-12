@@ -23,6 +23,9 @@ export const swapChangesAtom = atom(
     const fromIndex = changesOrder.indexOf(from);
     const toIndex = changesOrder.indexOf(to);
 
+    if (Math.abs(fromIndex - toIndex) !== 1) {
+      throw new Error(`only adjacent changes can switch places`);
+    }
     // moving array item
     const newChangesOrder = [...changesOrder];
     const elCopy = newChangesOrder[fromIndex];

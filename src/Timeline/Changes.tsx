@@ -1,9 +1,10 @@
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import React from 'react';
 import { Group, Layer, Rect } from 'react-konva';
 
 import {
   changesAtom,
+  changesOrderAtom,
   swapChangesAtom,
   updateChangesAtom,
 } from '../atoms/changes';
@@ -22,6 +23,7 @@ export function Changes({
   // used for displaying change "ghost" so it snaps back in that position on dragEnd
   const [snapPosX, setSnapPosX] = React.useState(-1);
   const [changes] = useAtom(changesAtom);
+  const changesOrder = useAtomValue(changesOrderAtom);
   const [, updateChanges] = useAtom(updateChangesAtom);
   const [, swapChanges] = useAtom(swapChangesAtom);
 
@@ -52,9 +54,21 @@ export function Changes({
               );
 
               const swapFrom = id;
-              const swapTo = shouldSwap?.[0];
+              let swapTo = shouldSwap?.[0];
 
               if (swapTo && swapFrom !== swapTo) {
+                const swapFromIndex = changesOrder.indexOf(swapFrom);
+                const swapToIndex = changesOrder.indexOf(swapTo);
+
+                if (Math.abs(swapFromIndex - swapToIndex) !== 1) {
+                  if (swapToIndex > swapFromIndex) {
+                    swapTo = changesOrder[swapFromIndex + 1];
+                  }
+                  if (swapToIndex < swapFromIndex) {
+                    swapTo = changesOrder[swapFromIndex - 1];
+                  }
+                }
+
                 if (
                   change.deps.includes(swapTo) ||
                   changes[swapTo].deps.includes(swapFrom)
@@ -63,8 +77,8 @@ export function Changes({
                 }
 
                 updateChanges((changes) => {
-                  changes[swapFrom].x = staticChanges[swapTo].x;
-                  changes[swapTo].x = staticChanges[swapFrom].x;
+                  changes[swapFrom].x = staticChanges[swapTo!].x;
+                  changes[swapTo!].x = staticChanges[swapFrom].x;
                 });
 
                 swapChanges({ from: swapFrom, to: swapTo });

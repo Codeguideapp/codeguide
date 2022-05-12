@@ -53,49 +53,6 @@ export function getMonacoEdits(
   return edits;
 }
 
-export function getMonacoEdits2(
-  deltas: Delta[],
-  monacoModel: monaco.editor.ITextModel
-) {
-  const edits: monaco.editor.IIdentifiedSingleEditOperation[] = [];
-
-  let index = 0;
-  for (const delta of deltas) {
-    for (const op of delta.ops) {
-      if (op.retain !== undefined) {
-        index += op.retain;
-      } else if (typeof op.insert === 'string') {
-        const posStart = monacoModel.getPositionAt(index);
-
-        edits.push({
-          range: new monaco.Range(
-            posStart.lineNumber,
-            posStart.column,
-            posStart.lineNumber,
-            posStart.column
-          ),
-          text: op.insert,
-        });
-      } else if (op.delete !== undefined) {
-        const posStart = monacoModel.getPositionAt(index);
-        const posEnd = monacoModel.getPositionAt(index + op.delete);
-
-        edits.push({
-          range: new monaco.Range(
-            posStart.lineNumber,
-            posStart.column,
-            posEnd.lineNumber,
-            posEnd.column
-          ),
-          text: '',
-        });
-      }
-    }
-  }
-
-  return edits;
-}
-
 export function getTabChar(monacoModel: monaco.editor.ITextModel) {
   monacoModel.detectIndentation(true, 2);
   const { insertSpaces, indentSize } = monacoModel.getOptions();

@@ -8,7 +8,7 @@ import Split from 'react-split';
 import { DiffMarker, DiffMarkers, getDiffMarkers } from '../api/diffMarkers';
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
-import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
+import { calcCoordinates, saveDeltaAtom } from '../atoms/saveDeltaAtom';
 import { getFileContent } from '../utils/getFileContent';
 import {
   getMonacoEdits,
@@ -136,6 +136,15 @@ export function EditorEditMode() {
           delta.retain(change.rangeOffset);
           delta.delete(change.rangeLength);
           delta.insert(change.text);
+          if (
+            calcCoordinates([{ delta: saved.transform(delta), id: '' }])
+              .length > 1
+          ) {
+            throw new Error('not supported - todo');
+            // todo: break delta into multiple saveDelta() calls in this case
+          }
+
+          console.log(saved.transform(delta));
           saveDelta(saved.transform(delta));
 
           saved = saved.compose(delta);
