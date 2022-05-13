@@ -8,7 +8,8 @@ import Split from 'react-split';
 import { DiffMarker, DiffMarkers, getDiffMarkers } from '../api/diffMarkers';
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
-import { calcCoordinates, saveDeltaAtom } from '../atoms/saveDeltaAtom';
+import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
+import { composeDeltas } from '../utils/deltaUtils';
 import { getFileContent } from '../utils/getFileContent';
 import {
   getMonacoEdits,
@@ -100,7 +101,7 @@ export function EditorEditMode() {
 
     const current = previousChangeId
       ? getFileContent({
-          changeId: previousChangeId,
+          upToChangeId: previousChangeId,
           changes,
           changesOrder,
         })
@@ -127,28 +128,31 @@ export function EditorEditMode() {
     setDiffMarkers(markers);
 
     modifiedContentListener.current = modifiedModel.onDidChangeContent((e) => {
-      let saved = new Delta();
+      const deltas: Delta[] = [];
+
+      if (
+        activeFile.status !== 'added' &&
+        !changesOrder.find((id) => changes[id].path === activeFile.path)
+      ) {
+        // this is first time change is saved for a file
+        saveDelta({
+          file: activeFile,
+          isFileDepChange: true,
+          delta: new Delta().insert(activeFile.oldVal),
+        });
+      }
 
       e.changes
-        .sort((c1, c2) => c1.rangeOffset - c2.rangeOffset)
+        .sort((c1, c2) => c2.rangeOffset - c1.rangeOffset)
         .forEach((change) => {
           const delta = new Delta();
           delta.retain(change.rangeOffset);
           delta.delete(change.rangeLength);
           delta.insert(change.text);
-          if (
-            calcCoordinates([{ delta: saved.transform(delta), id: '' }])
-              .length > 1
-          ) {
-            throw new Error('not supported - todo');
-            // todo: break delta into multiple saveDelta() calls in this case
-          }
-
-          console.log(saved.transform(delta));
-          saveDelta(saved.transform(delta));
-
-          saved = saved.compose(delta);
+          deltas.push(delta);
         });
+
+      saveDelta({ delta: composeDeltas(deltas), file: activeFile });
     });
   }, [activeFile, changesOrder, saveDelta, setDiffMarkers]); // not watching changes as dep, because it is covered by changesOrder
 

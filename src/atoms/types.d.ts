@@ -10,7 +10,6 @@ export type Change = {
   x: number;
   color: string;
   path: string;
-  deps: string[];
   width: number;
   actions: Record<
     string,

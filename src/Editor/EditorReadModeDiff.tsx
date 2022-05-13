@@ -33,14 +33,14 @@ export function EditorReadModeDiff() {
 
     const before = previousChange
       ? getFileContent({
-          changeId: previousChange.id,
+          upToChangeId: previousChange.id,
           changes,
           changesOrder,
         })
       : '';
 
     const after = getFileContent({
-      changeId: activeChangeId,
+      upToChangeId: activeChangeId,
       changes,
       changesOrder,
     });

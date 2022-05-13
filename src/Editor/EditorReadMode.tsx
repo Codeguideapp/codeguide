@@ -7,20 +7,16 @@ import {
   changesAtom,
   changesOrderAtom,
 } from '../atoms/changes';
-import { getDeltas } from '../utils/getFileContent';
-import { blankModel, getMonacoEdits } from '../utils/monaco';
+import { applyDelta, blankModel } from '../utils/monaco';
 
 type OpenFile = {
   model: monaco.editor.ITextModel;
-  changes: {
-    id: string;
-    edits: monaco.editor.IValidEditOperation[];
-  }[];
+  changes: string[];
 };
 
 export function EditorReadMode() {
   const editorDiffDom = useRef<HTMLDivElement>(null);
-  const diffEditor = useRef<monaco.editor.IStandaloneCodeEditor>();
+  const editor = useRef<monaco.editor.IStandaloneCodeEditor>();
   const activeChangeId = useAtomValue(activeChangeIdAtom);
   const changes = useAtomValue(changesAtom);
   const changesOrder = useAtomValue(changesOrderAtom);
@@ -29,8 +25,8 @@ export function EditorReadMode() {
   useEffect(() => {
     if (!editorDiffDom.current) return;
 
-    if (!diffEditor.current) {
-      diffEditor.current = monaco.editor.create(editorDiffDom.current, {
+    if (!editor.current) {
+      editor.current = monaco.editor.create(editorDiffDom.current, {
         automaticLayout: true,
         theme: 'defaultDark',
         readOnly: true,
@@ -39,7 +35,7 @@ export function EditorReadMode() {
 
     if (!activeChangeId) {
       if (blankModel.isAttachedToEditor() === false) {
-        diffEditor.current?.setModel(blankModel);
+        editor.current?.setModel(blankModel);
       }
       return;
     }
@@ -56,54 +52,39 @@ export function EditorReadMode() {
     }
 
     if (file.model.isAttachedToEditor() === false) {
-      diffEditor.current?.setModel(file.model);
+      editor.current?.setModel(file.model);
     }
 
-    const pathFilteredIds = changesOrder.filter(
+    const fileChangesIds = changesOrder.filter(
       (id) => changes[id].path === change.path
     );
-    const changesIdsToApply = pathFilteredIds.slice(
-      0,
-      pathFilteredIds.indexOf(activeChangeId) + 1
-    );
+    const changesUpToActive = fileChangesIds
+      .slice(0, fileChangesIds.indexOf(activeChangeId) + 1)
+      .map((id) => ({ id, delta: changes[id].delta }));
 
-    let sameUntil = -1;
-    for (let i = 0; i < file.changes.length; i++) {
-      if (file.changes[i].id !== changesIdsToApply[i]) {
-        break;
-      } else {
-        sameUntil = i;
-      }
-    }
-
-    if (
-      changesIdsToApply.length === file.changes.length &&
-      changesIdsToApply.length === sameUntil + 1
-    ) {
+    if (changesUpToActive.length === file.changes.length) {
       return;
     }
 
-    const deltas = getDeltas({
-      changeId: activeChangeId,
-      changes,
-      changesOrder,
-    });
+    if (file.changes.length > changesUpToActive.length) {
+      const numChangesToUno = file.changes.length - changesUpToActive.length;
 
-    const toUndo = file.changes.slice(sameUntil + 1);
-    const toApply = deltas.slice(sameUntil + 1);
-
-    for (let i = 0; i < toUndo.length; i++) {
-      const last = file.changes.pop();
-      if (last) {
-        file.model.applyEdits(last.edits);
+      for (let i = 0; i < numChangesToUno; i++) {
+        const last = file.changes.pop();
+        if (last) {
+          const delta = changes[last].deltaInverted;
+          applyDelta(delta, file.model);
+        }
       }
     }
 
-    for (const { delta, id } of toApply) {
-      file.changes.push({
-        edits: file.model.applyEdits(getMonacoEdits(delta, file.model), true),
-        id,
-      });
+    if (changesUpToActive.length > file.changes.length) {
+      const numChangesToApply = changesUpToActive.length - file.changes.length;
+
+      for (const { delta, id } of changesUpToActive.slice(-numChangesToApply)) {
+        applyDelta(delta, file.model);
+        file.changes.push(id);
+      }
     }
   }, [editorDiffDom, changes, changesOrder, activeChangeId]);
 
@@ -113,7 +94,7 @@ export function EditorReadMode() {
       for (const file of Object.values(openFiles.current)) {
         file.model.dispose();
       }
-      diffEditor.current?.dispose();
+      editor.current?.dispose();
     };
   }, [editorDiffDom]);
 
