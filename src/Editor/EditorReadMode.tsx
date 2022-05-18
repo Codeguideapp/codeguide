@@ -7,11 +7,12 @@ import {
   changesAtom,
   changesOrderAtom,
 } from '../atoms/changes';
-import { applyDelta, blankModel } from '../utils/monaco';
+import { applyDelta, blankModel, getRange } from '../utils/monaco';
 
 type OpenFile = {
   model: monaco.editor.ITextModel;
   changes: string[];
+  decorations: string[];
 };
 
 export function EditorReadMode() {
@@ -30,6 +31,7 @@ export function EditorReadMode() {
         automaticLayout: true,
         theme: 'defaultDark',
         readOnly: true,
+        smoothScrolling: true,
       });
     }
 
@@ -47,6 +49,7 @@ export function EditorReadMode() {
       openFiles.current[change.path] = {
         model: monaco.editor.createModel('', 'typescript'),
         changes: [],
+        decorations: [],
       };
       file = openFiles.current[change.path];
     }
@@ -62,18 +65,15 @@ export function EditorReadMode() {
       .slice(0, fileChangesIds.indexOf(activeChangeId) + 1)
       .map((id) => ({ id, delta: changes[id].delta }));
 
-    if (changesUpToActive.length === file.changes.length) {
-      return;
-    }
-
     if (file.changes.length > changesUpToActive.length) {
       const numChangesToUno = file.changes.length - changesUpToActive.length;
 
       for (let i = 0; i < numChangesToUno; i++) {
         const last = file.changes.pop();
-        if (last) {
-          const delta = changes[last].deltaInverted;
-          applyDelta(delta, file.model);
+        const delta = last ? changes[last].deltaInverted : undefined;
+        if (delta) {
+          const cursorOffset = applyDelta(delta, file.model);
+          editor.current.setPosition(file.model.getPositionAt(cursorOffset));
         }
       }
     }
@@ -82,10 +82,30 @@ export function EditorReadMode() {
       const numChangesToApply = changesUpToActive.length - file.changes.length;
 
       for (const { delta, id } of changesUpToActive.slice(-numChangesToApply)) {
-        applyDelta(delta, file.model);
+        if (delta) {
+          const cursorOffset = applyDelta(delta, file.model);
+          editor.current.setPosition(file.model.getPositionAt(cursorOffset));
+        }
         file.changes.push(id);
       }
     }
+
+    file.decorations = editor.current.deltaDecorations(
+      file.decorations,
+      changes[activeChangeId].highlight.map((highlight) => ({
+        range: getRange(file.model, highlight.offset, highlight.length),
+        options: highlight.options,
+      }))
+    );
+
+    changes[activeChangeId].highlight.forEach((highlight, i) => {
+      const range = getRange(file.model, highlight.offset, highlight.length);
+
+      editor.current?.revealRangeInCenterIfOutsideViewport(
+        range,
+        monaco.editor.ScrollType.Smooth
+      );
+    });
   }, [editorDiffDom, changes, changesOrder, activeChangeId]);
 
   useEffect(() => {

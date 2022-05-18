@@ -14,12 +14,12 @@ export function getFileContent({
   if (!change) throw new Error('change not found');
 
   const pathFilteredIds = changesOrder.filter(
-    (id) => changes[id].path === change.path
+    (id) => changes[id].path === change.path && changes[id].delta
   );
   const changesIdsToApply = pathFilteredIds.slice(
     0,
     pathFilteredIds.indexOf(change.id) + 1
   );
 
-  return deltaToString(changesIdsToApply.map((id) => changes[id].delta));
+  return deltaToString(changesIdsToApply.map((id) => changes[id].delta!));
 }

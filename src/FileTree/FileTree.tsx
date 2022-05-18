@@ -36,8 +36,8 @@ export function FileTree() {
     }
 
     for (const id of appliedIds) {
-      const { path, status } = changes[id];
-      isFileAdded[path] = status === 'modified' || status === 'added';
+      const { path, fileStatus } = changes[id];
+      isFileAdded[path] = fileStatus === 'modified' || fileStatus === 'added';
     }
 
     return isFileAdded;

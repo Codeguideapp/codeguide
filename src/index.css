@@ -56,6 +56,10 @@ code {
 .main-right {
   width: 100%;
   height: 100%;
+  user-select: none;
+  -moz-user-select: none;
+  -khtml-user-select: none;
+  -webkit-user-select: none;
 }
 .editor-top {
   height: 20px;
@@ -117,15 +121,6 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   border-left: 1px solid #000;
 }
 
-.child-highlight {
-  z-index: 1;
-}
-.highlight-no-child.insert-highlight {
-  background: rgba(213, 255, 116, 0.4);
-}
-.highlight-no-child.replace-highlight {
-  background: rgba(213, 255, 116, 0.4);
-}
 .delete-highlight {
   background: rgba(255, 0, 0, 0.5);
   z-index: 1;
@@ -144,8 +139,32 @@ body .monaco-diff-editor.side-by-side .editor.modified {
 }
 
 .insert-highlight {
-  background: rgba(213, 255, 116, 0.4);
+  background: rgba(213, 255, 116, 0.3);
 }
 .replace-highlight {
-  background: rgba(213, 255, 116, 0.4);
+  background: rgba(116, 162, 255, 0.3);
+}
+
+.highlight-cursor {
+  position: absolute;
+  border-left: orange solid 2px;
+  border-top: orange solid 2px;
+  border-bottom: orange solid 2px;
+  height: 100%;
+  box-sizing: border-box;
+}
+.highlight-cursor::after {
+  position: absolute;
+  content: ' ';
+  border: 3px solid orange;
+  border-radius: 4px;
+  left: -4px;
+  top: -5px;
+}
+
+.cursor-color-replace, .cursor-color-replace::after {
+  border-color: rgb(0, 115, 255);
+}
+.cursor-color-delete, .cursor-color-delete::after {
+  border-color: red;
 }

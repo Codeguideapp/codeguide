@@ -139,6 +139,7 @@ export function EditorEditMode() {
           file: activeFile,
           isFileDepChange: true,
           delta: new Delta().insert(activeFile.oldVal),
+          eolChar: modifiedModel.getEOL(),
         });
       }
 
@@ -152,7 +153,11 @@ export function EditorEditMode() {
           deltas.push(delta);
         });
 
-      saveDelta({ delta: composeDeltas(deltas), file: activeFile });
+      saveDelta({
+        delta: composeDeltas(deltas),
+        file: activeFile,
+        eolChar: modifiedModel.getEOL(),
+      });
     });
   }, [activeFile, changesOrder, saveDelta, setDiffMarkers]); // not watching changes as dep, because it is covered by changesOrder
 

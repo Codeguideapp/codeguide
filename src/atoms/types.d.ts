@@ -1,11 +1,20 @@
+import type * as monaco from 'monaco-editor';
 import type Delta from 'quill-delta';
 
 export type Changes = Record<string, Readonly<Change>>; // changes is updated using immer so the result object can be read only
+
 export type Change = {
-  status: 'added' | 'modified' | 'deleted';
+  fileStatus: 'added' | 'modified' | 'deleted';
+  highlight: {
+    offset: number;
+    length: number;
+    type: 'delete' | 'insert' | 'replace';
+    options: monaco.editor.IModelDecorationOptions;
+  }[];
+  parentChangeId?: string;
   isFileDepChange: boolean;
-  delta: Delta;
-  deltaInverted: Delta;
+  delta?: Delta;
+  deltaInverted?: Delta;
   id: string;
   x: number;
   color: string;
