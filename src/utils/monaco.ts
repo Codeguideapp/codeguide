@@ -107,60 +107,67 @@ export function getHighlightsBefore(delta: Delta, eolChar: string) {
   const highlights: Change['highlight'] = [];
 
   let index = 0;
-  let i = 0;
 
-  // todo: refactor by iterating delta.ops and check nextOp for "replace" (not highlights arr like now)
+  for (let i = 0; i < delta.ops.length; i++) {
+    const op = delta.ops[i];
 
-  for (const op of delta.ops) {
     if (op.retain !== undefined) {
       index += op.retain;
     } else if (typeof op.insert === 'string') {
-      highlights.push({
-        offset: op.insert.startsWith(eolChar) ? index + eolChar.length : index,
-        length: 0,
-        type: 'insert',
-        options: {
-          className: 'highlight-cursor',
-        },
-      });
-      i++;
-    } else if (op.delete !== undefined) {
-      if (highlights[i - 1]?.type === 'insert') {
-        highlights[i - 1].offset += op.delete;
-        highlights[i - 1].options = {
-          className: 'highlight-cursor cursor-color-replace',
-        };
-
+      const nextOp = delta.ops[i + 1];
+      if (nextOp?.delete) {
+        // replace
+        highlights.push({
+          offset: op.insert.startsWith(eolChar)
+            ? index + eolChar.length + nextOp.delete
+            : index + nextOp.delete,
+          length: 0,
+          type: 'replace',
+          options: {
+            className: 'highlight-cursor cursor-color-replace',
+          },
+        });
         highlights.push({
           offset: index,
-          length: op.delete,
+          length: nextOp.delete,
           type: 'replace',
           options: {
             className: 'replace-highlight',
           },
         });
-        i++;
-      } else {
-        highlights.push({
-          offset: index,
-          length: op.delete,
-          type: 'delete',
-          options: {
-            className: 'delete-highlight',
-          },
-        });
-        i++;
 
+        i++; // skip next delta since it's covered here
+      } else {
+        // normal insert
         highlights.push({
-          offset: index + op.delete,
+          offset: op.insert.startsWith(eolChar)
+            ? index + eolChar.length
+            : index,
           length: 0,
           type: 'insert',
           options: {
-            className: 'highlight-cursor cursor-color-delete',
+            className: 'highlight-cursor',
           },
         });
-        i++;
       }
+    } else if (op.delete !== undefined) {
+      highlights.push({
+        offset: index,
+        length: op.delete,
+        type: 'delete',
+        options: {
+          className: 'delete-highlight',
+        },
+      });
+
+      highlights.push({
+        offset: index + op.delete,
+        length: 0,
+        type: 'insert',
+        options: {
+          className: 'highlight-cursor cursor-color-delete',
+        },
+      });
     }
   }
 
@@ -170,55 +177,64 @@ export function getHighlightsAfter(delta: Delta, eolChar: string) {
   const highlights: Change['highlight'] = [];
 
   let index = 0;
-  let i = 0;
-  for (const op of delta.ops) {
+  for (let i = 0; i < delta.ops.length; i++) {
+    const op = delta.ops[i];
     if (op.retain !== undefined) {
       index += op.retain;
     } else if (typeof op.insert === 'string') {
-      highlights.push({
-        offset: index,
-        length: op.insert.length,
-        type: 'insert',
-        options: {
-          className: 'insert-highlight',
-        },
-      });
-      i++;
+      const nextOp = delta.ops[i + 1];
+      if (nextOp?.delete) {
+        highlights.push({
+          offset: index,
+          length: op.insert.length,
+          type: 'replace',
+          options: {
+            className: 'replace-highlight',
+          },
+        });
 
-      const newLineOffset = op.insert.endsWith(eolChar) ? -eolChar.length : 0;
-      highlights.push({
-        offset: index + op.insert.length + newLineOffset,
-        length: 0,
-        type: 'insert',
-        options: {
-          className: 'highlight-cursor',
-        },
-      });
-      i++;
+        const newLineOffset = op.insert.endsWith(eolChar) ? -eolChar.length : 0;
+        highlights.push({
+          offset: index + op.insert.length + newLineOffset,
+          length: 0,
+          type: 'replace',
+          options: {
+            className: 'highlight-cursor cursor-color-replace',
+          },
+        });
 
-      index += op.insert.length;
-    } else if (op.delete !== undefined) {
-      if (highlights[i - 1]?.type === 'insert') {
-        highlights[i - 2].type = 'replace';
-        highlights[i - 2].options = {
-          className: 'replace-highlight',
-        };
-
-        highlights[i - 1].type = 'replace';
-        highlights[i - 1].options = {
-          className: 'highlight-cursor cursor-color-replace',
-        };
+        i++; // skip next delta since it's covered here
       } else {
         highlights.push({
           offset: index,
+          length: op.insert.length,
+          type: 'insert',
+          options: {
+            className: 'insert-highlight',
+          },
+        });
+
+        const newLineOffset = op.insert.endsWith(eolChar) ? -eolChar.length : 0;
+        highlights.push({
+          offset: index + op.insert.length + newLineOffset,
           length: 0,
           type: 'insert',
           options: {
-            className: 'highlight-cursor cursor-color-delete',
+            className: 'highlight-cursor',
           },
         });
-        i++;
+
+        index += op.insert.length;
       }
+    } else if (op.delete !== undefined) {
+      highlights.push({
+        offset: index,
+        length: 0,
+        type: 'delete',
+        options: {
+          className: 'highlight-cursor cursor-color-delete',
+        },
+      });
     }
   }
 
