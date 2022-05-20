@@ -178,6 +178,7 @@ export function EditorEditMode() {
       previewModel.setValue(modifiedValue);
     }
 
+    previewModel.updateOptions(modifiedModel.getOptions());
     editor.current?.setModel(previewModel);
 
     if (viewstate) {

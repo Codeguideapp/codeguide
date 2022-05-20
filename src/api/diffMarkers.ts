@@ -76,7 +76,7 @@ export function getDiffMarkers(
         }
         modifiedOffset += value.length;
       }
-    } else if (type === DIFF_INSERT) {
+    } else if (type === DIFF_INSERT && value.length !== 0) {
       const id = nanoid();
 
       if (prev?.[0] === DIFF_DELETE) {
