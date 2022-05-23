@@ -122,9 +122,8 @@ body .monaco-diff-editor.side-by-side .editor.modified {
 }
 
 .delete-highlight {
-  background: rgba(255, 0, 0, 0.5);
+  background: rgba(100, 0, 0, 0.6);
   z-index: 1;
-  opacity: 0.7;
   position: relative;
 }
 .delete-highlight:before {
@@ -135,8 +134,9 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   right: 0;
   border-top: 1px solid;
   border-color: var(--vscode-editor-foreground);
-  opacity: 0.5;
+  opacity: 0.3;
 }
+
 
 .insert-highlight {
   background: rgba(213, 255, 116, 0.3);

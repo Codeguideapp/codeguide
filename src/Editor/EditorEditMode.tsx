@@ -13,6 +13,7 @@ import { composeDeltas } from '../utils/deltaUtils';
 import { getFileContent } from '../utils/getFileContent';
 import {
   getMonacoEdits,
+  getRange,
   getTabChar,
   modifiedModel,
   originalModel,
@@ -200,6 +201,53 @@ export function EditorEditMode() {
       );
       editor.current?.revealRangeInCenterIfOutsideViewport(
         edits[0].range,
+        monaco.editor.ScrollType.Smooth
+      );
+    } else if (marker.operation === 'replace') {
+      const delta = new Delta()
+        .retain(marker.modifiedOffset)
+        .retain(marker.oldValue.length)
+        .insert(marker.newValue);
+
+      const edits = getMonacoEdits(delta, previewModel);
+
+      if (edits.length === 0) return;
+
+      highlightUndo.current = previewModel.applyEdits(edits, true);
+
+      decorations.current = editor.current!.deltaDecorations(
+        decorations.current,
+        [
+          {
+            range: getRange(
+              previewModel,
+              marker.modifiedOffset,
+              marker.oldValue.length
+            ),
+            options: {
+              className: 'delete-highlight',
+            },
+          },
+          ...highlightUndo.current.map((edit) => ({
+            range: edit.range,
+            options: {
+              className: 'insert-highlight',
+            },
+          })),
+        ]
+      );
+
+      const startRange = highlightUndo.current[0].range;
+      const endRange =
+        highlightUndo.current[highlightUndo.current.length - 1].range;
+
+      editor.current?.revealRangeInCenterIfOutsideViewport(
+        new monaco.Range(
+          startRange.startLineNumber,
+          startRange.startColumn,
+          endRange.endLineNumber,
+          endRange.endColumn
+        ),
         monaco.editor.ScrollType.Smooth
       );
     } else {
