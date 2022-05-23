@@ -1,6 +1,17 @@
 import { DIFF_INSERT, diff_match_patch } from 'diff-match-patch';
 
-export function diffChars(oldStr: string, newStr: string) {
+export function diff_lineMode(text1: string, text2: string) {
+  var dmp = new diff_match_patch();
+  var a = dmp.diff_linesToChars_(text1, text2);
+  var lineText1 = a.chars1;
+  var lineText2 = a.chars2;
+  var lineArray = a.lineArray;
+  var diffs = dmp.diff_main(lineText1, lineText2, false);
+  dmp.diff_charsToLines_(diffs, lineArray);
+  return diffs;
+}
+
+export function diff_charMode(oldStr: string, newStr: string) {
   const dmp = new diff_match_patch();
   const diffs = dmp.diff_main(oldStr, newStr);
   dmp.diff_cleanupSemantic(diffs);

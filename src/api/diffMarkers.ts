@@ -3,11 +3,11 @@ import lineColumn from 'line-column';
 import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 
-import { diffChars } from './diffMatchPatch';
+import { diff_charMode, diff_lineMode } from './diffMatchPatch';
 import { mergeTabsInSequence } from './diffMatchPatch';
-
 interface BaseDiffMarker {
   id: string;
+  length: number;
   modifiedOffset: number;
   originalOffset: number;
   operation: 'replace' | 'insert' | 'delete';
@@ -32,8 +32,68 @@ export function getDiffMarkers(
   modifiedValue: string,
   originalValue: string,
   tab: string
+) {
+  const lineMarkers = getDiffMarkersPerMode(
+    modifiedValue,
+    originalValue,
+    tab,
+    'line'
+  );
+  const charMarkers = getDiffMarkersPerMode(
+    modifiedValue,
+    originalValue,
+    tab,
+    'char'
+  );
+
+  const res: DiffMarkers = charMarkers;
+
+  for (const charMarker of Object.values(charMarkers)) {
+    if (charMarker.operation !== 'replace') {
+      // only check char replace
+      continue;
+    }
+
+    const charFrom = charMarker.modifiedOffset;
+    const charTo = charMarker.modifiedOffset + charMarker.length;
+
+    // check if there are multiple lineMarkers in that range
+    const lineMarkersInRange = Object.values(lineMarkers).filter((lm) => {
+      const lineFrom = lm.modifiedOffset;
+      const lineTo = lm.modifiedOffset + lm.length;
+
+      return (
+        (lineFrom < charFrom && lineTo > charFrom) ||
+        (lineFrom < charTo && lineTo > charTo) ||
+        (lineFrom > charFrom && lineTo < charTo)
+      );
+    });
+
+    if (lineMarkersInRange.length > 1) {
+      // if there are, use that lineMarker and delete char marker
+      for (const lineMarker of lineMarkersInRange) {
+        res[lineMarker.id] = lineMarker;
+      }
+      delete res[charMarker.id];
+    }
+  }
+
+  return res;
+}
+
+function getDiffMarkersPerMode(
+  modifiedValue: string,
+  originalValue: string,
+  tab: string,
+  mode: 'char' | 'line'
 ): DiffMarkers {
-  const diffs = diffChars(modifiedValue, originalValue);
+  // todo(optimisation): line mode is calculated from diff chars but it is calulcated separately here
+  // result of char diff can probably be reused
+  const diffs =
+    mode === 'char'
+      ? diff_charMode(modifiedValue, originalValue)
+      : diff_lineMode(modifiedValue, originalValue);
+
   mergeTabsInSequence(diffs, tab);
 
   const markers: DiffMarkers = {};
@@ -59,6 +119,7 @@ export function getDiffMarkers(
           modifiedOffset,
           originalOffset,
           operation: 'delete',
+          length: value.length,
           newValue: '',
           oldValue: value,
           delta: new Delta([
@@ -87,6 +148,7 @@ export function getDiffMarkers(
           operation: 'replace',
           newValue: value,
           oldValue: prev[1],
+          length: value.length,
           delta: new Delta([
             { retain: modifiedOffset },
             { delete: prev[1].length },
@@ -101,6 +163,7 @@ export function getDiffMarkers(
           modifiedOffset,
           originalOffset,
           operation: 'insert',
+          length: value.length,
           delta: new Delta([{ retain: modifiedOffset }, { insert: value }]),
           newValue: value,
           oldValue: '',
@@ -220,6 +283,7 @@ function separateTabsAndNewLines(markers: DiffMarkers, tab: string) {
       const newId = nanoid();
       markers[newId] = {
         id: newId,
+        length: marker.length,
         modifiedOffset: marker.modifiedOffset,
         originalOffset: marker.originalOffset + newInsertVal.length,
         operation: 'insert',
