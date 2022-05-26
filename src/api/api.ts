@@ -16,58 +16,63 @@ export const getFile = async (path: string) => {
 };
 
 const octokit = new Octokit({
-  auth: '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',
+  auth: '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',
 });
 
 export const getFiles = async (pr: number): Promise<File[]> => {
-  // const files: File[] = [];
+  return mockFiles;
+  const files: File[] = [];
 
-  // const owner = 'stoplightio';
-  // const repo = 'elements';
-  // const pull_number = 153;
-  // const pull_number = 1693;
+  //const owner = 'stoplightio';
+  //const repo = 'elements';
+  //const pull_number = 153;
+  //const pull_number = 1693;
 
-  // const prReq = await octokit.request(
-  //   `GET /repos/${owner}/${repo}/pulls/${pull_number}`,
-  //   {
-  //     owner,
-  //     repo,
-  //     pull_number,
-  //   }
-  // );
-  // const baseSha = prReq.data.base.sha;
+  const owner = 'webiny';
+  const repo = 'webiny-js';
+  const pull_number = 2402;
 
-  // const filesReq = await octokit.request(
-  //   `GET /repos/${owner}/${repo}/pulls/${pull_number}/files`,
-  //   {
-  //     owner,
-  //     repo,
-  //     pull_number,
-  //   }
-  // );
+  const prReq = await octokit.request(
+    `GET /repos/${owner}/${repo}/pulls/${pull_number}`,
+    {
+      owner,
+      repo,
+      pull_number,
+    }
+  );
+  const baseSha = prReq.data.base.sha;
 
-  // for (const file of filesReq.data) {
-  //   const oldVal = await fetch(
-  //     `https://raw.githubusercontent.com/${owner}/${repo}/${baseSha}/${encodeURIComponent(
-  //       file.filename
-  //     )}`
-  //   ).then((r) => r.text());
+  const filesReq = await octokit.request(
+    `GET /repos/${owner}/${repo}/pulls/${pull_number}/files`,
+    {
+      owner,
+      repo,
+      pull_number,
+    }
+  );
 
-  //   //console.log(file);
-  //   const newVal = await fetch(
-  //     `https://raw.githubusercontent.com/${owner}/${repo}/${
-  //       prReq.data.merge_commit_sha
-  //     }/${encodeURIComponent(file.filename)}`
-  //   ).then((r) => r.text());
+  for (const file of filesReq.data) {
+    const oldVal = await fetch(
+      `https://raw.githubusercontent.com/${owner}/${repo}/${baseSha}/${encodeURIComponent(
+        file.filename
+      )}`
+    ).then((r) => r.text());
 
-  //   files.push({
-  //     path: file.filename,
-  //     status: file.status,
-  //     oldVal,
-  //     newVal,
-  //   });
-  // }
+    //console.log(file);
+    const newVal = await fetch(
+      `https://raw.githubusercontent.com/${owner}/${repo}/${
+        prReq.data.merge_commit_sha
+      }/${encodeURIComponent(file.filename)}`
+    ).then((r) => r.text());
 
-  // return files;
+    files.push({
+      path: file.filename,
+      status: file.status,
+      oldVal,
+      newVal,
+    });
+  }
+
+  return files;
   return mockFiles;
 };

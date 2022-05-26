@@ -137,7 +137,6 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   opacity: 0.3;
 }
 
-
 .insert-highlight {
   background: rgba(213, 255, 116, 0.3);
 }
@@ -162,9 +161,99 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   top: -5px;
 }
 
-.cursor-color-replace, .cursor-color-replace::after {
+.cursor-color-replace,
+.cursor-color-replace::after {
   border-color: rgb(0, 115, 255);
 }
-.cursor-color-delete, .cursor-color-delete::after {
+.cursor-color-delete,
+.cursor-color-delete::after {
   border-color: red;
+}
+
+.diff-markers-wrap {
+  height: 100%;
+  overflow: auto;
+  background: rgb(32 36 40);
+  padding: 15px;
+}
+.diff-marker {
+  background: #3b4856;
+  border-radius: 2px;
+  min-height: 60px;
+  margin-bottom: 15px;
+}
+.diff-marker:hover {
+  border: 1px solid #4081c8;
+}
+
+.diff-marker .head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.diff-marker .operation {
+  display: flex;
+  align-items: center;
+}
+.diff-marker .operation .text {
+  color: #fff;
+  text-transform: uppercase;
+  font-weight: bold;
+  font-size: 12px;
+}
+.diff-marker .operation .dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #fff;
+  margin: 0 5px;
+}
+.diff-marker .operation .dot.insert {
+  background: #07ff4d;
+}
+.diff-marker .operation .dot.replace {
+  background: #4dc9ff;
+}
+.diff-marker .operation .dot.delete {
+  background: #fd5151;
+}
+.diff-marker .operation .dot.indent {
+  background: #ffb800;
+}
+
+.diff-marker .stat {
+  font-family: 'Inconsolata';
+}
+.diff-marker .stat .additions {
+  color: #3be300;
+  display: inline-block;
+  text-align: right;
+}
+.diff-marker .stat .deletions {
+  color: #ff5252;
+  width: 25px;
+  display: inline-block;
+  text-align: right;
+  margin-right: 5px;
+}
+
+.diff-marker .code-preview {
+  font-family: 'Inconsolata';
+  overflow: hidden;
+  white-space: nowrap;
+  color: #949494;
+  font-size: 12px;
+  line-height: 11px;
+  padding: 5px;
+}
+
+.diff-marker .code-preview .linenumber {
+  width: 25px;
+  display: inline-block;
+}
+.diff-marker .code-preview .strikethrough {
+  text-decoration: line-through;
+  margin-right: 2px;
 }

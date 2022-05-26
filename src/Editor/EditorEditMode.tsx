@@ -2,10 +2,21 @@ import { useAtom } from 'jotai';
 import { findLast } from 'lodash';
 import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
-import React, { useEffect, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import Split from 'react-split';
 
-import { DiffMarker, DiffMarkers, getDiffMarkers } from '../api/diffMarkers';
+import {
+  DiffMarker,
+  DiffMarkers,
+  getDiffMarkers,
+  isIndentMarker,
+} from '../api/diffMarkers';
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
 import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
@@ -31,6 +42,12 @@ export function EditorEditMode() {
   const [, saveDelta] = useAtom(saveDeltaAtom);
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
+  const activeMarkerIndex = useRef<number>(-1);
+
+  useEffect(() => {
+    // reset active marker when path changes
+    activeMarkerIndex.current = -1;
+  }, [activeFile?.path]);
 
   const highlightUndo = useRef<
     {
@@ -40,7 +57,15 @@ export function EditorEditMode() {
   >([]);
 
   const [diffMarkers, setDiffMarkers] = useState<DiffMarkers>({});
-  //const [originalColored, setOriginalColored] = useState<string[]>([]);
+
+  const markerIds = useMemo(
+    () =>
+      Object.values(diffMarkers)
+        .sort((a, b) => a.originalOffset - b.originalOffset)
+        .sort((a, b) => (isIndentMarker(a) ? 1 : isIndentMarker(b) ? -1 : 0))
+        .map((m) => m.id),
+    [diffMarkers]
+  );
 
   useEffect(() => {
     // initializing editor
@@ -56,6 +81,7 @@ export function EditorEditMode() {
       glyphMargin: true,
       smoothScrolling: true,
       tabSize: 2,
+      //wordWrap: 'on',
     });
 
     editor.current.setModel(modifiedModel);
@@ -76,24 +102,6 @@ export function EditorEditMode() {
       modifiedModel.setValue('');
       return;
     }
-
-    // setOriginalColored([]);
-    // monaco.editor
-    //   .colorize(originalModel.getValue(), 'typescript', { tabSize: 2 })
-    //   .then((html) => {
-    //     const el = document.createElement('div');
-    //     el.innerHTML = html;
-
-    //     let spanPerLine = [];
-    //     for (const child of el.children) {
-    //       if (child.tagName === 'BR') {
-    //         continue;
-    //       }
-    //       spanPerLine.push(child.innerHTML);
-    //     }
-
-    //     setOriginalColored(spanPerLine);
-    //   });
 
     const previousChangeId = findLast(
       changesOrder,
@@ -162,7 +170,7 @@ export function EditorEditMode() {
     });
   }, [activeFile, changesOrder, saveDelta, setDiffMarkers]); // not watching changes as dep, because it is covered by changesOrder
 
-  const diffMarkerMouseEnterHandle = (marker: DiffMarker) => () => {
+  const activateDiffMarker = useCallback((marker: DiffMarker) => {
     const viewstate = editor.current?.saveViewState();
 
     editor.current?.updateOptions({
@@ -280,9 +288,9 @@ export function EditorEditMode() {
         monaco.editor.ScrollType.Smooth
       );
     }
-  };
+  }, []);
 
-  const diffMarkerMouseLeaveHandle = (marker: DiffMarker) => () => {
+  const resetDiffMarkers = useCallback(() => {
     previewModel.applyEdits(highlightUndo.current);
     highlightUndo.current = [];
 
@@ -304,50 +312,167 @@ export function EditorEditMode() {
         horizontal: 'auto',
       },
     });
-  };
+  }, []);
 
-  const diffMarkerClickHandle = (marker: DiffMarker) => () => {
+  const applyDiffMarker = useCallback((marker: DiffMarker) => {
     const edits = getMonacoEdits(marker.delta, modifiedModel);
     modifiedModel.applyEdits(edits);
+
+    const viewstate = editor.current?.saveViewState();
     editor.current?.setModel(modifiedModel);
-  };
+    if (viewstate) {
+      editor.current?.restoreViewState(viewstate);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeMarkerIndex.current !== -1) {
+      const id = markerIds[activeMarkerIndex.current];
+      if (id) {
+        activateDiffMarker(diffMarkers[id]);
+      }
+    }
+  }, [diffMarkers, markerIds, activateDiffMarker]);
 
   return (
     <Split
       className="split-editor"
       direction="horizontal"
-      sizes={[60, 40]}
+      sizes={[70, 30]}
       gutterSize={1}
     >
       <div ref={monacoDom} className="monaco edit-mode"></div>
-      <div
-        style={{
-          position: 'relative',
-          height: '100%',
-          overflow: 'auto',
-          background: 'rgb(32 36 40)',
-        }}
-      >
-        {Object.values(diffMarkers)
-          .sort((a, b) => a.originalOffset - b.originalOffset)
-          .map((marker, i) => (
-            <div key={i} style={{ background: 'rgb(40 49 56)', padding: 10 }}>
-              <div
-                style={{
-                  width: '100%',
-                  height: 50,
-                  marginTop: 10,
-                  overflow: 'auto',
-                  background: '#374957',
-                }}
-                onMouseEnter={diffMarkerMouseEnterHandle(marker)}
-                onMouseLeave={diffMarkerMouseLeaveHandle(marker)}
-                onClick={diffMarkerClickHandle(marker)}
-              >
-                <div style={{ margin: 0 }}>{marker.operation}</div>
+      <div className="diff-markers-wrap">
+        {markerIds.map((markerId) => {
+          const marker = diffMarkers[markerId];
+
+          const markerType = isIndentMarker(marker)
+            ? 'indent'
+            : marker.operation;
+
+          const addedChars =
+            marker.operation === 'insert' || marker.operation === 'replace'
+              ? marker.newValue.length
+              : 0;
+
+          const deletedChars =
+            marker.operation === 'delete' || marker.operation === 'replace'
+              ? marker.oldValue.length
+              : 0;
+
+          const edits = getMonacoEdits(marker.delta, modifiedModel);
+
+          const previewRec: Record<
+            number,
+            {
+              isDelete: boolean;
+              code: string;
+            }[]
+          > = {};
+
+          for (const edit of edits) {
+            if (edit.text) {
+              // insert and replace
+              edit.text.split('\n').forEach((lineContent, i) => {
+                const code = isIndentMarker(marker)
+                  ? '▶'.repeat(marker.indentVal)
+                  : lineContent;
+
+                if (!code) return;
+
+                const lineNum = edit.range.startLineNumber + i;
+                if (!previewRec[lineNum]) {
+                  previewRec[lineNum] = [];
+                }
+
+                previewRec[lineNum].push({
+                  isDelete: false,
+                  code,
+                });
+              });
+            } else {
+              // delete
+              const { startLineNumber, endLineNumber } = edit.range;
+              for (let i = startLineNumber; i <= endLineNumber; i++) {
+                if (i === endLineNumber && edit.range.endColumn === 1) {
+                  break;
+                }
+
+                if (!previewRec[i]) {
+                  previewRec[i] = [];
+                }
+
+                const startColumn =
+                  i === startLineNumber ? edit.range.startColumn : 1;
+
+                const endColumn =
+                  i === endLineNumber
+                    ? edit.range.endColumn
+                    : modifiedModel.getLineMaxColumn(i);
+
+                previewRec[i].push({
+                  isDelete: true,
+                  code: modifiedModel.getValueInRange(
+                    new monaco.Range(i, startColumn, i, endColumn)
+                  ),
+                });
+              }
+            }
+          }
+
+          const previewLines = Object.keys(previewRec);
+          if (previewLines.length > 3) {
+            const toRemove = previewLines.splice(2, previewLines.length - 3);
+            for (const line of toRemove) {
+              delete previewRec[Number(line)];
+            }
+          }
+          return (
+            <div
+              key={marker.id}
+              className={`diff-marker`}
+              onMouseEnter={() => {
+                activeMarkerIndex.current = markerIds.indexOf(marker.id);
+                activateDiffMarker(marker);
+              }}
+              onMouseLeave={() => {
+                activeMarkerIndex.current = -1;
+                resetDiffMarkers();
+              }}
+              onClick={() => {
+                applyDiffMarker(marker);
+              }}
+            >
+              <div className="head">
+                <div className="operation">
+                  <span className={`dot ${markerType}`}></span>
+                  <span className="text">{markerType}</span>
+                </div>
+                <span className="stat">
+                  <span className="additions">+{addedChars}</span>
+                  <span className="deletions">-{deletedChars}</span>
+                </span>
+              </div>
+              <div className="code-preview">
+                {Object.entries(previewRec).map(([line, content]) => (
+                  <div key={line}>
+                    <span className="linenumber">{line}:</span>
+                    {content.map((c, i) => {
+                      return (
+                        <span
+                          key={`${line}-${i}`}
+                          className={c.isDelete ? 'strikethrough' : ''}
+                        >
+                          {c.code}
+                        </span>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
+          );
+        })}
       </div>
     </Split>
   );
