@@ -131,7 +131,8 @@ export function EditorEditMode() {
     const markers = getDiffMarkers(
       modifiedModel.getValue(),
       originalModel.getValue(),
-      getTabChar(modifiedModel)
+      getTabChar(modifiedModel),
+      modifiedModel.getEOL()
     );
 
     setDiffMarkers(markers);
@@ -360,73 +361,6 @@ export function EditorEditMode() {
               ? marker.oldValue.length
               : 0;
 
-          const edits = getMonacoEdits(marker.delta, modifiedModel);
-
-          const previewRec: Record<
-            number,
-            {
-              isDelete: boolean;
-              code: string;
-            }[]
-          > = {};
-
-          for (const edit of edits) {
-            if (edit.text) {
-              // insert and replace
-              edit.text.split('\n').forEach((lineContent, i) => {
-                const code = isIndentMarker(marker)
-                  ? '▶'.repeat(marker.indentVal)
-                  : lineContent;
-
-                if (!code) return;
-
-                const lineNum = edit.range.startLineNumber + i;
-                if (!previewRec[lineNum]) {
-                  previewRec[lineNum] = [];
-                }
-
-                previewRec[lineNum].push({
-                  isDelete: false,
-                  code,
-                });
-              });
-            } else {
-              // delete
-              const { startLineNumber, endLineNumber } = edit.range;
-              for (let i = startLineNumber; i <= endLineNumber; i++) {
-                if (i === endLineNumber && edit.range.endColumn === 1) {
-                  break;
-                }
-
-                if (!previewRec[i]) {
-                  previewRec[i] = [];
-                }
-
-                const startColumn =
-                  i === startLineNumber ? edit.range.startColumn : 1;
-
-                const endColumn =
-                  i === endLineNumber
-                    ? edit.range.endColumn
-                    : modifiedModel.getLineMaxColumn(i);
-
-                previewRec[i].push({
-                  isDelete: true,
-                  code: modifiedModel.getValueInRange(
-                    new monaco.Range(i, startColumn, i, endColumn)
-                  ),
-                });
-              }
-            }
-          }
-
-          const previewLines = Object.keys(previewRec);
-          if (previewLines.length > 3) {
-            const toRemove = previewLines.splice(2, previewLines.length - 3);
-            for (const line of toRemove) {
-              delete previewRec[Number(line)];
-            }
-          }
           return (
             <div
               key={marker.id}
@@ -454,7 +388,7 @@ export function EditorEditMode() {
                 </span>
               </div>
               <div className="code-preview">
-                {Object.entries(previewRec).map(([line, content]) => (
+                {Object.entries(marker.preview || {}).map(([line, content]) => (
                   <div key={line}>
                     <span className="linenumber">{line}:</span>
                     {content.map((c, i) => {

@@ -1,5 +1,4 @@
 import { DIFF_DELETE, DIFF_EQUAL, DIFF_INSERT } from 'diff-match-patch';
-import lineColumn from 'line-column';
 import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 
@@ -14,6 +13,13 @@ interface BaseDiffMarker {
   newValue: string;
   oldValue: string;
   delta: Delta;
+  preview?: Record<
+    number,
+    {
+      isDelete: boolean;
+      code: string;
+    }[]
+  >;
 }
 
 interface IndentDiffMarker extends BaseDiffMarker {
@@ -31,18 +37,21 @@ export const isIndentMarker = (m: DiffMarker): m is IndentDiffMarker => {
 export function getDiffMarkers(
   modifiedValue: string,
   originalValue: string,
-  tab: string
+  tab: string,
+  eol: string
 ) {
   const lineMarkers = getDiffMarkersPerMode(
     modifiedValue,
     originalValue,
     tab,
+    eol,
     'line'
   );
   const charMarkers = getDiffMarkersPerMode(
     modifiedValue,
     originalValue,
     tab,
+    eol,
     'char'
   );
 
@@ -85,8 +94,9 @@ function getDiffMarkersPerMode(
   modifiedValue: string,
   originalValue: string,
   tab: string,
+  eol: string,
   mode: 'char' | 'line'
-): DiffMarkers {
+) {
   // todo(optimisation): line mode is calculated from diff chars but it is calulcated separately here
   // result of char diff can probably be reused
   const diffs =
@@ -181,8 +191,9 @@ function getDiffMarkersPerMode(
     i++;
   }
 
-  separateTabsAndNewLines(markers, tab);
-  mergeIndents(markers, modifiedValue, originalValue, tab);
+  separateTabsAndNewLines(markers, tab, eol);
+  mergeIndents(markers, modifiedValue, originalValue, tab, eol);
+  addMarkerPreview(markers, modifiedValue, eol);
   return markers;
 }
 
@@ -190,11 +201,9 @@ function mergeIndents(
   markers: DiffMarkers,
   modifiedValue: string,
   originalValue: string,
-  tab: string
+  tab: string,
+  eol: string
 ) {
-  const lcOriginal = lineColumn(originalValue);
-  const lcModified = lineColumn(modifiedValue);
-
   const markersArr = Object.values(markers).sort(
     (a, b) => a.originalOffset - b.originalOffset
   );
@@ -206,17 +215,21 @@ function mergeIndents(
       delete markers[refMarker.id];
     } else if (isIndentMarker(refMarker) && refMarker.operation === 'insert') {
       const toMerge: IndentDiffMarker[] = [];
-      const refMarkerOrigLine = lcOriginal.fromIndex(
-        refMarker.originalOffset
-      )!.line;
+      const refMarkerOrigLine = getLineNum(
+        refMarker.originalOffset,
+        originalValue,
+        eol
+      );
 
       for (let nextI = refI + 1; nextI < markersArr.length; nextI++) {
         // check if currLine = nextLine + 1 for another 'add-indent'
         // and then currLine = nextLine + 2 for next one etc
         const nextMarker = markersArr[nextI];
-        const nextOrigLineNum = lcOriginal.fromIndex(
-          nextMarker.originalOffset
-        )!.line;
+        const nextOrigLineNum = getLineNum(
+          nextMarker.originalOffset,
+          originalValue,
+          eol
+        );
 
         if (
           isIndentMarker(nextMarker) &&
@@ -230,16 +243,25 @@ function mergeIndents(
 
       if (toMerge.length) {
         // create new Delta() which inserts tab(s)
-        const refModLine = lcModified.fromIndex(refMarker.modifiedOffset)!.line;
-        const offset = lcModified.toIndex(refModLine, 1);
+        const refModLine = getLineNum(
+          refMarker.modifiedOffset,
+          modifiedValue,
+          eol
+        );
+        const offset = getLineOffset(refModLine, modifiedValue, eol);
+
         let resDelta = new Delta()
           .retain(offset)
           .insert(tab.repeat(refMarker.indentVal));
 
         for (const marker of toMerge) {
-          const modLineNum = lcModified.fromIndex(marker.modifiedOffset)!.line;
+          const modLineNum = getLineNum(
+            marker.modifiedOffset,
+            modifiedValue,
+            eol
+          );
+          const offset = getLineOffset(modLineNum, modifiedValue, eol);
 
-          const offset = lcModified.toIndex(modLineNum, 1);
           resDelta = resDelta.compose(
             new Delta().retain(offset).insert(tab.repeat(marker.indentVal))
           );
@@ -253,11 +275,15 @@ function mergeIndents(
   }
 }
 
-function separateTabsAndNewLines(markers: DiffMarkers, tab: string) {
+function separateTabsAndNewLines(
+  markers: DiffMarkers,
+  tab: string,
+  eol: string
+) {
   const markersArr = Object.values(markers).sort(
     (a, b) => a.originalOffset - b.originalOffset
   );
-  const pattern = `\n[${tab}]+$`;
+  const pattern = `${eol}[${tab}]+$`;
   const re = new RegExp(pattern, 'g');
 
   let i = 0;
@@ -302,4 +328,78 @@ function isIndent(value: string, tab: string) {
   const pattern = `^[${tab}]+$`;
   const re = new RegExp(pattern, 'g');
   return re.test(value);
+}
+
+function addMarkerPreview(
+  markers: DiffMarkers,
+  modifiedValue: string,
+  eol: string
+) {
+  for (const [, marker] of Object.entries(markers)) {
+    const preview: DiffMarker['preview'] = {};
+
+    let index = 0;
+    for (const op of marker.delta.ops) {
+      if (op.retain !== undefined) {
+        index += op.retain;
+      } else {
+        const value =
+          typeof op.insert === 'string'
+            ? op.insert
+            : op.delete !== undefined
+            ? modifiedValue.slice(index, index + op.delete)
+            : '';
+
+        const startLineNum = getLineNum(index, modifiedValue, eol);
+        const endLineNum = startLineNum + value.split(eol).length - 1;
+        const valueSplitted = value.split(eol);
+
+        for (let lineNum = startLineNum; lineNum <= endLineNum; lineNum++) {
+          const lineContent = valueSplitted[lineNum - startLineNum];
+          if (!lineContent) continue;
+
+          const code = isIndentMarker(marker)
+            ? '▶'.repeat(marker.indentVal)
+            : lineContent;
+
+          if (!preview[lineNum]) {
+            preview[lineNum] = [];
+          }
+          preview[lineNum].push({ isDelete: op.delete !== undefined, code });
+        }
+
+        if (typeof op.insert === 'string') {
+          index += op.insert.length;
+        }
+      }
+    }
+    const previewLines = Object.keys(preview);
+    if (previewLines.length > 3) {
+      const toRemove = previewLines.splice(2, previewLines.length - 3);
+      for (const line of toRemove) {
+        delete preview[Number(line)];
+      }
+    }
+
+    marker.preview = preview;
+  }
+}
+
+function getLineNum(index: number, modifiedValue: string, eol: string): number {
+  return modifiedValue.slice(0, index).split(eol).length;
+}
+function getLineOffset(
+  line: number,
+  modifiedValue: string,
+  eol: string
+): number {
+  const splitted = modifiedValue.split(eol);
+  if (line <= 1) {
+    return 0;
+  }
+  if (line > splitted.length) {
+    return modifiedValue.length;
+  }
+  splitted.splice(line - 1);
+  return splitted.join(eol).length + 1;
 }
