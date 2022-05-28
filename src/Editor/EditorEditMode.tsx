@@ -128,12 +128,12 @@ export function EditorEditMode() {
       originalModel.setValue(goal);
     }
 
-    const markers = getDiffMarkers(
-      modifiedModel.getValue(),
-      originalModel.getValue(),
-      getTabChar(modifiedModel),
-      modifiedModel.getEOL()
-    );
+    const markers = getDiffMarkers({
+      modifiedValue: modifiedModel.getValue(),
+      originalValue: originalModel.getValue(),
+      tab: getTabChar(modifiedModel),
+      eol: modifiedModel.getEOL(),
+    });
 
     setDiffMarkers(markers);
 

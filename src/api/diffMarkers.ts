@@ -4,6 +4,7 @@ import Delta from 'quill-delta';
 
 import { diff_charMode, diff_lineMode } from './diffMatchPatch';
 import { mergeTabsInSequence } from './diffMatchPatch';
+
 interface BaseDiffMarker {
   id: string;
   length: number;
@@ -34,26 +35,14 @@ export const isIndentMarker = (m: DiffMarker): m is IndentDiffMarker => {
   return typeof m === 'object' && 'type' in m && m.type === 'indent';
 };
 
-export function getDiffMarkers(
-  modifiedValue: string,
-  originalValue: string,
-  tab: string,
-  eol: string
-) {
-  const lineMarkers = getDiffMarkersPerMode(
-    modifiedValue,
-    originalValue,
-    tab,
-    eol,
-    'line'
-  );
-  const charMarkers = getDiffMarkersPerMode(
-    modifiedValue,
-    originalValue,
-    tab,
-    eol,
-    'char'
-  );
+export function getDiffMarkers(params: {
+  modifiedValue: string;
+  originalValue: string;
+  tab: string;
+  eol: string;
+}) {
+  const lineMarkers = getDiffMarkersPerMode({ ...params, mode: 'line' });
+  const charMarkers = getDiffMarkersPerMode({ ...params, mode: 'char' });
 
   const res: DiffMarkers = charMarkers;
 
@@ -90,13 +79,19 @@ export function getDiffMarkers(
   return res;
 }
 
-function getDiffMarkersPerMode(
-  modifiedValue: string,
-  originalValue: string,
-  tab: string,
-  eol: string,
-  mode: 'char' | 'line'
-) {
+function getDiffMarkersPerMode({
+  modifiedValue,
+  originalValue,
+  tab,
+  eol,
+  mode,
+}: {
+  modifiedValue: string;
+  originalValue: string;
+  tab: string;
+  eol: string;
+  mode: 'char' | 'line';
+}) {
   // todo(optimisation): line mode is calculated from diff chars but it is calulcated separately here
   // result of char diff can probably be reused
   const diffs =
@@ -105,6 +100,12 @@ function getDiffMarkersPerMode(
       : diff_lineMode(modifiedValue, originalValue);
 
   mergeTabsInSequence(diffs, tab);
+
+  const isIndent = (value: string) => {
+    const pattern = `^[${tab}]+$`;
+    const re = new RegExp(pattern, 'g');
+    return re.test(value);
+  };
 
   const markers: DiffMarkers = {};
   let modifiedOffset = 0;
@@ -138,7 +139,7 @@ function getDiffMarkersPerMode(
           ]),
         };
 
-        if (isIndent(value, tab)) {
+        if (isIndent(value)) {
           markers[id] = {
             ...markers[id],
             type: 'indent',
@@ -178,7 +179,7 @@ function getDiffMarkersPerMode(
           newValue: value,
           oldValue: '',
         };
-        if (isIndent(value, tab)) {
+        if (isIndent(value)) {
           markers[id] = {
             ...markers[id],
             type: 'indent',
@@ -322,12 +323,6 @@ function separateTabsAndNewLines(
     }
     i++;
   }
-}
-
-function isIndent(value: string, tab: string) {
-  const pattern = `^[${tab}]+$`;
-  const re = new RegExp(pattern, 'g');
-  return re.test(value);
 }
 
 function addMarkerPreview(
