@@ -135,7 +135,7 @@ export function getHighlightsBefore(delta: Delta, eolChar: string) {
             className: 'replace-highlight',
           },
         });
-
+        index += nextOp.delete;
         i++; // skip next delta since it's covered here
       } else {
         // normal insert
@@ -168,6 +168,7 @@ export function getHighlightsBefore(delta: Delta, eolChar: string) {
           className: 'highlight-cursor cursor-color-delete',
         },
       });
+      index += op.delete;
     }
   }
 
@@ -203,6 +204,7 @@ export function getHighlightsAfter(delta: Delta, eolChar: string) {
           },
         });
 
+        index += op.insert.length;
         i++; // skip next delta since it's covered here
       } else {
         highlights.push({
