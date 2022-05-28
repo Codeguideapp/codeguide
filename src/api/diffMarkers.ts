@@ -2,6 +2,7 @@ import { DIFF_DELETE, DIFF_EQUAL, DIFF_INSERT } from 'diff-match-patch';
 import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 
+import { deltaToString } from '../utils/deltaUtils';
 import { diff_charMode, diff_lineMode } from './diffMatchPatch';
 import { mergeTabsInSequence } from './diffMatchPatch';
 
@@ -11,9 +12,8 @@ interface BaseDiffMarker {
   modifiedOffset: number;
   originalOffset: number;
   operation: 'replace' | 'insert' | 'delete';
-  newValue: string;
-  oldValue: string;
   delta: Delta;
+  stat: [number, number];
   preview?: Record<
     number,
     {
@@ -131,8 +131,7 @@ function getDiffMarkersPerMode({
           originalOffset,
           operation: 'delete',
           length: value.length,
-          newValue: '',
-          oldValue: value,
+          stat: [0, value.length],
           delta: new Delta([
             { retain: modifiedOffset },
             { delete: value.length },
@@ -157,9 +156,8 @@ function getDiffMarkersPerMode({
           modifiedOffset,
           originalOffset,
           operation: 'replace',
-          newValue: value,
-          oldValue: prev[1],
           length: value.length,
+          stat: [value.length, prev[1].length],
           delta: new Delta([
             { retain: modifiedOffset },
             { delete: prev[1].length },
@@ -175,9 +173,8 @@ function getDiffMarkersPerMode({
           originalOffset,
           operation: 'insert',
           length: value.length,
+          stat: [value.length, 0],
           delta: new Delta([{ retain: modifiedOffset }, { insert: value }]),
-          newValue: value,
-          oldValue: '',
         };
         if (isIndent(value)) {
           markers[id] = {
@@ -290,7 +287,7 @@ function separateTabsAndNewLines(
   let i = 0;
   for (const marker of markersArr) {
     const nextMarker = markersArr[i + 1];
-    const oldVal = marker.newValue;
+    const oldVal = deltaToString([marker.delta]);
     let matched = oldVal.match(re);
 
     if (
@@ -301,7 +298,6 @@ function separateTabsAndNewLines(
       const tabs = matched[0].slice(1, matched[0].length); // removing matched /n at the beginning
       const newInsertVal = oldVal.slice(0, oldVal.length - tabs.length); // removing tab(s) at the end
 
-      marker.newValue = newInsertVal;
       marker.delta = new Delta([
         { retain: marker.modifiedOffset },
         { insert: newInsertVal },
@@ -315,8 +311,7 @@ function separateTabsAndNewLines(
         originalOffset: marker.originalOffset + newInsertVal.length,
         operation: 'insert',
         delta: new Delta([{ retain: marker.modifiedOffset }, { insert: tabs }]),
-        newValue: tabs,
-        oldValue: '',
+        stat: [tabs.length, 0],
         type: 'indent',
         indentVal: tabs.split(tab).length - 1,
       };

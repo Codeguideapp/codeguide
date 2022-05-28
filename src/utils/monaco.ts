@@ -55,6 +55,40 @@ export function getMonacoEdits(
   return edits;
 }
 
+export function removeDeletions(delta: Delta) {
+  let resDelta = new Delta();
+
+  for (const op of delta.ops) {
+    if (op.retain) {
+      resDelta = resDelta.retain(op.retain);
+    }
+    if (op.insert) {
+      resDelta = resDelta.insert(op.insert);
+    }
+    if (op.delete) {
+      resDelta = resDelta.retain(op.delete);
+    }
+  }
+
+  return resDelta;
+}
+
+export function removeInserts(delta: Delta) {
+  let resDelta = new Delta();
+
+  for (const op of delta.ops) {
+    if (op.retain) {
+      resDelta = resDelta.retain(op.retain);
+    }
+
+    if (op.delete) {
+      resDelta = resDelta.delete(op.delete);
+    }
+  }
+
+  return resDelta;
+}
+
 export function applyDelta(
   delta: Delta,
   monacoModel: monaco.editor.ITextModel
@@ -103,7 +137,11 @@ export function applyDelta(
   return cursorOffset;
 }
 
-export function getHighlightsBefore(delta: Delta, eolChar: string) {
+export function getHighlightsBefore(
+  delta: Delta,
+  value: string,
+  eolChar: string
+) {
   const highlights: Change['highlight'] = [];
 
   let index = 0;
@@ -160,8 +198,11 @@ export function getHighlightsBefore(delta: Delta, eolChar: string) {
         },
       });
 
+      const deletedVal = value.slice(index, index + op.delete);
+      const eolOffset = deletedVal.endsWith(eolChar) ? -1 : 0;
+
       highlights.push({
-        offset: index + op.delete,
+        offset: index + op.delete + eolOffset,
         length: 0,
         type: 'insert',
         options: {

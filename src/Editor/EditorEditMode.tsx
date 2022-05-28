@@ -24,11 +24,12 @@ import { composeDeltas } from '../utils/deltaUtils';
 import { getFileContent } from '../utils/getFileContent';
 import {
   getMonacoEdits,
-  getRange,
   getTabChar,
   modifiedModel,
   originalModel,
   previewModel,
+  removeDeletions,
+  removeInserts,
 } from '../utils/monaco';
 
 export function EditorEditMode() {
@@ -213,30 +214,24 @@ export function EditorEditMode() {
         monaco.editor.ScrollType.Smooth
       );
     } else if (marker.operation === 'replace') {
-      const delta = new Delta()
-        .retain(marker.modifiedOffset)
-        .retain(marker.oldValue.length)
-        .insert(marker.newValue);
+      const deltaIns = removeDeletions(marker.delta);
+      const deltaDel = removeInserts(marker.delta);
+      const editsIns = getMonacoEdits(deltaIns, previewModel);
+      const editsDel = getMonacoEdits(deltaDel, previewModel);
 
-      const edits = getMonacoEdits(delta, previewModel);
+      if (editsIns.length === 0) return;
 
-      if (edits.length === 0) return;
-
-      highlightUndo.current = previewModel.applyEdits(edits, true);
+      highlightUndo.current = previewModel.applyEdits(editsIns, true);
 
       decorations.current = editor.current!.deltaDecorations(
         decorations.current,
         [
-          {
-            range: getRange(
-              previewModel,
-              marker.modifiedOffset,
-              marker.oldValue.length
-            ),
+          ...editsDel.map((edit) => ({
+            range: edit.range,
             options: {
               className: 'delete-highlight',
             },
-          },
+          })),
           ...highlightUndo.current.map((edit) => ({
             range: edit.range,
             options: {
@@ -351,16 +346,6 @@ export function EditorEditMode() {
             ? 'indent'
             : marker.operation;
 
-          const addedChars =
-            marker.operation === 'insert' || marker.operation === 'replace'
-              ? marker.newValue.length
-              : 0;
-
-          const deletedChars =
-            marker.operation === 'delete' || marker.operation === 'replace'
-              ? marker.oldValue.length
-              : 0;
-
           return (
             <div
               key={marker.id}
@@ -383,8 +368,8 @@ export function EditorEditMode() {
                   <span className="text">{markerType}</span>
                 </div>
                 <span className="stat">
-                  <span className="additions">+{addedChars}</span>
-                  <span className="deletions">-{deletedChars}</span>
+                  <span className="additions">+{marker.stat[0]}</span>
+                  <span className="deletions">-{marker.stat[1]}</span>
                 </span>
               </div>
               <div className="code-preview">

@@ -28,14 +28,16 @@ export const saveDeltaAtom = atom(
       .filter((id) => changes[id].path === file.path && changes[id].delta)
       .map((id) => changes[id].delta!);
 
+    const before = deltaToString(fileChanges);
+    const after = deltaToString([...fileChanges, delta]);
+
     let changeStatus: Change['fileStatus'];
     switch (file.status) {
       case 'added':
         changeStatus = fileChanges.length === 0 ? 'added' : 'modified';
         break;
       case 'deleted':
-        const resContent = deltaToString([...fileChanges, delta]);
-        changeStatus = resContent === '' ? 'deleted' : 'modified';
+        changeStatus = after === '' ? 'deleted' : 'modified';
         break;
       default:
         changeStatus = file.status;
@@ -77,7 +79,7 @@ export const saveDeltaAtom = atom(
           path: changesDraft[newChangeId].path,
           isFileDepChange: false,
           parentChangeId: newChangeId,
-          highlight: getHighlightsBefore(delta, eolChar),
+          highlight: getHighlightsBefore(delta, before, eolChar),
           id: highlightChangeId,
           color: '#cccccc',
           width: 20,
