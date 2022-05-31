@@ -12,6 +12,7 @@ export type Change = {
     options: monaco.editor.IModelDecorationOptions;
   }[];
   parentChangeId?: string;
+  children: string[];
   isFileDepChange: boolean;
   delta?: Delta;
   deltaInverted?: Delta;

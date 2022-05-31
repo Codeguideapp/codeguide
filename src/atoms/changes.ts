@@ -2,7 +2,7 @@ import produce, { Draft } from 'immer';
 import { atom } from 'jotai';
 import { isEqual } from 'lodash';
 
-import { Changes } from './types';
+import { Change, Changes } from './types';
 
 export const changesAtom = atom<Changes>(produce({}, () => {}));
 export const changesOrderAtom = atom<string[]>([]);
@@ -20,11 +20,13 @@ export const updateChangesAtom = atom(
 export function swapChanges({
   changes,
   changesOrder,
-  from,
   to,
+  from,
+  length,
 }: {
   to: string;
   from: string;
+  length: number;
   changes: Changes;
   changesOrder: string[];
 }) {
@@ -40,9 +42,8 @@ export function swapChanges({
   }
   // moving array item
   const newChangesOrder = [...changesOrder];
-  const elCopy = newChangesOrder[fromIndex];
-  newChangesOrder.splice(fromIndex, 1); // remove from element
-  newChangesOrder.splice(toIndex, 0, elCopy); // add elCopy in toIndex
+  const elCopy = newChangesOrder.splice(fromIndex, length); // remove from element
+  newChangesOrder.splice(toIndex, 0, ...elCopy); // add elCopy in toIndex
 
   const changesFromOrder = changesOrder.filter(
     (id) => changes[from].path === changes[id].path
@@ -66,3 +67,19 @@ export function swapChanges({
 
   return newChangesOrder;
 }
+
+export const updateChangesX =
+  (changesOrder: string[]) => (changes: Record<string, Change>) => {
+    let x = 10;
+    for (const id of changesOrder) {
+      if (changes[id].isFileDepChange) {
+        continue;
+      }
+      changes[id].x = x;
+      const space = changes[id].parentChangeId ? 0 : 10;
+      x += changes[id].width + space;
+    }
+  };
+
+export const sortBy = (sortRef: string[]) => (a: string, b: string) =>
+  sortRef.indexOf(a) - sortRef.indexOf(b);

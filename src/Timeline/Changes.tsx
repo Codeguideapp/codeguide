@@ -1,12 +1,14 @@
 import { useAtom } from 'jotai';
-import React from 'react';
+import React, { useRef } from 'react';
 import { Group, Layer, Rect } from 'react-konva';
 
 import {
   changesAtom,
   changesOrderAtom,
+  sortBy,
   swapChanges,
   updateChangesAtom,
+  updateChangesX,
 } from '../atoms/changes';
 
 export function Changes({
@@ -25,68 +27,71 @@ export function Changes({
   const [changes] = useAtom(changesAtom);
   const [changesOrder, setChangesOrder] = useAtom(changesOrderAtom);
   const [, updateChanges] = useAtom(updateChangesAtom);
-
-  // changes but updated only if ordering is changed
-  const staticChanges = React.useMemo(
-    () => changes,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [snapPosX] // recalculate only when snap position is changed
-  );
+  const changesOrderRef = useRef<string[]>([]);
 
   return (
     <Layer x={layerX} scaleX={zoom}>
-      {Object.entries(changes)
-        .filter(([, change]) => !change.isFileDepChange)
-        .map(([id, change]) => {
+      {Object.values(changes)
+        .filter((change) => !change.isFileDepChange && !change.parentChangeId)
+        .map((change) => {
+          const withChildren = [change.id, ...change.children].sort(
+            sortBy(changesOrder)
+          );
+          const swapFrom = changes[withChildren[0]];
+
           return (
             <Group
-              key={id}
-              x={change.x}
+              key={swapFrom.id}
+              x={swapFrom.x}
               y={y}
               draggable
               onDragStart={() => {
-                setSnapPosX(change.x);
+                changesOrderRef.current = changesOrder;
               }}
               onDragMove={(event) => {
                 const pos = event.target.getPosition();
 
-                const shouldSwap = Object.entries(staticChanges).find(
-                  ([, c]) => c.x < change.x && c.x + c.width > change.x
+                let swapToId = changesOrderRef.current.find(
+                  (id) =>
+                    changes[id].x < swapFrom.x &&
+                    changes[id].x + changes[id].width > swapFrom.x
                 );
 
-                const swapFrom = id;
-                let swapTo = shouldSwap?.[0];
-
                 try {
-                  if (!swapTo) {
+                  if (!swapToId) {
                     throw new Error('invalid "to" param');
                   }
 
-                  const newChangedOrder = swapChanges({
+                  swapToId = changes[swapToId].parentChangeId || swapToId;
+                  const swapToWithChildren = [
+                    swapToId,
+                    ...changes[swapToId].children,
+                  ].sort(sortBy(changesOrder));
+                  swapToId = swapToWithChildren[0];
+
+                  const newChangesOrder = swapChanges({
                     changes,
                     changesOrder,
-                    from: swapFrom,
-                    to: swapTo,
+                    from: swapFrom.id,
+                    to: swapToId,
+                    length: withChildren.length,
                   });
 
-                  setChangesOrder(newChangedOrder);
-                  updateChanges((changes) => {
-                    changes[swapFrom].x = staticChanges[swapTo!].x;
-                    changes[swapTo!].x = staticChanges[swapFrom].x;
-                  });
-                  setSnapPosX(changes[swapTo].x);
+                  changesOrderRef.current = newChangesOrder;
+
+                  setChangesOrder(newChangesOrder);
+                  updateChanges(updateChangesX(changesOrderRef.current));
+                  setSnapPosX(changes[swapToId].x);
                 } catch (err) {
                   // forbidden swap, ignore here
                   updateChanges((changes) => {
-                    changes[id].x = pos.x;
+                    changes[swapFrom.id].x = pos.x;
                   });
                   return;
                 }
               }}
               onDragEnd={() => {
-                updateChanges((changes) => {
-                  changes[id].x = snapPosX;
-                });
+                updateChanges(updateChangesX(changesOrderRef.current));
                 setSnapPosX(-1);
               }}
               dragBoundFunc={(pos) => {
@@ -96,8 +101,16 @@ export function Changes({
                 };
               }}
             >
-              <Rect fill={change.color} width={change.width} height={height} />
-              {Object.entries(change.actions).map(([id, action], i) => (
+              {withChildren.map((id, i) => (
+                <Rect
+                  key={changes[id].id}
+                  x={i === 0 ? 0 : changes[withChildren[i - 1]].width}
+                  fill={changes[id].color}
+                  width={changes[id].width}
+                  height={height}
+                />
+              ))}
+              {/* {Object.entries(change.actions).map(([id, action], i) => (
                 // todo: buttons with tooltips https://konvajs.org/docs/sandbox/Shape_Tooltips.html separate component - react with tooltip support?
                 <Rect
                   key={id}
@@ -108,7 +121,7 @@ export function Changes({
                   onClick={action.callback}
                   name={action.label}
                 />
-              ))}
+              ))} */}
             </Group>
           );
         })}

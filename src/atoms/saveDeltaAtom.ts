@@ -6,7 +6,7 @@ import Delta from 'quill-delta';
 import { File } from '../api/api';
 import { composeDeltas, deltaToString } from '../utils/deltaUtils';
 import { getHighlightsAfter, getHighlightsBefore } from '../utils/monaco';
-import { changesAtom, changesOrderAtom } from './changes';
+import { changesAtom, changesOrderAtom, updateChangesX } from './changes';
 import { setPlayheadXAtom } from './playhead';
 import { Change } from './types';
 interface SaveDeltaParams {
@@ -70,15 +70,17 @@ export const saveDeltaAtom = atom(
         },
         path: file.path,
         delta,
+        children: !isFileDepChange ? [highlightChangeId] : [],
         deltaInverted: delta.invert(composeDeltas(fileChanges)),
       };
 
       if (!isFileDepChange) {
         changesDraft[highlightChangeId] = {
+          parentChangeId: newChangeId,
           fileStatus: changesDraft[newChangeId].fileStatus,
           path: changesDraft[newChangeId].path,
           isFileDepChange: false,
-          parentChangeId: newChangeId,
+          children: [],
           highlight: getHighlightsBefore(delta, before, eolChar),
           id: highlightChangeId,
           color: '#cccccc',
@@ -87,19 +89,14 @@ export const saveDeltaAtom = atom(
           actions: {},
         };
       }
-
-      let x = 10;
-      for (const id of newChangesOrder) {
-        if (changesDraft[id].isFileDepChange) {
-          continue;
-        }
-        changesDraft[id].x = x;
-        const space = changesDraft[id].parentChangeId ? 0 : 10;
-        x += changesDraft[id].width + space;
-      }
     });
 
-    set(changesAtom, newChanges);
+    const newChangesOrdered = produce(
+      newChanges,
+      updateChangesX(newChangesOrder)
+    );
+
+    set(changesAtom, newChangesOrdered);
     set(changesOrderAtom, newChangesOrder);
     set(setPlayheadXAtom, Infinity);
   }
