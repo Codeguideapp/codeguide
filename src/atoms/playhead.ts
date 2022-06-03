@@ -26,7 +26,7 @@ export const setPlayheadXAtom = atom(null, (get, set, x: number) => {
   const appliedIds = changesOrder.filter(
     (id) => changes[id].x < newPlayHeadX && !changes[id].isFileDepChange
   );
-  const activeChangeId = last(appliedIds) || null;
+  const activeChangeId = canEdit ? null : last(appliedIds) || null;
 
   set(playheadXAtom, newPlayHeadX);
   set(activeChangeIdAtom, activeChangeId);

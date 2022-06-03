@@ -4,7 +4,12 @@ import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 
 import { File } from '../api/api';
-import { composeDeltas, deltaToString } from '../utils/deltaUtils';
+import {
+  calcStat,
+  composeDeltas,
+  countLines,
+  deltaToString,
+} from '../utils/deltaUtils';
 import { getHighlightsAfter, getHighlightsBefore } from '../utils/monaco';
 import { changesAtom, changesOrderAtom, updateChangesX } from './changes';
 import { setPlayheadXAtom } from './playhead';
@@ -47,31 +52,21 @@ export const saveDeltaAtom = atom(
       ? [newChangeId, ...changesOrder]
       : [...changesOrder, highlightChangeId, newChangeId];
 
+    const width = getChangeWidth(delta, before, eolChar);
     const newChanges = produce(changes, (changesDraft) => {
       changesDraft[newChangeId] = {
         isFileDepChange: Boolean(isFileDepChange),
         fileStatus: changeStatus,
         highlight: isFileDepChange ? [] : getHighlightsAfter(delta, eolChar),
         id: newChangeId,
-        color: changeStatus === 'modified' ? '#374957' : '#0074bb',
-        width: isFileDepChange ? 0 : 50,
+        width: isFileDepChange ? 0 : width,
         x: 0,
-        actions: {
-          discardDraft: {
-            label: 'Discard Draft',
-            color: 'red',
-            callback: () => {},
-          },
-          saveChanges: {
-            label: 'Save Changes',
-            color: 'green',
-            callback: () => {},
-          },
-        },
+        actions: {},
         path: file.path,
         delta,
         children: !isFileDepChange ? [highlightChangeId] : [],
         deltaInverted: delta.invert(composeDeltas(fileChanges)),
+        stat: calcStat(delta),
       };
 
       if (!isFileDepChange) {
@@ -83,10 +78,10 @@ export const saveDeltaAtom = atom(
           children: [],
           highlight: getHighlightsBefore(delta, before, eolChar),
           id: highlightChangeId,
-          color: '#cccccc',
-          width: 20,
+          width: 10,
           x: 0,
           actions: {},
+          stat: [0, 0],
         };
       }
     });
@@ -101,3 +96,30 @@ export const saveDeltaAtom = atom(
     set(setPlayheadXAtom, Infinity);
   }
 );
+
+function getChangeWidth(delta: Delta, before: string, eolChar: string): number {
+  const stat = calcStat(delta);
+  const lines = countLines(delta, before, eolChar);
+  const widthFromChars = stat[0] + stat[1];
+  const widthFromLines = lines * 50;
+  const width =
+    widthFromLines > widthFromChars ? widthFromChars : widthFromLines;
+
+  let min = 20;
+  let max = 50;
+
+  if (width > 300) {
+    max = 60;
+  }
+  if (width > 800) {
+    max = 90;
+  }
+  if (width > 1000) {
+    max = 100;
+  }
+  if (width > 1500) {
+    max = 120;
+  }
+
+  return Math.max(min, Math.min(width, max));
+}

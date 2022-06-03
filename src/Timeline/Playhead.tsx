@@ -16,14 +16,14 @@ export function Playhead({
   const [, setPlayheadX] = useAtom(setPlayheadXAtom);
 
   return (
-    <Layer x={layerX} scaleX={zoom}>
+    <Layer x={layerX}>
       <Group
-        x={playHeadX}
+        x={playHeadX * zoom}
         y={0}
         draggable
         onDragMove={(event) => {
           const pos = event.target.getPosition();
-          setPlayheadX(pos.x);
+          setPlayheadX(pos.x / zoom);
         }}
         dragBoundFunc={(pos) => {
           return {
@@ -32,9 +32,9 @@ export function Playhead({
           };
         }}
       >
-        <Rect x={0} width={2} height={height} stroke="black" opacity={0} />
-        <Rect x={2} width={1} height={height} stroke="black" />
-        <Rect x={3} width={2} height={height} stroke="black" opacity={0} />
+        <Rect x={0} width={4} height={height} fill="red" opacity={0} />
+        <Rect x={4} width={1} height={height} fill="#9E9E9E" />
+        <Rect x={5} width={4} height={height} fill="red" opacity={0} />
       </Group>
     </Layer>
   );

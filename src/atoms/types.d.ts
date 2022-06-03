@@ -16,9 +16,9 @@ export type Change = {
   isFileDepChange: boolean;
   delta?: Delta;
   deltaInverted?: Delta;
+  stat: [number, number];
   id: string;
   x: number;
-  color: string;
   path: string;
   width: number;
   actions: Record<

@@ -7,6 +7,7 @@ import {
   windowHeightAtom,
   windowWidthAtom,
 } from '../atoms/layout';
+import { setPlayheadXAtom } from '../atoms/playhead';
 import { Changes } from './Changes';
 import { Playhead } from './Playhead';
 
@@ -19,6 +20,7 @@ export const Timeline = () => {
   const [layoutSplitRatio] = useAtom(layoutSplitRatioAtom);
   const [windowHeight] = useAtom(windowHeightAtom);
   const [stageWidth] = useAtom(windowWidthAtom);
+  const [, setPlayheadX] = useAtom(setPlayheadXAtom);
 
   const stageHeight = React.useMemo(
     () => Math.ceil(windowHeight * (layoutSplitRatio[0] / 100)) - topOffset,
@@ -92,6 +94,9 @@ export const Timeline = () => {
             const x = Math.max(minX, Math.min(layerX - dx, maxX));
             setLayerX(x);
           }
+        }}
+        onClick={(e) => {
+          setPlayheadX(e.evt.x / zoom - layerX);
         }}
       >
         <Changes

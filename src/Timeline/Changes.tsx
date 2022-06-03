@@ -1,8 +1,9 @@
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import React, { useRef } from 'react';
 import { Group, Layer, Rect } from 'react-konva';
 
 import {
+  activeChangeIdAtom,
   changesAtom,
   changesOrderAtom,
   sortBy,
@@ -10,6 +11,7 @@ import {
   updateChangesAtom,
   updateChangesX,
 } from '../atoms/changes';
+import { Change } from '../atoms/types';
 
 export function Changes({
   layerX,
@@ -28,6 +30,7 @@ export function Changes({
   const [changesOrder, setChangesOrder] = useAtom(changesOrderAtom);
   const [, updateChanges] = useAtom(updateChangesAtom);
   const changesOrderRef = useRef<string[]>([]);
+  const activeChangeId = useAtomValue(activeChangeIdAtom);
 
   return (
     <Layer x={layerX} scaleX={zoom}>
@@ -37,7 +40,8 @@ export function Changes({
           const withChildren = [change.id, ...change.children].sort(
             sortBy(changesOrder)
           );
-          const swapFrom = changes[withChildren[0]];
+          const first = changes[withChildren[0]];
+          const swapFrom = first;
 
           return (
             <Group
@@ -101,15 +105,45 @@ export function Changes({
                 };
               }}
             >
-              {withChildren.map((id, i) => (
+              {withChildren.map((id, i) => {
+                const parentChangeId = changes[id].parentChangeId;
+                const [inserts, deletes] = parentChangeId
+                  ? changes[parentChangeId].stat
+                  : changes[id].stat;
+
+                const total = inserts + deletes;
+
+                return (
+                  <Group key={changes[id].id}>
+                    <Rect
+                      x={i === 0 ? 0 : changes[withChildren[i - 1]].width}
+                      fill={getColor(changes[id], activeChangeId, 'green')}
+                      width={changes[id].width}
+                      height={(inserts / total) * height}
+                    />
+                    <Rect
+                      y={(inserts / total) * height}
+                      x={i === 0 ? 0 : changes[withChildren[i - 1]].width}
+                      fill={getColor(changes[id], activeChangeId, 'red')}
+                      width={changes[id].width}
+                      height={(deletes / total) * height}
+                    />
+                  </Group>
+                );
+              })}
+              {activeChangeId && withChildren.includes(activeChangeId) && (
                 <Rect
-                  key={changes[id].id}
-                  x={i === 0 ? 0 : changes[withChildren[i - 1]].width}
-                  fill={changes[id].color}
-                  width={changes[id].width}
+                  x={0}
+                  width={withChildren.reduce(
+                    (acc, id) => acc + changes[id].width,
+                    0
+                  )}
                   height={height}
+                  stroke="#c2c2c2"
+                  strokeWidth={1}
                 />
-              ))}
+              )}
+
               {/* {Object.entries(change.actions).map(([id, action], i) => (
                 // todo: buttons with tooltips https://konvajs.org/docs/sandbox/Shape_Tooltips.html separate component - react with tooltip support?
                 <Rect
@@ -131,4 +165,29 @@ export function Changes({
       )}
     </Layer>
   );
+}
+
+function getColor(
+  change: Change,
+  activeId: string | null,
+  color: 'green' | 'red'
+) {
+  const activeHighlight = color === 'green' ? '#628A70' : '#9B5B63';
+  const nonActiveHighlight = color === 'green' ? '#3A704D' : '#87313B';
+  const activeChange = color === 'green' ? '#12562A' : '#720714';
+  const nonActiveChange = activeChange;
+
+  if (change.parentChangeId) {
+    if (activeId === change.id) {
+      return activeHighlight;
+    } else {
+      return nonActiveHighlight;
+    }
+  } else {
+    if (activeId === change.id) {
+      return activeChange;
+    } else {
+      return nonActiveChange;
+    }
+  }
 }
