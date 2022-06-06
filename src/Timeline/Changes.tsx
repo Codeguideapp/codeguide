@@ -73,10 +73,11 @@ export function Changes({
       {fileWrappers.map((fileWrapper) => {
         const fileName = fileWrapper.path.split('/').pop()!;
         const width = (fileWrapper.lastX - fileWrapper.x) * zoom;
-        const maxChars = width / 5 - 3; // px to char size, 3 is legth of "..."
+        const maxChars = width / 6; // px to char size
         let text = fileName.slice(0, maxChars);
 
         if (fileName.length > maxChars) {
+          text = text.slice(0, text.length - 3);
           text += '...';
         }
 
