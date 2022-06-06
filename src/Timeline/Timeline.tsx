@@ -96,7 +96,7 @@ export const Timeline = () => {
           }
         }}
         onClick={(e) => {
-          setPlayheadX(e.evt.x / zoom - layerX);
+          setPlayheadX((e.evt.x - layerX) / zoom);
         }}
       >
         <Changes

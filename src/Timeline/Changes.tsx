@@ -1,6 +1,6 @@
 import { useAtom, useAtomValue } from 'jotai';
-import React, { useRef } from 'react';
-import { Group, Layer, Rect } from 'react-konva';
+import React, { useMemo, useRef } from 'react';
+import { Group, Layer, Rect, Text } from 'react-konva';
 
 import {
   activeChangeIdAtom,
@@ -32,8 +32,75 @@ export function Changes({
   const changesOrderRef = useRef<string[]>([]);
   const activeChangeId = useAtomValue(activeChangeIdAtom);
 
+  const fileWrappers = useMemo(() => {
+    const paths: {
+      path: string;
+      ids: string[];
+    }[] = [];
+
+    for (const id of changesOrder) {
+      if (changes[id].isFileDepChange) {
+        continue;
+      }
+      const lastIndex = paths.length - 1;
+      if (paths[lastIndex]?.path !== changes[id].path) {
+        paths.push({
+          path: changes[id].path,
+          ids: [id],
+        });
+      } else {
+        paths[lastIndex].ids.push(id);
+      }
+    }
+
+    return paths.map(({ path, ids }) => {
+      const x = Math.min(...ids.map((id) => changes[id].x));
+      const lastX = Math.max(
+        ...ids.map((id) => changes[id].x + changes[id].width)
+      );
+
+      return {
+        id: ids[0],
+        path,
+        x,
+        lastX,
+      };
+    });
+  }, [changes, changesOrder]);
+
   return (
-    <Layer x={layerX} scaleX={zoom}>
+    <Layer x={layerX}>
+      {fileWrappers.map((fileWrapper) => {
+        const fileName = fileWrapper.path.split('/').pop()!;
+        const width = (fileWrapper.lastX - fileWrapper.x) * zoom;
+        const maxChars = width / 5 - 3; // px to char size, 3 is legth of "..."
+        let text = fileName.slice(0, maxChars);
+
+        if (fileName.length > maxChars) {
+          text += '...';
+        }
+
+        return (
+          <Group key={fileWrapper.id}>
+            <Rect
+              y={y - 30}
+              x={fileWrapper.x * zoom - 10}
+              fill={'#2C3137'}
+              width={width + 20}
+              height={height + 40}
+              cornerRadius={4}
+            />
+            <Text
+              x={fileWrapper.x * zoom}
+              y={y - 20}
+              fontFamily="Menlo, Monaco, monospace"
+              fontSize={10}
+              text={text}
+              fill="#C2B6B6"
+            />
+          </Group>
+        );
+      })}
       {Object.values(changes)
         .filter((change) => !change.isFileDepChange && !change.parentChangeId)
         .map((change) => {
@@ -46,7 +113,7 @@ export function Changes({
           return (
             <Group
               key={swapFrom.id}
-              x={swapFrom.x}
+              x={swapFrom.x * zoom}
               y={y}
               draggable
               onDragStart={() => {
@@ -116,16 +183,20 @@ export function Changes({
                 return (
                   <Group key={changes[id].id}>
                     <Rect
-                      x={i === 0 ? 0 : changes[withChildren[i - 1]].width}
+                      x={
+                        i === 0 ? 0 : changes[withChildren[i - 1]].width * zoom
+                      }
                       fill={getColor(changes[id], activeChangeId, 'green')}
-                      width={changes[id].width}
+                      width={changes[id].width * zoom}
                       height={(inserts / total) * height}
                     />
                     <Rect
                       y={(inserts / total) * height}
-                      x={i === 0 ? 0 : changes[withChildren[i - 1]].width}
+                      x={
+                        i === 0 ? 0 : changes[withChildren[i - 1]].width * zoom
+                      }
                       fill={getColor(changes[id], activeChangeId, 'red')}
-                      width={changes[id].width}
+                      width={changes[id].width * zoom}
                       height={(deletes / total) * height}
                     />
                   </Group>
@@ -135,7 +206,7 @@ export function Changes({
                 <Rect
                   x={0}
                   width={withChildren.reduce(
-                    (acc, id) => acc + changes[id].width,
+                    (acc, id) => acc + changes[id].width * zoom,
                     0
                   )}
                   height={height}
@@ -143,19 +214,6 @@ export function Changes({
                   strokeWidth={1}
                 />
               )}
-
-              {/* {Object.entries(change.actions).map(([id, action], i) => (
-                // todo: buttons with tooltips https://konvajs.org/docs/sandbox/Shape_Tooltips.html separate component - react with tooltip support?
-                <Rect
-                  key={id}
-                  fill={action.color}
-                  x={i * 10}
-                  width={10}
-                  height={10}
-                  onClick={action.callback}
-                  name={action.label}
-                />
-              ))} */}
             </Group>
           );
         })}

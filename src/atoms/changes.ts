@@ -70,7 +70,7 @@ export function swapChanges({
 
 export const updateChangesX =
   (changesOrder: string[]) => (changes: Record<string, Change>) => {
-    let x = 10;
+    let x = 20;
     let lastId = '';
     for (const id of changesOrder) {
       if (changes[id].isFileDepChange) {
@@ -78,7 +78,7 @@ export const updateChangesX =
       }
 
       if (lastId && changes[lastId]?.path !== changes[id].path) {
-        x += 20;
+        x += 30;
       }
 
       changes[id].x = x;

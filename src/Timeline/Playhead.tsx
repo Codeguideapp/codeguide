@@ -32,9 +32,8 @@ export function Playhead({
           };
         }}
       >
-        <Rect x={0} width={4} height={height} fill="red" opacity={0} />
-        <Rect x={4} width={1} height={height} fill="#9E9E9E" />
-        <Rect x={5} width={4} height={height} fill="red" opacity={0} />
+        <Rect width={1} height={height} fill="#9E9E9E" />
+        <Rect x={1} width={6} height={height} fill="red" opacity={0} />
       </Group>
     </Layer>
   );

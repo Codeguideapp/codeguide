@@ -63,7 +63,6 @@ export function EditorEditMode() {
     () =>
       Object.values(diffMarkers)
         .sort((a, b) => a.originalOffset - b.originalOffset)
-        .sort((a, b) => (isIndentMarker(a) ? 1 : isIndentMarker(b) ? -1 : 0))
         .map((m) => m.id),
     [diffMarkers]
   );

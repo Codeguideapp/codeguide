@@ -13,7 +13,7 @@ export const setPlayheadXAtom = atom(null, (get, set, x: number) => {
   const lastChangeId = last(changesOrder);
 
   const maxPlayheadX = lastChangeId
-    ? changes[lastChangeId].x + changes[lastChangeId].width
+    ? changes[lastChangeId].x + changes[lastChangeId].width + 10
     : 10;
 
   const canEditTreshold = lastChangeId
