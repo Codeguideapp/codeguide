@@ -15,8 +15,10 @@ monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
 export function getMonacoEdits(
   delta: Delta,
   monacoModel: monaco.editor.ITextModel
-) {
-  const edits: monaco.editor.IIdentifiedSingleEditOperation[] = [];
+): monaco.editor.IIdentifiedSingleEditOperation[] {
+  const edits: (monaco.editor.IIdentifiedSingleEditOperation & {
+    rangeOffset: number;
+  })[] = [];
 
   let index = 0;
   for (const op of delta.ops) {
@@ -33,6 +35,7 @@ export function getMonacoEdits(
           posStart.column
         ),
         text: op.insert,
+        rangeOffset: index,
       });
 
       index += op.insert.length;
@@ -48,11 +51,17 @@ export function getMonacoEdits(
           posEnd.column
         ),
         text: '',
+        rangeOffset: index,
       });
     }
   }
 
-  return edits;
+  return edits
+    .sort((c1, c2) => c2.rangeOffset - c1.rangeOffset)
+    .map((c) => ({
+      range: c.range,
+      text: c.text,
+    }));
 }
 
 export function removeDeletions(delta: Delta) {

@@ -249,6 +249,10 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   padding: 5px;
 }
 
+.diff-marker.applied {
+  opacity: 0.2;
+}
+
 .diff-marker .code-preview .linenumber {
   width: 25px;
   display: inline-block;

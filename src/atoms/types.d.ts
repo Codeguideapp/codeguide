@@ -1,6 +1,8 @@
 import type * as monaco from 'monaco-editor';
 import type Delta from 'quill-delta';
 
+import { DiffMarker } from '../api/diffMarkers';
+
 export type Changes = Record<string, Readonly<Change>>; // changes is updated using immer so the result object can be read only
 
 export type Change = {
@@ -12,6 +14,7 @@ export type Change = {
     options: monaco.editor.IModelDecorationOptions;
   }[];
   parentChangeId?: string;
+  diffMarker?: DiffMarker;
   children: string[];
   isFileDepChange: boolean;
   delta?: Delta;

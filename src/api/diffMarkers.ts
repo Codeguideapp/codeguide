@@ -8,6 +8,7 @@ import { mergeTabsInSequence } from './diffMatchPatch';
 
 interface BaseDiffMarker {
   id: string;
+  changeId?: string;
   length: number;
   modifiedOffset: number;
   originalOffset: number;

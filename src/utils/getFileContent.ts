@@ -5,10 +5,12 @@ export function getFileContent({
   upToChangeId,
   changesOrder,
   changes,
+  excludeChange,
 }: {
   upToChangeId: string;
   changesOrder: string[];
   changes: Record<string, Change>;
+  excludeChange?: boolean;
 }) {
   const change = changes[upToChangeId];
   if (!change) throw new Error('change not found');
@@ -18,7 +20,7 @@ export function getFileContent({
   );
   const changesIdsToApply = pathFilteredIds.slice(
     0,
-    pathFilteredIds.indexOf(change.id) + 1
+    pathFilteredIds.indexOf(change.id) + (excludeChange ? 0 : 1)
   );
 
   return deltaToString(changesIdsToApply.map((id) => changes[id].delta!));

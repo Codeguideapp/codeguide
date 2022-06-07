@@ -1,5 +1,5 @@
 import { useAtom } from 'jotai';
-import { findLast } from 'lodash';
+import { findLast, isEqual } from 'lodash';
 import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 import React, {
@@ -43,12 +43,10 @@ export function EditorEditMode() {
   const [, saveDelta] = useAtom(saveDeltaAtom);
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
-  const activeMarkerIndex = useRef<number>(-1);
-
-  useEffect(() => {
-    // reset active marker when path changes
-    activeMarkerIndex.current = -1;
-  }, [activeFile?.path]);
+  const appliedMarkerRef = useRef<{
+    edits: monaco.editor.IIdentifiedSingleEditOperation[];
+    marker: DiffMarker;
+  }>();
 
   const highlightUndo = useRef<
     {
@@ -135,7 +133,23 @@ export function EditorEditMode() {
       eol: modifiedModel.getEOL(),
     });
 
-    setDiffMarkers(markers);
+    const appliedMarkers: DiffMarkers = Object.values(changes).reduce(
+      (acc, c) => {
+        if (!c.diffMarker || c.path !== activeFile.path) {
+          return acc;
+        }
+        return {
+          ...acc,
+          [c.diffMarker.id]: {
+            ...c.diffMarker,
+            changeId: c.id,
+          },
+        };
+      },
+      {} as DiffMarkers
+    );
+
+    setDiffMarkers({ ...markers, ...appliedMarkers });
 
     modifiedContentListener.current = modifiedModel.onDidChangeContent((e) => {
       const deltas: Delta[] = [];
@@ -167,123 +181,141 @@ export function EditorEditMode() {
         delta: composeDeltas(deltas),
         file: activeFile,
         eolChar: modifiedModel.getEOL(),
+        diffMarker: isEqual(
+          appliedMarkerRef.current?.edits,
+          e.changes.map((c) => ({ range: c.range, text: c.text }))
+        )
+          ? appliedMarkerRef.current?.marker
+          : undefined,
       });
     });
   }, [activeFile, changesOrder, saveDelta, setDiffMarkers]); // not watching changes as dep, because it is covered by changesOrder
 
-  const activateDiffMarker = useCallback((marker: DiffMarker) => {
-    const viewstate = editor.current?.saveViewState();
+  const activateDiffMarker = useCallback(
+    (marker: DiffMarker) => {
+      const viewstate = editor.current?.saveViewState();
 
-    editor.current?.updateOptions({
-      scrollbar: {
-        vertical: 'hidden',
-        horizontal: 'hidden',
-      },
-    });
+      editor.current?.updateOptions({
+        scrollbar: {
+          vertical: 'hidden',
+          horizontal: 'hidden',
+        },
+      });
 
-    const modifiedValue = modifiedModel.getValue();
-    const previewValue = previewModel.getValue();
+      const modifiedValue = modifiedModel.getValue();
+      const previewValue = previewModel.getValue();
 
-    if (modifiedValue !== previewValue) {
-      previewModel.setValue(modifiedValue);
-    }
+      if (marker.changeId) {
+        previewModel.setValue(
+          getFileContent({
+            upToChangeId: marker.changeId,
+            excludeChange: true,
+            changes,
+            changesOrder,
+          })
+        );
+      } else if (modifiedValue !== previewValue) {
+        previewModel.setValue(modifiedValue);
+      }
 
-    previewModel.updateOptions(modifiedModel.getOptions());
-    editor.current?.setModel(previewModel);
+      previewModel.updateOptions(modifiedModel.getOptions());
+      editor.current?.setModel(previewModel);
 
-    if (viewstate) {
-      editor.current?.restoreViewState(viewstate);
-    }
+      if (viewstate) {
+        editor.current?.restoreViewState(viewstate);
+      }
 
-    if (marker.operation === 'delete') {
-      const edits = getMonacoEdits(marker.delta, previewModel);
-      decorations.current = editor.current!.deltaDecorations(
-        decorations.current,
-        [
-          {
-            range: edits[0].range,
-            options: {
-              className: 'delete-highlight',
+      if (marker.operation === 'delete') {
+        const edits = getMonacoEdits(marker.delta, previewModel);
+        decorations.current = editor.current!.deltaDecorations(
+          decorations.current,
+          [
+            {
+              range: edits[0].range,
+              options: {
+                className: 'delete-highlight',
+              },
             },
-          },
-        ]
-      );
-      editor.current?.revealRangeInCenterIfOutsideViewport(
-        edits[0].range,
-        monaco.editor.ScrollType.Smooth
-      );
-    } else if (marker.operation === 'replace') {
-      const deltaIns = removeDeletions(marker.delta);
-      const deltaDel = removeInserts(marker.delta);
-      const editsIns = getMonacoEdits(deltaIns, previewModel);
-      const editsDel = getMonacoEdits(deltaDel, previewModel);
+          ]
+        );
+        editor.current?.revealRangeInCenterIfOutsideViewport(
+          edits[0].range,
+          monaco.editor.ScrollType.Smooth
+        );
+      } else if (marker.operation === 'replace') {
+        const deltaIns = removeDeletions(marker.delta);
+        const deltaDel = removeInserts(marker.delta);
+        const editsIns = getMonacoEdits(deltaIns, previewModel);
+        const editsDel = getMonacoEdits(deltaDel, previewModel);
 
-      if (editsIns.length === 0) return;
+        if (editsIns.length === 0) return;
 
-      highlightUndo.current = previewModel.applyEdits(editsIns, true);
+        highlightUndo.current = previewModel.applyEdits(editsIns, true);
 
-      decorations.current = editor.current!.deltaDecorations(
-        decorations.current,
-        [
-          ...editsDel.map((edit) => ({
-            range: edit.range,
-            options: {
-              className: 'delete-highlight',
-            },
-          })),
-          ...highlightUndo.current.map((edit) => ({
+        decorations.current = editor.current!.deltaDecorations(
+          decorations.current,
+          [
+            ...editsDel.map((edit) => ({
+              range: edit.range,
+              options: {
+                className: 'delete-highlight',
+              },
+            })),
+            ...highlightUndo.current.map((edit) => ({
+              range: edit.range,
+              options: {
+                className: 'insert-highlight',
+              },
+            })),
+          ]
+        );
+
+        const startRange = highlightUndo.current[0].range;
+        const endRange =
+          highlightUndo.current[highlightUndo.current.length - 1].range;
+
+        editor.current?.revealRangeInCenterIfOutsideViewport(
+          new monaco.Range(
+            startRange.startLineNumber,
+            startRange.startColumn,
+            endRange.endLineNumber,
+            endRange.endColumn
+          ),
+          monaco.editor.ScrollType.Smooth
+        );
+      } else {
+        const edits = getMonacoEdits(marker.delta, previewModel);
+        if (edits.length === 0) return;
+
+        highlightUndo.current = previewModel.applyEdits(edits, true);
+
+        decorations.current = editor.current!.deltaDecorations(
+          decorations.current,
+          highlightUndo.current.map((edit) => ({
             range: edit.range,
             options: {
               className: 'insert-highlight',
             },
-          })),
-        ]
-      );
+          }))
+        );
 
-      const startRange = highlightUndo.current[0].range;
-      const endRange =
-        highlightUndo.current[highlightUndo.current.length - 1].range;
+        const startRange = highlightUndo.current[0].range;
+        const endRange =
+          highlightUndo.current[highlightUndo.current.length - 1].range;
 
-      editor.current?.revealRangeInCenterIfOutsideViewport(
-        new monaco.Range(
-          startRange.startLineNumber,
-          startRange.startColumn,
-          endRange.endLineNumber,
-          endRange.endColumn
-        ),
-        monaco.editor.ScrollType.Smooth
-      );
-    } else {
-      const edits = getMonacoEdits(marker.delta, previewModel);
-      if (edits.length === 0) return;
-
-      highlightUndo.current = previewModel.applyEdits(edits, true);
-
-      decorations.current = editor.current!.deltaDecorations(
-        decorations.current,
-        highlightUndo.current.map((edit) => ({
-          range: edit.range,
-          options: {
-            className: 'insert-highlight',
-          },
-        }))
-      );
-
-      const startRange = highlightUndo.current[0].range;
-      const endRange =
-        highlightUndo.current[highlightUndo.current.length - 1].range;
-
-      editor.current?.revealRangeInCenterIfOutsideViewport(
-        new monaco.Range(
-          startRange.startLineNumber,
-          startRange.startColumn,
-          endRange.endLineNumber,
-          endRange.endColumn
-        ),
-        monaco.editor.ScrollType.Smooth
-      );
-    }
-  }, []);
+        editor.current?.revealRangeInCenterIfOutsideViewport(
+          new monaco.Range(
+            startRange.startLineNumber,
+            startRange.startColumn,
+            endRange.endLineNumber,
+            endRange.endColumn
+          ),
+          monaco.editor.ScrollType.Smooth
+        );
+      }
+    },
+    [changes, changesOrder]
+  );
 
   const resetDiffMarkers = useCallback(() => {
     previewModel.applyEdits(highlightUndo.current);
@@ -311,6 +343,8 @@ export function EditorEditMode() {
 
   const applyDiffMarker = useCallback((marker: DiffMarker) => {
     const edits = getMonacoEdits(marker.delta, modifiedModel);
+
+    appliedMarkerRef.current = { edits, marker };
     modifiedModel.applyEdits(edits);
 
     const viewstate = editor.current?.saveViewState();
@@ -319,15 +353,6 @@ export function EditorEditMode() {
       editor.current?.restoreViewState(viewstate);
     }
   }, []);
-
-  useEffect(() => {
-    if (activeMarkerIndex.current !== -1) {
-      const id = markerIds[activeMarkerIndex.current];
-      if (id) {
-        activateDiffMarker(diffMarkers[id]);
-      }
-    }
-  }, [diffMarkers, markerIds, activateDiffMarker]);
 
   return (
     <Split
@@ -341,57 +366,75 @@ export function EditorEditMode() {
         {markerIds.map((markerId) => {
           const marker = diffMarkers[markerId];
 
-          const markerType = isIndentMarker(marker)
-            ? 'indent'
-            : marker.operation;
-
           return (
-            <div
-              key={marker.id}
-              className={`diff-marker`}
+            <DiffMarkerButton
+              key={markerId}
+              marker={marker}
               onMouseEnter={() => {
-                activeMarkerIndex.current = markerIds.indexOf(marker.id);
                 activateDiffMarker(marker);
               }}
               onMouseLeave={() => {
-                activeMarkerIndex.current = -1;
                 resetDiffMarkers();
               }}
               onClick={() => {
                 applyDiffMarker(marker);
               }}
-            >
-              <div className="head">
-                <div className="operation">
-                  <span className={`dot ${markerType}`}></span>
-                  <span className="text">{markerType}</span>
-                </div>
-                <span className="stat">
-                  <span className="additions">+{marker.stat[0]}</span>
-                  <span className="deletions">-{marker.stat[1]}</span>
-                </span>
-              </div>
-              <div className="code-preview">
-                {Object.entries(marker.preview || {}).map(([line, content]) => (
-                  <div key={line}>
-                    <span className="linenumber">{line}:</span>
-                    {content.map((c, i) => {
-                      return (
-                        <span
-                          key={`${line}-${i}`}
-                          className={c.isDelete ? 'strikethrough' : ''}
-                        >
-                          {c.code}
-                        </span>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            </div>
+            />
           );
         })}
       </div>
     </Split>
+  );
+}
+
+function DiffMarkerButton({
+  marker,
+  onMouseEnter,
+  onMouseLeave,
+  onClick,
+}: {
+  marker: DiffMarker;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
+  onClick?: () => void;
+}) {
+  const markerType = isIndentMarker(marker) ? 'indent' : marker.operation;
+
+  return (
+    <div
+      className={`diff-marker ${marker.changeId ? 'applied' : ''}`}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      onClick={marker.changeId ? undefined : onClick}
+      style={{ cursor: marker.changeId ? 'default' : 'pointer' }}
+    >
+      <div className="head">
+        <div className="operation">
+          <span className={`dot ${markerType}`}></span>
+          <span className="text">{markerType}</span>
+        </div>
+        <span className="stat">
+          <span className="additions">+{marker.stat[0]}</span>
+          <span className="deletions">-{marker.stat[1]}</span>
+        </span>
+      </div>
+      <div className="code-preview">
+        {Object.entries(marker.preview || {}).map(([line, content]) => (
+          <div key={line}>
+            <span className="linenumber">{line}:</span>
+            {content.map((c, i) => {
+              return (
+                <span
+                  key={`${line}-${i}`}
+                  className={c.isDelete ? 'strikethrough' : ''}
+                >
+                  {c.code}
+                </span>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

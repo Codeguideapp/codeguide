@@ -4,6 +4,7 @@ import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 
 import { File } from '../api/api';
+import { DiffMarker } from '../api/diffMarkers';
 import {
   calcStat,
   composeDeltas,
@@ -19,11 +20,16 @@ interface SaveDeltaParams {
   file: File;
   isFileDepChange?: boolean;
   eolChar: string;
+  diffMarker?: DiffMarker;
 }
 
 export const saveDeltaAtom = atom(
   null,
-  (get, set, { delta, file, isFileDepChange, eolChar }: SaveDeltaParams) => {
+  (
+    get,
+    set,
+    { delta, file, isFileDepChange, eolChar, diffMarker }: SaveDeltaParams
+  ) => {
     const newChangeId = nanoid();
     const highlightChangeId = nanoid();
     const changes = get(changesAtom);
@@ -64,6 +70,7 @@ export const saveDeltaAtom = atom(
         actions: {},
         path: file.path,
         delta,
+        diffMarker: !isFileDepChange ? diffMarker : undefined,
         children: !isFileDepChange ? [highlightChangeId] : [],
         deltaInverted: delta.invert(composeDeltas(fileChanges)),
         stat: calcStat(delta),
