@@ -7,9 +7,15 @@ import {
   windowHeightAtom,
   windowWidthAtom,
 } from '../atoms/layout';
-import { setPlayheadXAtom } from '../atoms/playhead';
+import {
+  isPlayheadVisibleAtom,
+  isPlayingAtom,
+  refPlayheadXAtom,
+  setPlayheadXAtom,
+} from '../atoms/playhead';
 import { Changes } from './Changes';
-import { Playhead } from './Playhead';
+import { MediaControls } from './MediaControls';
+import { Playhead, PreviewPlayhead } from './Playhead';
 
 const topBarHeight = 19;
 const mainTopHeight = 46;
@@ -21,6 +27,9 @@ export const Timeline = () => {
   const [windowHeight] = useAtom(windowHeightAtom);
   const [stageWidth] = useAtom(windowWidthAtom);
   const [, setPlayheadX] = useAtom(setPlayheadXAtom);
+  const [playHeadX] = useAtom(refPlayheadXAtom);
+  const [, setPlayheadVisible] = useAtom(isPlayheadVisibleAtom);
+  const [isPlaying] = useAtom(isPlayingAtom);
 
   const stageHeight = React.useMemo(
     () => Math.ceil(windowHeight * (layoutSplitRatio[0] / 100)) - topOffset,
@@ -61,12 +70,30 @@ export const Timeline = () => {
   var scaleBy = 1.04;
   return (
     <div>
-      <div className="timeline-top" style={{ height: topBarHeight }}></div>
+      <div className="timeline-top" style={{ height: topBarHeight }}>
+        <MediaControls />
+      </div>
       <Stage
         className="timeline"
         width={window.innerWidth}
         height={stageHeight}
         ref={stageRef}
+        onMouseLeave={() => {
+          if (isPlaying) return;
+          setPlayheadVisible(false);
+          setPlayheadX({
+            x: playHeadX,
+            type: 'preview',
+          });
+        }}
+        onMouseMove={(e) => {
+          if (isPlaying) return;
+          setPlayheadVisible(true);
+          setPlayheadX({
+            x: (e.evt.x - layerX) / zoom,
+            type: 'preview',
+          });
+        }}
         onWheel={(e) => {
           e.evt.preventDefault();
           if (e.evt.ctrlKey) {
@@ -96,7 +123,10 @@ export const Timeline = () => {
           }
         }}
         onClick={(e) => {
-          setPlayheadX((e.evt.x - layerX) / zoom);
+          setPlayheadX({
+            x: (e.evt.x - layerX) / zoom,
+            type: 'ref',
+          });
         }}
       >
         <Changes
@@ -106,6 +136,12 @@ export const Timeline = () => {
           y={(stageHeight - 100) / 2}
         />
         <Playhead layerX={layerX} zoom={zoom} height={stageHeight - 10} />
+        <PreviewPlayhead
+          layerX={layerX}
+          zoom={zoom}
+          height={stageHeight - 10}
+        />
+
         <Layer>
           <Rect
             x={scrollbarX}

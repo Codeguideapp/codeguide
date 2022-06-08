@@ -104,6 +104,23 @@ code {
 .timeline-top {
   background: var(--secondary-background);
   border-bottom: 1px solid #0000004d;
+  text-align: center;
+}
+.timeline-top .media-controls {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+.timeline-top .media-controls .speed {
+  font-size: 10px;
+  color: #8f8f8f;
+  padding-left: 5px;
+  font-family: 'Inconsolata';
+  cursor: default;
+}
+.timeline-top .media-controls svg {
+  padding: 0 4px;
 }
 
 .monaco.edit-mode .diffglyph {

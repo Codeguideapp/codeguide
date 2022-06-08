@@ -100,7 +100,7 @@ export const saveDeltaAtom = atom(
 
     set(changesAtom, newChangesOrdered);
     set(changesOrderAtom, newChangesOrder);
-    set(setPlayheadXAtom, Infinity);
+    set(setPlayheadXAtom, { x: Infinity, type: 'ref' });
   }
 );
 

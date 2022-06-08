@@ -1,7 +1,13 @@
 import { useAtom } from 'jotai';
 import { Group, Layer, Rect } from 'react-konva';
 
-import { playheadXAtom, setPlayheadXAtom } from '../atoms/playhead';
+import {
+  isPlayheadVisibleAtom,
+  isPlayingAtom,
+  playheadXAtom,
+  refPlayheadXAtom,
+  setPlayheadXAtom,
+} from '../atoms/playhead';
 
 export function Playhead({
   layerX,
@@ -12,7 +18,8 @@ export function Playhead({
   zoom: number;
   height: number;
 }) {
-  const [playHeadX] = useAtom(playheadXAtom);
+  const [isPlaying] = useAtom(isPlayingAtom);
+  const [playHeadX] = useAtom(refPlayheadXAtom);
   const [, setPlayheadX] = useAtom(setPlayheadXAtom);
 
   return (
@@ -23,7 +30,10 @@ export function Playhead({
         draggable
         onDragMove={(event) => {
           const pos = event.target.getPosition();
-          setPlayheadX(pos.x / zoom);
+          setPlayheadX({
+            x: pos.x / zoom,
+            type: 'ref',
+          });
         }}
         dragBoundFunc={(pos) => {
           return {
@@ -32,8 +42,33 @@ export function Playhead({
           };
         }}
       >
-        <Rect width={1} height={height} fill="#9E9E9E" />
+        <Rect
+          width={1}
+          height={height}
+          fill={isPlaying ? '#ECFF75' : '#666666'}
+        />
         <Rect x={1} width={6} height={height} fill="red" opacity={0} />
+      </Group>
+    </Layer>
+  );
+}
+
+export function PreviewPlayhead({
+  layerX,
+  zoom,
+  height,
+}: {
+  layerX: number;
+  zoom: number;
+  height: number;
+}) {
+  const [playheadVisible] = useAtom(isPlayheadVisibleAtom);
+  const [playHeadX] = useAtom(playheadXAtom);
+
+  return (
+    <Layer x={layerX - 1} opacity={playheadVisible ? 1 : 0}>
+      <Group x={playHeadX * zoom} y={0}>
+        <Rect width={1} height={height} fill="#9E9E9E" />
       </Group>
     </Layer>
   );
