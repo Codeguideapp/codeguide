@@ -5,17 +5,18 @@ import React, { useMemo, useState } from 'react';
 import useSWR from 'swr';
 
 import { getFiles } from '../api/api';
+import { activeChangeIdAtom, changesAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
 import { setPlayheadXAtom } from '../atoms/playhead';
 
 const { DirectoryTree } = Tree;
 
 export function FileTree() {
-  const [, setActiveFile] = useAtom(activeFileAtom);
-  // const [changes] = useAtom(changesAtom);
+  const [activeFile, setActiveFile] = useAtom(activeFileAtom);
+  const [changes] = useAtom(changesAtom);
   // const [fileChanges] = useAtom(fileChangesAtom);
   // const [changesOrder] = useAtom(changesOrderAtom);
-  // const [activeChangeId] = useAtom(activeChangeIdAtom);
+  const [activeChangeId] = useAtom(activeChangeIdAtom);
   const [, setPlayheadX] = useAtom(setPlayheadXAtom);
   const [activeDir] = useState('/');
 
@@ -77,12 +78,20 @@ export function FileTree() {
             type: 'ref',
           });
         }}
-      />
-      <br />
-      <div>changed files</div>
-      <br /> */}
+      /> 
+     */}
+      <div className="header">Changed files</div>
       <DirectoryTree
+        className="directory-tree"
         treeData={modifiedFiles}
+        activeKey={
+          activeChangeId ? changes[activeChangeId].path : activeFile?.path
+        }
+        selectedKeys={
+          activeChangeId
+            ? [changes[activeChangeId].path]
+            : [activeFile?.path || '']
+        }
         onSelect={(selected) => {
           const file = data.find((f) => f.path === selected[0]);
           setActiveFile(file);

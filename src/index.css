@@ -12,7 +12,7 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: #000000;
+  background: #0000;
   color: #cccccc;
   --primary-background: #181a1c;
   --secondary-background: #202428;
@@ -28,18 +28,32 @@ body {
 }
 .main-left {
   display: flex;
+  overflow: hidden;
 }
 .left-menu {
   width: 45px;
   min-width: 45px;
-  border-right: 1px solid black;
+  border-right: 1px solid rgba(0, 0, 0, 0.2);
   background: var(--primary-background);
 }
 .file-tree {
   background: var(--primary-background);
   width: 100%;
-  padding: 10px;
+  min-width: 200px;
+}
+.file-tree .header {
+  height: 30px;
+  display: flex;
+  align-items: center;
+  font-family: 'Roboto';
+  font-size: 12px;
+  font-weight: bold;
+  padding-left: 24px;
+}
+.file-tree .directory-tree {
+  padding-top: 10px;
   overflow: auto;
+  height: 100%;
 }
 
 code {
@@ -203,7 +217,6 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   height: 30px;
   width: 100%;
   background: rgb(32 36 40);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   font-family: 'Roboto';

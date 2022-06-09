@@ -366,7 +366,7 @@ export function EditorEditMode() {
       <div>
         <div className="editor-top">
           <span className="filename">{path.split('/').pop()}</span>
-          <span className="path">{path}</span>
+          <span className="path">{path.split('/').length > 1 ? path : ''}</span>
         </div>
         <div ref={monacoDom} className="monaco edit-mode"></div>
       </div>

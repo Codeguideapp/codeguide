@@ -2,7 +2,7 @@ import { File } from '../api/api';
 
 export const mockFiles: File[] = [
   {
-    path: 'old-tests.ts',
+    path: 'some/path/old-tests.ts',
     status: 'modified',
     oldVal: `
       const renderApp = () =>

@@ -126,7 +126,7 @@ export function EditorReadMode() {
     <div style={{ height: '100%' }}>
       <div className="editor-top">
         <span className="filename">{path.split('/').pop()}</span>
-        <span className="path">{path}</span>
+        <span className="path">{path.split('/').length > 1 ? path : ''}</span>
       </div>
       <div ref={editorDiffDom} className="monaco read-mode"></div>
     </div>
