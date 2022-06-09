@@ -61,16 +61,6 @@ code {
   -khtml-user-select: none;
   -webkit-user-select: none;
 }
-.editor-top {
-  height: 20px;
-  width: 100%;
-  border-bottom: 1px solid #0000004d;
-  background: var(--primary-background);
-}
-.editor-bottom {
-  width: 100%;
-  height: calc(100% - 21px);
-}
 
 .split-horiz {
   display: flex;
@@ -123,6 +113,28 @@ code {
   padding: 0 4px;
 }
 
+.editor-top {
+  height: 30px;
+  padding-left: 10px;
+  width: 100%;
+  background: var(--primary-background);
+  display: flex;
+  align-items: center;
+  font-family: 'Roboto';
+  font-size: 12px;
+}
+.editor-top .filename {
+  padding: 0 8px;
+  font-weight: bold;
+}
+.editor-top .path {
+  opacity: 0.5;
+  font-size: 70%;
+}
+
+.monaco {
+  height: calc(100% - 30px);
+}
 .monaco.edit-mode .diffglyph {
   background: red;
 }
@@ -187,8 +199,24 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   border-color: red;
 }
 
+.rightpanel-top {
+  height: 30px;
+  width: 100%;
+  background: rgb(32 36 40);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  font-family: 'Roboto';
+  font-size: 12px;
+  padding-left: 10px;
+}
+.rightpanel-top span {
+  padding: 0 8px;
+  font-weight: bold;
+}
+
 .diff-markers-wrap {
-  height: 100%;
+  height: calc(100% - 30px);
   overflow: auto;
   background: rgb(32 36 40);
   padding: 15px;

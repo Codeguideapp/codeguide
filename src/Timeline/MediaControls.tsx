@@ -45,7 +45,7 @@ export function MediaControls() {
   );
   const setSpeedHandler = useCallback(() => {
     let newSpeed = playheadSpeed * 2;
-    if (newSpeed > 32) {
+    if (newSpeed > 8) {
       newSpeed = 1;
     }
     setPlayheadSpeed(newSpeed);

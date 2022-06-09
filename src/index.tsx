@@ -1,6 +1,7 @@
 import './index.css';
 import 'antd/dist/antd.dark.css';
 import '@fontsource/inconsolata';
+import '@fontsource/roboto';
 
 import { useAtom } from 'jotai';
 import { debounce } from 'lodash';

@@ -47,6 +47,7 @@ export function EditorEditMode() {
     edits: monaco.editor.IIdentifiedSingleEditOperation[];
     marker: DiffMarker;
   }>();
+  const path = activeFile?.path || '';
 
   const highlightUndo = useRef<
     {
@@ -359,29 +360,41 @@ export function EditorEditMode() {
       className="split-editor"
       direction="horizontal"
       sizes={[70, 30]}
+      minSize={200}
       gutterSize={1}
     >
-      <div ref={monacoDom} className="monaco edit-mode"></div>
-      <div className="diff-markers-wrap">
-        {markerIds.map((markerId) => {
-          const marker = diffMarkers[markerId];
+      <div>
+        <div className="editor-top">
+          <span className="filename">{path.split('/').pop()}</span>
+          <span className="path">{path}</span>
+        </div>
+        <div ref={monacoDom} className="monaco edit-mode"></div>
+      </div>
+      <div>
+        <div className="rightpanel-top">
+          <span>Changes</span>
+        </div>
+        <div className="diff-markers-wrap">
+          {markerIds.map((markerId) => {
+            const marker = diffMarkers[markerId];
 
-          return (
-            <DiffMarkerButton
-              key={markerId}
-              marker={marker}
-              onMouseEnter={() => {
-                activateDiffMarker(marker);
-              }}
-              onMouseLeave={() => {
-                resetDiffMarkers();
-              }}
-              onClick={() => {
-                applyDiffMarker(marker);
-              }}
-            />
-          );
-        })}
+            return (
+              <DiffMarkerButton
+                key={markerId}
+                marker={marker}
+                onMouseEnter={() => {
+                  activateDiffMarker(marker);
+                }}
+                onMouseLeave={() => {
+                  resetDiffMarkers();
+                }}
+                onClick={() => {
+                  applyDiffMarker(marker);
+                }}
+              />
+            );
+          })}
+        </div>
       </div>
     </Split>
   );

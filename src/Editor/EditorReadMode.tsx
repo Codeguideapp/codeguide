@@ -1,6 +1,6 @@
 import { useAtomValue } from 'jotai';
 import * as monaco from 'monaco-editor';
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 
 import {
   activeChangeIdAtom,
@@ -22,6 +22,10 @@ export function EditorReadMode() {
   const changes = useAtomValue(changesAtom);
   const changesOrder = useAtomValue(changesOrderAtom);
   const openFiles = useRef<Record<string, OpenFile>>({});
+  const path = useMemo(
+    () => (activeChangeId ? changes[activeChangeId].path : ''),
+    [activeChangeId, changes]
+  );
 
   useEffect(() => {
     if (!editorDiffDom.current) return;
@@ -118,5 +122,13 @@ export function EditorReadMode() {
     };
   }, [editorDiffDom]);
 
-  return <div ref={editorDiffDom} className="monaco read-mode"></div>;
+  return (
+    <div style={{ height: '100%' }}>
+      <div className="editor-top">
+        <span className="filename">{path.split('/').pop()}</span>
+        <span className="path">{path}</span>
+      </div>
+      <div ref={editorDiffDom} className="monaco read-mode"></div>
+    </div>
+  );
 }
