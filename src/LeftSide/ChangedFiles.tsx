@@ -11,7 +11,7 @@ import { setPlayheadXAtom } from '../atoms/playhead';
 
 const { DirectoryTree } = Tree;
 
-export function FileTree() {
+export function ChangedFiles() {
   const [activeFile, setActiveFile] = useAtom(activeFileAtom);
   const [changes] = useAtom(changesAtom);
   // const [fileChanges] = useAtom(fileChangesAtom);

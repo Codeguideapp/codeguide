@@ -17,6 +17,7 @@ body {
   --background-1: #181a1c;
   --background-2: #202428;
   --background-3: #1f2124;
+  --background-4: #272a2e;
 }
 
 .main {
@@ -44,7 +45,10 @@ body {
 .left-menu .icon {
   margin-bottom: 20px;
   opacity: 0.4;
+  cursor: pointer;
 }
+
+.left-menu .icon:hover,
 .left-menu .icon.active {
   opacity: 1;
 }
@@ -248,7 +252,7 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   padding: 15px;
 }
 .diff-marker {
-  background: var(--background-3);
+  background: var(--background-4);
   border-radius: 2px;
   min-height: 60px;
   margin-bottom: 15px;

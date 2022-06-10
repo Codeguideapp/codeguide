@@ -19,9 +19,7 @@ import {
 } from './atoms/layout';
 import { Editor } from './Editor/Editor';
 import { defaultDarkTheme } from './Editor/monaco-themes/defaultDark';
-import { ReactComponent as FilesDiffIcon } from './filediff.svg';
-import { ReactComponent as FilesIcon } from './files.svg';
-import { FileTree } from './FileTree/FileTree';
+import { LeftSide } from './LeftSide/LeftSide';
 import reportWebVitals from './reportWebVitals';
 import { Timeline } from './Timeline/Timeline';
 
@@ -57,7 +55,7 @@ function App() {
         sizes={layoutSplitRatio}
         minSize={[100, 100]}
         onDrag={([top, bottom]) => {
-          setlLayoutSplitRatio([bottom, top]);
+          setlLayoutSplitRatio([top, bottom]);
         }}
       >
         <Split
@@ -66,18 +64,7 @@ function App() {
           sizes={[20, 80]}
           gutterSize={1}
         >
-          <div className="main-left">
-            <div className="left-menu">
-              <div className="icon active">
-                <FilesDiffIcon width={28} />
-              </div>
-              <div className="icon">
-                <FilesIcon width={28} />
-              </div>
-            </div>
-            <FileTree />
-          </div>
-
+          <LeftSide />
           <Editor />
         </Split>
 
