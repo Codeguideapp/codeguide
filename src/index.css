@@ -14,8 +14,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: #0000;
   color: #cccccc;
-  --primary-background: #181a1c;
-  --secondary-background: #202428;
+  --background-1: #181a1c;
+  --background-2: #202428;
+  --background-3: #1f2124;
 }
 
 .main {
@@ -23,7 +24,7 @@ body {
 }
 .main .top {
   height: 45px;
-  background: var(--primary-background);
+  background: var(--background-1);
   margin-bottom: 1px;
 }
 .main-left {
@@ -33,25 +34,36 @@ body {
 .left-menu {
   width: 45px;
   min-width: 45px;
-  border-right: 1px solid rgba(0, 0, 0, 0.2);
-  background: var(--primary-background);
+  border-right: 1px solid #202020;
+  background: var(--background-2);
+  display: flex;
+  padding-top: 20px;
+  flex-direction: column;
+  align-items: center;
+}
+.left-menu .icon {
+  margin-bottom: 20px;
+  opacity: 0.4;
+}
+.left-menu .icon.active {
+  opacity: 1;
 }
 .file-tree {
-  background: var(--primary-background);
+  background: var(--background-3);
   width: 100%;
   min-width: 200px;
 }
 .file-tree .header {
-  height: 30px;
+  height: 40px;
   display: flex;
   align-items: center;
   font-family: 'Roboto';
-  font-size: 12px;
+  font-size: 11px;
   font-weight: bold;
-  padding-left: 24px;
+  padding-left: 22px;
+  text-transform: uppercase;
 }
 .file-tree .directory-tree {
-  padding-top: 10px;
   overflow: auto;
   height: 100%;
 }
@@ -95,19 +107,21 @@ code {
 
 .gutter.gutter-horizontal {
   cursor: col-resize;
+  background: #202020;
 }
 
 .gutter.gutter-vertical {
   cursor: row-resize;
+  background: #191c1f;
 }
 
 .timeline {
-  background: var(--secondary-background);
+  background: var(--background-2);
 }
 
 .timeline-top {
-  background: var(--secondary-background);
-  border-bottom: 1px solid #0000004d;
+  background: var(--background-2);
+  border-bottom: 1px solid #191c1f;
   text-align: center;
 }
 .timeline-top .media-controls {
@@ -128,27 +142,27 @@ code {
 }
 
 .editor-top {
-  height: 30px;
-  padding-left: 10px;
+  height: 35px;
   width: 100%;
-  background: var(--primary-background);
+  background: var(--background-3);
   display: flex;
   align-items: center;
   font-family: 'Roboto';
   font-size: 12px;
 }
-.editor-top .filename {
-  padding: 0 8px;
-  font-weight: bold;
+.editor-bottom {
+  height: calc(100% - 35px);
 }
-.editor-top .path {
-  opacity: 0.5;
-  font-size: 70%;
+.editor-top .filename {
+  padding: 0 15px;
+  font-weight: bold;
+  background: var(--background-1);
+  height: 35px;
+  line-height: 35px;
+  min-width: 120px;
+  text-align: center;
 }
 
-.monaco {
-  height: calc(100% - 30px);
-}
 .monaco.edit-mode .diffglyph {
   background: red;
 }
@@ -214,9 +228,9 @@ body .monaco-diff-editor.side-by-side .editor.modified {
 }
 
 .rightpanel-top {
-  height: 30px;
+  height: 50px;
   width: 100%;
-  background: rgb(32 36 40);
+  background: var(--background-2);
   display: flex;
   align-items: center;
   font-family: 'Roboto';
@@ -229,13 +243,12 @@ body .monaco-diff-editor.side-by-side .editor.modified {
 }
 
 .diff-markers-wrap {
-  height: calc(100% - 30px);
   overflow: auto;
-  background: rgb(32 36 40);
+  background: var(--background-1);
   padding: 15px;
 }
 .diff-marker {
-  background: #3b4856;
+  background: var(--background-3);
   border-radius: 2px;
   min-height: 60px;
   margin-bottom: 15px;

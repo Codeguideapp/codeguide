@@ -122,13 +122,5 @@ export function EditorReadMode() {
     };
   }, [editorDiffDom]);
 
-  return (
-    <div style={{ height: '100%' }}>
-      <div className="editor-top">
-        <span className="filename">{path.split('/').pop()}</span>
-        <span className="path">{path.split('/').length > 1 ? path : ''}</span>
-      </div>
-      <div ref={editorDiffDom} className="monaco read-mode"></div>
-    </div>
-  );
+  return <div ref={editorDiffDom} className="monaco read-mode"></div>;
 }

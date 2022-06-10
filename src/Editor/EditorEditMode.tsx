@@ -47,7 +47,6 @@ export function EditorEditMode() {
     edits: monaco.editor.IIdentifiedSingleEditOperation[];
     marker: DiffMarker;
   }>();
-  const path = activeFile?.path || '';
 
   const highlightUndo = useRef<
     {
@@ -363,38 +362,27 @@ export function EditorEditMode() {
       minSize={200}
       gutterSize={1}
     >
-      <div>
-        <div className="editor-top">
-          <span className="filename">{path.split('/').pop()}</span>
-          <span className="path">{path.split('/').length > 1 ? path : ''}</span>
-        </div>
-        <div ref={monacoDom} className="monaco edit-mode"></div>
-      </div>
-      <div>
-        <div className="rightpanel-top">
-          <span>Changes</span>
-        </div>
-        <div className="diff-markers-wrap">
-          {markerIds.map((markerId) => {
-            const marker = diffMarkers[markerId];
+      <div ref={monacoDom} className="monaco edit-mode"></div>
+      <div className="diff-markers-wrap">
+        {markerIds.map((markerId) => {
+          const marker = diffMarkers[markerId];
 
-            return (
-              <DiffMarkerButton
-                key={markerId}
-                marker={marker}
-                onMouseEnter={() => {
-                  activateDiffMarker(marker);
-                }}
-                onMouseLeave={() => {
-                  resetDiffMarkers();
-                }}
-                onClick={() => {
-                  applyDiffMarker(marker);
-                }}
-              />
-            );
-          })}
-        </div>
+          return (
+            <DiffMarkerButton
+              key={markerId}
+              marker={marker}
+              onMouseEnter={() => {
+                activateDiffMarker(marker);
+              }}
+              onMouseLeave={() => {
+                resetDiffMarkers();
+              }}
+              onClick={() => {
+                applyDiffMarker(marker);
+              }}
+            />
+          );
+        })}
       </div>
     </Split>
   );

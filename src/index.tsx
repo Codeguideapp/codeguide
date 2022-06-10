@@ -12,12 +12,15 @@ import Split from 'react-split';
 
 import { setFileChangesAtom } from './atoms/files';
 import {
+  layoutSplitRatio,
   layoutSplitRatioAtom,
   windowHeightAtom,
   windowWidthAtom,
 } from './atoms/layout';
 import { Editor } from './Editor/Editor';
 import { defaultDarkTheme } from './Editor/monaco-themes/defaultDark';
+import { ReactComponent as FilesDiffIcon } from './filediff.svg';
+import { ReactComponent as FilesIcon } from './files.svg';
 import { FileTree } from './FileTree/FileTree';
 import reportWebVitals from './reportWebVitals';
 import { Timeline } from './Timeline/Timeline';
@@ -45,14 +48,13 @@ function App() {
 
   return (
     <div className="main">
-      <div className="top"></div>
       <Split
         className="split"
         direction="vertical"
         gutterSize={1}
         snapOffset={10}
         style={{ height: '100%' }}
-        sizes={[65, 35]}
+        sizes={layoutSplitRatio}
         minSize={[100, 100]}
         onDrag={([top, bottom]) => {
           setlLayoutSplitRatio([bottom, top]);
@@ -65,7 +67,14 @@ function App() {
           gutterSize={1}
         >
           <div className="main-left">
-            <div className="left-menu"></div>
+            <div className="left-menu">
+              <div className="icon active">
+                <FilesDiffIcon width={28} />
+              </div>
+              <div className="icon">
+                <FilesIcon width={28} />
+              </div>
+            </div>
             <FileTree />
           </div>
 

@@ -18,9 +18,8 @@ import { MediaControls } from './MediaControls';
 import { Playhead, PreviewPlayhead } from './Playhead';
 
 const topBarHeight = 19;
-const mainTopHeight = 46;
 const gutterSize = 1;
-const topOffset = topBarHeight + mainTopHeight + gutterSize;
+const topOffset = topBarHeight + gutterSize;
 
 export const Timeline = () => {
   const [layoutSplitRatio] = useAtom(layoutSplitRatioAtom);
@@ -32,7 +31,7 @@ export const Timeline = () => {
   const [isPlaying] = useAtom(isPlayingAtom);
 
   const stageHeight = React.useMemo(
-    () => Math.ceil(windowHeight * (layoutSplitRatio[0] / 100)) - topOffset,
+    () => Math.ceil(windowHeight * (layoutSplitRatio[1] / 100)) - topOffset,
     [layoutSplitRatio, windowHeight]
   );
 
