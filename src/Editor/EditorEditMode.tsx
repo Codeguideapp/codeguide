@@ -362,7 +362,16 @@ export function EditorEditMode() {
       minSize={200}
       gutterSize={1}
     >
-      <div ref={monacoDom} className="monaco edit-mode"></div>
+      <div>
+        <div
+          ref={monacoDom}
+          className="monaco edit-mode"
+          style={{ height: 'calc(100% - 20px)' }}
+        ></div>
+        <div className="editor-statusbar" style={{ height: 20 }}>
+          <div className="path">{activeFile?.path}</div>
+        </div>
+      </div>
       <div className="diff-markers-wrap">
         {markerIds.map((markerId) => {
           const marker = diffMarkers[markerId];

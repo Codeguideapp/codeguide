@@ -146,17 +146,33 @@ code {
 }
 
 .editor-top {
-  height: 35px;
+  height: 25px;
   width: 100%;
-  background: var(--background-3);
-  display: flex;
-  align-items: center;
-  font-family: 'Roboto';
-  font-size: 12px;
+  background: var(--background-1);
 }
 .editor-bottom {
-  height: calc(100% - 35px);
+  height: calc(100% - 25px);
 }
+.editor-statusbar {
+  height: 20px;
+  background: var(--background-1);
+  border-top: 1px solid #27282a;
+  display: flex;
+  align-items: center;
+  color: #9eabbc;
+  font-family: 'Roboto';
+  font-size: 12px;
+  padding: 0 10px;
+}
+.editor-statusbar .path {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 200px;
+  direction: rtl;
+  text-align: left;
+}
+
 .editor-top .filename {
   padding: 0 15px;
   font-weight: bold;

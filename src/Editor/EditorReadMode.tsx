@@ -122,5 +122,12 @@ export function EditorReadMode() {
     };
   }, [editorDiffDom]);
 
-  return <div ref={editorDiffDom} className="monaco read-mode"></div>;
+  return (
+    <div style={{ height: 'calc(100% - 20px)' }}>
+      <div ref={editorDiffDom} className="monaco read-mode"></div>
+      <div className="editor-statusbar" style={{ height: 20 }}>
+        <div className="path">{path}</div>
+      </div>
+    </div>
+  );
 }
