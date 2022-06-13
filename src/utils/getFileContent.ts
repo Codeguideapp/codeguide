@@ -1,4 +1,4 @@
-import { Change } from '../atoms/types';
+import { Change } from '../atoms/changes';
 import { deltaToString } from './deltaUtils';
 
 export function getFileContent({

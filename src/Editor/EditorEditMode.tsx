@@ -11,12 +11,7 @@ import React, {
 } from 'react';
 import Split from 'react-split';
 
-import {
-  DiffMarker,
-  DiffMarkers,
-  getDiffMarkers,
-  isIndentMarker,
-} from '../api/diffMarkers';
+import { DiffMarker, DiffMarkers, isIndentMarker } from '../api/diffMarkers';
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
 import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
@@ -126,12 +121,7 @@ export function EditorEditMode() {
       originalModel.setValue(goal);
     }
 
-    const markers = getDiffMarkers({
-      modifiedValue: modifiedModel.getValue(),
-      originalValue: originalModel.getValue(),
-      tab: getTabChar(modifiedModel),
-      eol: modifiedModel.getEOL(),
-    });
+    const markers = activeFile.diffMarkers;
 
     const appliedMarkers: DiffMarkers = Object.values(changes).reduce(
       (acc, c) => {
@@ -164,6 +154,7 @@ export function EditorEditMode() {
           isFileDepChange: true,
           delta: new Delta().insert(activeFile.oldVal),
           eolChar: modifiedModel.getEOL(),
+          tabChar: getTabChar(modifiedModel),
         });
       }
 
@@ -181,6 +172,7 @@ export function EditorEditMode() {
         delta: composeDeltas(deltas),
         file: activeFile,
         eolChar: modifiedModel.getEOL(),
+        tabChar: getTabChar(modifiedModel),
         diffMarker: isEqual(
           appliedMarkerRef.current?.edits,
           e.changes.map((c) => ({ range: c.range, text: c.text }))

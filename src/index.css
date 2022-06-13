@@ -71,6 +71,15 @@ body {
   overflow: auto;
   height: 100%;
 }
+.file-tree .tree-file-node {
+  width: calc(100% - 24px);
+}
+.file-tree .tree-file-node .percentage {
+  float: right;
+  padding-right: 10px;
+  font-size: 80%;
+  opacity: 0.7;
+}
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',

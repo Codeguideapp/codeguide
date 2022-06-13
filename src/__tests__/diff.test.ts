@@ -49,11 +49,12 @@ describe('diff', () => {
 \t\t</Text>`,
     };
 
-    const diffMarkers = getDiffMarkers(
-      tabIndent.oldVal,
-      tabIndent.newVal,
-      '\t'
-    );
+    const diffMarkers = getDiffMarkers({
+      modifiedValue: tabIndent.oldVal,
+      originalValue: tabIndent.newVal,
+      eol: '\n',
+      tab: '\t',
+    });
     expect(Object.values(diffMarkers).filter(isIndentMarker).length === 4);
 
     const tabIndentDouble = {
@@ -69,11 +70,12 @@ describe('diff', () => {
 \t\t\t</Text>`,
     };
 
-    const diffMarkers2 = getDiffMarkers(
-      tabIndentDouble.oldVal,
-      tabIndentDouble.newVal,
-      '\t'
-    );
+    const diffMarkers2 = getDiffMarkers({
+      modifiedValue: tabIndentDouble.oldVal,
+      originalValue: tabIndentDouble.newVal,
+      eol: '\n',
+      tab: '\t',
+    });
     expect(Object.values(diffMarkers2).filter(isIndentMarker).length === 4);
   });
 });

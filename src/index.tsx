@@ -62,6 +62,7 @@ function App() {
           className="split-horiz"
           direction="horizontal"
           sizes={[20, 80]}
+          minSize={[300, 300]}
           gutterSize={1}
         >
           <LeftSide />

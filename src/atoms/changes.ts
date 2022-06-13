@@ -1,8 +1,42 @@
 import produce, { Draft } from 'immer';
 import { atom } from 'jotai';
 import { isEqual } from 'lodash';
+import type * as monaco from 'monaco-editor';
+import type Delta from 'quill-delta';
 
-import { Change, Changes } from './types';
+import { DiffMarker, DiffMarkers } from '../api/diffMarkers';
+
+export type Changes = Record<string, Readonly<Change>>; // changes is updated using immer so the result object can be read only
+
+export type Change = {
+  fileStatus: 'added' | 'modified' | 'deleted';
+  highlight: {
+    offset: number;
+    length: number;
+    type: 'delete' | 'insert' | 'replace';
+    options: monaco.editor.IModelDecorationOptions;
+  }[];
+  parentChangeId?: string;
+  diffMarker?: DiffMarker;
+  diffMarkers: DiffMarkers;
+  children: string[];
+  isFileDepChange: boolean;
+  delta?: Delta;
+  deltaInverted?: Delta;
+  stat: [number, number];
+  id: string;
+  x: number;
+  path: string;
+  width: number;
+  actions: Record<
+    string,
+    {
+      label: string;
+      color: string;
+      callback: () => void;
+    }
+  >;
+};
 
 export const changesAtom = atom<Changes>(produce({}, () => {}));
 export const changesOrderAtom = atom<string[]>([]);

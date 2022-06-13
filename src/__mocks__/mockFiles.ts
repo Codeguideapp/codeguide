@@ -1,6 +1,6 @@
-import { File } from '../api/api';
+import { ApiFile } from '../api/api';
 
-export const mockFiles: File[] = [
+export const mockFiles: ApiFile[] = [
   {
     path: 'some/path/old-tests.ts',
     status: 'modified',

@@ -2,7 +2,7 @@ import { Octokit } from 'octokit';
 
 import { mockFiles } from '../__mocks__/mockFiles';
 
-export type File = {
+export type ApiFile = {
   status: 'added' | 'modified' | 'deleted';
   path: string;
   oldVal: string;
@@ -19,9 +19,9 @@ const octokit = new Octokit({
   auth: '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',
 });
 
-export const getFiles = async (pr: number): Promise<File[]> => {
+export const getFiles = async (pr: number): Promise<ApiFile[]> => {
   return mockFiles;
-  const files: File[] = [];
+  const files: ApiFile[] = [];
 
   //const owner = 'stoplightio';
   //const repo = 'elements';
@@ -74,5 +74,4 @@ export const getFiles = async (pr: number): Promise<File[]> => {
   }
 
   return files;
-  return mockFiles;
 };

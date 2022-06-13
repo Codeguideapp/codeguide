@@ -3,8 +3,7 @@ import { atom } from 'jotai';
 import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 
-import { File } from '../api/api';
-import { DiffMarker } from '../api/diffMarkers';
+import { DiffMarker, getDiffMarkers } from '../api/diffMarkers';
 import {
   calcStat,
   composeDeltas,
@@ -13,13 +12,15 @@ import {
 } from '../utils/deltaUtils';
 import { getHighlightsAfter, getHighlightsBefore } from '../utils/monaco';
 import { changesAtom, changesOrderAtom, updateChangesX } from './changes';
+import { Change } from './changes';
+import { File, fileChangesAtom } from './files';
 import { setPlayheadXAtom } from './playhead';
-import { Change } from './types';
 interface SaveDeltaParams {
   delta: Delta;
   file: File;
   isFileDepChange?: boolean;
   eolChar: string;
+  tabChar: string;
   diffMarker?: DiffMarker;
 }
 
@@ -28,7 +29,14 @@ export const saveDeltaAtom = atom(
   (
     get,
     set,
-    { delta, file, isFileDepChange, eolChar, diffMarker }: SaveDeltaParams
+    {
+      delta,
+      file,
+      isFileDepChange,
+      eolChar,
+      diffMarker,
+      tabChar,
+    }: SaveDeltaParams
   ) => {
     const newChangeId = nanoid();
     const highlightChangeId = nanoid();
@@ -41,6 +49,12 @@ export const saveDeltaAtom = atom(
 
     const before = deltaToString(fileChanges);
     const after = deltaToString([...fileChanges, delta]);
+    const diffMarkers = getDiffMarkers({
+      modifiedValue: after,
+      originalValue: file.newVal,
+      tab: tabChar,
+      eol: eolChar,
+    });
 
     let changeStatus: Change['fileStatus'];
     switch (file.status) {
@@ -71,6 +85,7 @@ export const saveDeltaAtom = atom(
         path: file.path,
         delta,
         diffMarker: !isFileDepChange ? diffMarker : undefined,
+        diffMarkers,
         children: !isFileDepChange ? [highlightChangeId] : [],
         deltaInverted: delta.invert(composeDeltas(fileChanges)),
         stat: calcStat(delta),
@@ -84,6 +99,7 @@ export const saveDeltaAtom = atom(
           isFileDepChange: false,
           children: [],
           highlight: getHighlightsBefore(delta, before, eolChar),
+          diffMarkers,
           id: highlightChangeId,
           width: 10,
           x: 0,
@@ -97,6 +113,19 @@ export const saveDeltaAtom = atom(
       newChanges,
       updateChangesX(newChangesOrder)
     );
+
+    const savedFileChanges = get(fileChangesAtom);
+    for (const savedFile of savedFileChanges) {
+      if (savedFile.path === file.path) {
+        file.prevVal = after;
+        file.diffMarkers = diffMarkers;
+        file.totalDiffMarkers = Math.max(
+          Object.keys(diffMarkers).length,
+          file.totalDiffMarkers
+        );
+      }
+    }
+    set(fileChangesAtom, [...savedFileChanges]);
 
     set(changesAtom, newChangesOrdered);
     set(changesOrderAtom, newChangesOrder);

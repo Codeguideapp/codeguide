@@ -1,7 +1,7 @@
 import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 
-import { Change } from '../atoms/types';
+import { Change } from '../atoms/changes';
 
 export const blankModel = monaco.editor.createModel('', 'typescript');
 export const modifiedModel = monaco.editor.createModel('', 'typescript');

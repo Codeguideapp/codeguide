@@ -11,7 +11,7 @@ import {
   updateChangesAtom,
   updateChangesX,
 } from '../atoms/changes';
-import { Change } from '../atoms/types';
+import { Change } from '../atoms/changes';
 
 export function Changes({
   layerX,

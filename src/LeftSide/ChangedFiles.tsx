@@ -1,24 +1,27 @@
 import { Tree } from 'antd';
 import { DataNode } from 'antd/lib/tree';
 import { useAtom } from 'jotai';
-import React, { useMemo, useState } from 'react';
-import useSWR from 'swr';
+import React, { useMemo } from 'react';
 
-import { getFiles } from '../api/api';
-import { activeChangeIdAtom, changesAtom } from '../atoms/changes';
-import { activeFileAtom } from '../atoms/files';
-import { setPlayheadXAtom } from '../atoms/playhead';
+import { DiffMarkers } from '../api/diffMarkers';
+import {
+  activeChangeIdAtom,
+  changesAtom,
+  changesOrderAtom,
+} from '../atoms/changes';
+import { activeFileAtom, fileChangesAtom } from '../atoms/files';
+import { canEditAtom, setPlayheadXAtom } from '../atoms/playhead';
 
 const { DirectoryTree } = Tree;
 
 export function ChangedFiles() {
   const [activeFile, setActiveFile] = useAtom(activeFileAtom);
   const [changes] = useAtom(changesAtom);
-  // const [fileChanges] = useAtom(fileChangesAtom);
-  // const [changesOrder] = useAtom(changesOrderAtom);
+  const [fileChanges] = useAtom(fileChangesAtom);
+  const [changesOrder] = useAtom(changesOrderAtom);
   const [activeChangeId] = useAtom(activeChangeIdAtom);
+  const [canEdit] = useAtom(canEditAtom);
   const [, setPlayheadX] = useAtom(setPlayheadXAtom);
-  const [activeDir] = useState('/');
 
   // const hiddenFiles = useMemo(() => {
   //   const appliedIds = activeChangeId
@@ -39,28 +42,50 @@ export function ChangedFiles() {
   //   return isFileAdded;
   // }, [fileChanges, changesOrder, changes, activeChangeId]);
 
-  const { data } = useSWR(activeDir, () => getFiles(0));
-
   const modifiedFiles = useMemo(() => {
     const treeData: DataNode[] = [];
 
-    for (const file of data || []) {
-      const last = file.path.split('/').pop();
+    const appliedIds = activeChangeId
+      ? changesOrder.slice(0, changesOrder.indexOf(activeChangeId) + 1)
+      : [];
+
+    const markersPerFile: Record<string, DiffMarkers> = {};
+    for (const id of appliedIds) {
+      const change = changes[id];
+      markersPerFile[change.path] = change.diffMarkers;
+    }
+
+    for (const file of fileChanges || []) {
+      const markersNumInChanges = markersPerFile[file.path]
+        ? Object.keys(markersPerFile[file.path]).length
+        : file.totalDiffMarkers;
+      const markersNumInFile = Object.keys(file.diffMarkers).length;
+      const diffMarkersNum = canEdit ? markersNumInFile : markersNumInChanges;
+
+      const filename = file.path.split('/').pop();
+      const percentage = Math.round(
+        (1 - diffMarkersNum / file.totalDiffMarkers) * 100
+      );
       treeData.push({
         key: file.path,
-        title: last,
+        title: (
+          <span className="tree-file-node">
+            <span className="filename">{filename}</span>
+            <span className="percentage">{percentage}%</span>
+          </span>
+        ),
         isLeaf: true,
       });
     }
 
     return treeData;
-  }, [data]);
+  }, [changesOrder, changes, activeChangeId, fileChanges, canEdit]);
 
   // const directory = useMemo(() => {
   //   return modifiedFiles.filter((file) => hiddenFiles[file.key]);
   // }, [modifiedFiles, hiddenFiles]);
 
-  if (!data) {
+  if (!fileChanges || fileChanges.length === 0) {
     return <div className="file-tree">loading...</div>;
   }
 
@@ -93,7 +118,7 @@ export function ChangedFiles() {
             : [activeFile?.path || '']
         }
         onSelect={(selected) => {
-          const file = data.find((f) => f.path === selected[0]);
+          const file = fileChanges.find((f) => f.path === selected[0]);
           setActiveFile(file);
           setPlayheadX({
             x: Infinity,
