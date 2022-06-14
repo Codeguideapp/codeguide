@@ -1,5 +1,9 @@
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faCheck } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Tree } from 'antd';
 import { DataNode } from 'antd/lib/tree';
+import classNames from 'classnames';
 import { useAtom } from 'jotai';
 import React, { useMemo } from 'react';
 
@@ -11,6 +15,8 @@ import {
 } from '../atoms/changes';
 import { activeFileAtom, fileChangesAtom } from '../atoms/files';
 import { canEditAtom, setPlayheadXAtom } from '../atoms/playhead';
+
+library.add(faCheck);
 
 const { DirectoryTree } = Tree;
 
@@ -69,11 +75,20 @@ export function ChangedFiles() {
       treeData.push({
         key: file.path,
         title: (
-          <span className="tree-file-node">
+          <span
+            className={classNames({
+              'tree-file-node': true,
+              completed: percentage === 100,
+            })}
+          >
             <span className="filename">{filename}</span>
             <span className="percentage">{percentage}%</span>
           </span>
         ),
+        icon:
+          percentage === 100 ? (
+            <FontAwesomeIcon color="#35b05f" icon="check" />
+          ) : null,
         isLeaf: true,
       });
     }

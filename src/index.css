@@ -80,6 +80,15 @@ body {
   font-size: 80%;
   opacity: 0.7;
 }
+.file-tree .tree-file-node.completed {
+  color: #35b05f;
+}
+.file-tree
+  .ant-tree.ant-tree-directory
+  .ant-tree-treenode-selected:hover::before,
+.file-tree .ant-tree.ant-tree-directory .ant-tree-treenode-selected::before {
+  background: #2c3137;
+}
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
