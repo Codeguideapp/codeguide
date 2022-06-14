@@ -48,23 +48,26 @@ export function ChangedFiles() {
   //   return isFileAdded;
   // }, [fileChanges, changesOrder, changes, activeChangeId]);
 
-  const modifiedFiles = useMemo(() => {
+  const { treeData, percentage } = useMemo(() => {
+    let total = 0;
+    let completed = 0;
     const treeData: DataNode[] = [];
 
     const appliedIds = activeChangeId
       ? changesOrder.slice(0, changesOrder.indexOf(activeChangeId) + 1)
       : [];
 
-    const markersPerFile: Record<string, DiffMarkers> = {};
+    const markersNumPerFile: Record<string, number> = {};
     for (const id of appliedIds) {
       const change = changes[id];
-      markersPerFile[change.path] = change.diffMarkers;
+      markersNumPerFile[change.path] = Object.keys(change.diffMarkers).length;
     }
 
     for (const file of fileChanges || []) {
-      const markersNumInChanges = markersPerFile[file.path]
-        ? Object.keys(markersPerFile[file.path]).length
-        : file.totalDiffMarkers;
+      const markersNumInChanges =
+        markersNumPerFile[file.path] !== undefined
+          ? markersNumPerFile[file.path]
+          : file.totalDiffMarkers;
       const markersNumInFile = Object.keys(file.diffMarkers).length;
       const diffMarkersNum = canEdit ? markersNumInFile : markersNumInChanges;
 
@@ -72,6 +75,10 @@ export function ChangedFiles() {
       const percentage = Math.round(
         (1 - diffMarkersNum / file.totalDiffMarkers) * 100
       );
+
+      total += file.totalDiffMarkers;
+      completed += diffMarkersNum;
+
       treeData.push({
         key: file.path,
         title: (
@@ -93,7 +100,10 @@ export function ChangedFiles() {
       });
     }
 
-    return treeData;
+    return {
+      treeData,
+      percentage: total === 0 ? 0 : Math.round((1 - completed / total) * 100),
+    };
   }, [changesOrder, changes, activeChangeId, fileChanges, canEdit]);
 
   // const directory = useMemo(() => {
@@ -120,10 +130,13 @@ export function ChangedFiles() {
         }}
       /> 
      */}
-      <div className="header">Changed files</div>
+      <div className="header">
+        <span className="title">Changed files</span>
+        <span className="right">{percentage}%</span>
+      </div>
       <DirectoryTree
         className="directory-tree"
-        treeData={modifiedFiles}
+        treeData={treeData}
         activeKey={
           activeChangeId ? changes[activeChangeId].path : activeFile?.path
         }

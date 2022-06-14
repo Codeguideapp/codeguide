@@ -61,12 +61,18 @@ body {
   height: 40px;
   display: flex;
   align-items: center;
-  font-family: 'Roboto';
   font-size: 11px;
   font-weight: bold;
   padding-left: 22px;
   text-transform: uppercase;
+  justify-content: space-between;
+  padding-right: 13px;
 }
+
+.file-tree .header .title {
+  font-family: 'Roboto';
+}
+
 .file-tree .directory-tree {
   overflow: auto;
   height: 100%;
