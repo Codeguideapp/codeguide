@@ -1,7 +1,9 @@
 import { useAtom } from 'jotai';
-import React from 'react';
+import type Konva from 'konva';
+import React, { useRef } from 'react';
 import { Layer, Rect, Stage } from 'react-konva';
 
+import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import {
   layoutSplitRatioAtom,
   windowHeightAtom,
@@ -26,9 +28,12 @@ export const Timeline = () => {
   const [windowHeight] = useAtom(windowHeightAtom);
   const [stageWidth] = useAtom(windowWidthAtom);
   const [, setPlayheadX] = useAtom(setPlayheadXAtom);
-  const [playHeadX] = useAtom(refPlayheadXAtom);
+  const [refPlayHeadX] = useAtom(refPlayheadXAtom);
   const [, setPlayheadVisible] = useAtom(isPlayheadVisibleAtom);
   const [isPlaying] = useAtom(isPlayingAtom);
+  const [changes] = useAtom(changesAtom);
+  const [changesOrder] = useAtom(changesOrderAtom);
+  const interval = useRef<NodeJS.Timeout>();
 
   const stageHeight = React.useMemo(
     () => Math.ceil(windowHeight * (layoutSplitRatio[1] / 100)) - topOffset,
@@ -38,23 +43,33 @@ export const Timeline = () => {
   const PADDING = 0;
 
   const stageRef = React.useRef<any>(null);
+  const scrollbarXRef = React.useRef<Konva.Rect>(null);
 
   const [layerX, setLayerX] = React.useState(0);
-  //const [scrollbarX, setScrollbarX] = React.useState(PADDING);
   const [zoom, setZoom] = React.useState(1);
 
-  const START_WIDTH = 3000;
-  const maxZoom = stageWidth / START_WIDTH;
+  const maxZoom = 0.5;
 
-  const canvasWidth = React.useMemo(() => START_WIDTH * zoom, [zoom]);
-  const horizontalBarWidth = React.useMemo(
-    () =>
-      Math.max(
-        0,
-        Math.min(stageWidth * (stageWidth / canvasWidth), stageWidth)
-      ),
-    [stageWidth, canvasWidth]
-  );
+  const canvasWidth = React.useMemo(() => {
+    const lastId = changesOrder.slice(-1)[0];
+    const lastX = lastId ? changes[lastId].x + changes[lastId].width + 100 : 0;
+    const width = lastX * zoom;
+    if (width > stageWidth) {
+      return width;
+    } else {
+      return stageWidth;
+    }
+  }, [zoom, stageWidth, changes, changesOrder]);
+
+  const horizontalBarWidth = React.useMemo(() => {
+    if (stageWidth >= canvasWidth) {
+      return 0;
+    }
+    return Math.max(
+      0,
+      Math.min(stageWidth * (stageWidth / canvasWidth), stageWidth)
+    );
+  }, [stageWidth, canvasWidth]);
 
   const scrollbarX = React.useMemo(
     () =>
@@ -81,17 +96,56 @@ export const Timeline = () => {
           if (isPlaying) return;
           setPlayheadVisible(false);
           setPlayheadX({
-            x: playHeadX,
+            x: refPlayHeadX,
             type: 'preview',
           });
         }}
         onMouseMove={(e) => {
           if (isPlaying) return;
+          const x = (e.evt.x - layerX) / zoom;
+          const rightMax = stageWidth - 20;
+
           setPlayheadVisible(true);
-          setPlayheadX({
-            x: (e.evt.x - layerX) / zoom,
-            type: 'preview',
-          });
+          setPlayheadX({ x, type: 'preview' });
+
+          if (interval.current) clearInterval(interval.current);
+
+          if (e.evt.x > rightMax) {
+            interval.current = setInterval(
+              () =>
+                setLayerX((prev) => {
+                  if (!scrollbarXRef.current) {
+                    clearInterval(interval.current!);
+                    return prev;
+                  }
+
+                  const x = scrollbarXRef.current.x();
+                  const width = scrollbarXRef.current.width();
+                  const scrollbarEndX = x + width;
+
+                  if (width && scrollbarEndX < stageWidth) {
+                    return prev - 4;
+                  } else {
+                    clearInterval(interval.current!);
+                    return prev;
+                  }
+                }),
+              15
+            );
+          }
+          if (e.evt.x < 20) {
+            interval.current = setInterval(
+              () =>
+                setLayerX((prev) => {
+                  if (prev < 0) {
+                    return prev + 4;
+                  }
+                  clearInterval(interval.current!);
+                  return prev;
+                }),
+              15
+            );
+          }
         }}
         onWheel={(e) => {
           e.evt.preventDefault();
@@ -107,7 +161,7 @@ export const Timeline = () => {
 
             setZoom(newScale);
             const newLayerX = pointer.x - mousePointTo * newScale;
-            if (newLayerX < 0) {
+            if (newLayerX < 0 && stageWidth < canvasWidth) {
               // only moving to "the right"
               setLayerX(newLayerX);
             }
@@ -143,6 +197,7 @@ export const Timeline = () => {
 
         <Layer>
           <Rect
+            ref={scrollbarXRef}
             x={scrollbarX}
             y={stageHeight - 10}
             width={horizontalBarWidth}
