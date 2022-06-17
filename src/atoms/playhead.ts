@@ -8,6 +8,7 @@ export const refPlayheadXAtom = atom(10);
 export const canEditAtom = atom(true);
 export const playheadSpeedAtom = atom(1);
 export const isPlayheadVisibleAtom = atom(false);
+export const scrollToAtom = atom(0);
 
 let playingInterval: NodeJS.Timeout;
 export const isPlayingAtom = atom(false);

@@ -1,6 +1,6 @@
 import { useAtom } from 'jotai';
 import type Konva from 'konva';
-import React, { useRef } from 'react';
+import React, { useCallback, useEffect, useRef } from 'react';
 import { Layer, Rect, Stage } from 'react-konva';
 
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
@@ -13,6 +13,7 @@ import {
   isPlayheadVisibleAtom,
   isPlayingAtom,
   refPlayheadXAtom,
+  scrollToAtom,
   setPlayheadXAtom,
 } from '../atoms/playhead';
 import { Changes } from './Changes';
@@ -33,6 +34,7 @@ export const Timeline = () => {
   const [isPlaying] = useAtom(isPlayingAtom);
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
+  const [scrollToX] = useAtom(scrollToAtom);
   const interval = useRef<NodeJS.Timeout>();
 
   const stageHeight = React.useMemo(
@@ -80,6 +82,32 @@ export const Timeline = () => {
           PADDING,
     [layerX, canvasWidth, stageWidth, horizontalBarWidth]
   );
+
+  const scrollToXFn = useCallback(
+    (x: number) => {
+      const min = 0;
+      const max = canvasWidth - stageWidth;
+
+      setLayerX((prev) => {
+        const newLayerX = -Math.max(
+          min,
+          Math.min((x + 10) * zoom - stageWidth, max)
+        );
+
+        if (newLayerX < prev) {
+          return newLayerX;
+        } else {
+          return prev;
+        }
+      });
+    },
+    [canvasWidth, stageWidth, zoom]
+  );
+
+  useEffect(() => {
+    scrollToXFn(scrollToX);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scrollToX]);
 
   var scaleBy = 1.04;
   return (

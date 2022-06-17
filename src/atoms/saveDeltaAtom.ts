@@ -14,7 +14,7 @@ import { getHighlightsAfter, getHighlightsBefore } from '../utils/monaco';
 import { changesAtom, changesOrderAtom, updateChangesX } from './changes';
 import { Change } from './changes';
 import { File, fileChangesAtom } from './files';
-import { setPlayheadXAtom } from './playhead';
+import { playheadXAtom, scrollToAtom, setPlayheadXAtom } from './playhead';
 interface SaveDeltaParams {
   delta: Delta;
   file: File;
@@ -130,6 +130,7 @@ export const saveDeltaAtom = atom(
     set(changesAtom, newChangesOrdered);
     set(changesOrderAtom, newChangesOrder);
     set(setPlayheadXAtom, { x: Infinity, type: 'ref' });
+    set(scrollToAtom, get(playheadXAtom));
   }
 );
 
