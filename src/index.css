@@ -89,11 +89,27 @@ body {
 /* .file-tree .tree-file-node.completed {
   color: #35b05f;
 } */
+
 .file-tree
   .ant-tree.ant-tree-directory
   .ant-tree-treenode-selected:hover::before,
-.file-tree .ant-tree.ant-tree-directory .ant-tree-treenode-selected::before {
+.edit-mode
+  .file-tree
+  .ant-tree.ant-tree-directory
+  .ant-tree-treenode-selected::before {
   background: #2c3137;
+}
+
+.read-mode .file-tree .ant-tree.ant-tree-directory .ant-tree-treenode {
+  pointer-events: none;
+  cursor: default;
+}
+.read-mode
+  .file-tree
+  .ant-tree.ant-tree-directory
+  .ant-tree-treenode:hover::before {
+  background: transparent;
+  cursor: default;
 }
 
 code {

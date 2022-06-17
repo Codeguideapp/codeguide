@@ -17,6 +17,7 @@ import {
   windowHeightAtom,
   windowWidthAtom,
 } from './atoms/layout';
+import { canEditAtom } from './atoms/playhead';
 import { Editor } from './Editor/Editor';
 import { defaultDarkTheme } from './Editor/monaco-themes/defaultDark';
 import { LeftSide } from './LeftSide/LeftSide';
@@ -28,6 +29,7 @@ function App() {
   const [, setWindowHeight] = useAtom(windowHeightAtom);
   const [, setWindowWidth] = useAtom(windowWidthAtom);
   const [, setFileChanges] = useAtom(setFileChangesAtom);
+  const [canEdit] = useAtom(canEditAtom);
 
   useEffect(() => {
     window.addEventListener(
@@ -45,7 +47,7 @@ function App() {
   }, [setFileChanges]);
 
   return (
-    <div className="main">
+    <div className={`main ${canEdit ? 'edit-mode' : 'read-mode'}`}>
       <Split
         className="split"
         direction="vertical"

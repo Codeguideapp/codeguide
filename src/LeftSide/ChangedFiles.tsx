@@ -148,10 +148,6 @@ export function ChangedFiles() {
         onSelect={(selected) => {
           const file = fileChanges.find((f) => f.path === selected[0]);
           setActiveFile(file);
-          setPlayheadX({
-            x: Infinity,
-            type: 'ref',
-          });
         }}
       />
     </div>
