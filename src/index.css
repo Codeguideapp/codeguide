@@ -184,6 +184,22 @@ code {
 .timeline-top .media-controls svg {
   padding: 0 4px;
 }
+.timeline-top .ant-slider:hover .ant-slider-track,
+.timeline-top .ant-slider .ant-slider-track {
+  background-color: #474747;
+}
+.timeline-top .ant-slider .ant-slider-rail,
+.timeline-top .ant-slider:hover .ant-slider-rail {
+  background-color: #181a1c;
+}
+.timeline-top .ant-slider .ant-slider-handle,
+.timeline-top .ant-slider:hover .ant-slider-handle {
+  background-color: #7e7e7e;
+  border: solid 2px #202428;
+}
+.timeline-top .ant-slider-handle:focus {
+  box-shadow: none;
+}
 
 .editor-top {
   height: 25px;

@@ -1,3 +1,4 @@
+import { Slider } from 'antd';
 import { useAtom } from 'jotai';
 import type Konva from 'konva';
 import React, { useCallback, useEffect, useRef } from 'react';
@@ -48,9 +49,12 @@ export const Timeline = () => {
   const scrollbarXRef = React.useRef<Konva.Rect>(null);
 
   const [layerX, setLayerX] = React.useState(0);
-  const [zoom, setZoom] = React.useState(1);
 
-  const maxZoom = 0.5;
+  const maxZoom = 5;
+  const minZoom = 1 / maxZoom;
+  const scaleBy = 1 + minZoom;
+
+  const [zoom, setZoom] = React.useState(1);
 
   const canvasWidth = React.useMemo(() => {
     const lastId = changesOrder.slice(-1)[0];
@@ -109,11 +113,38 @@ export const Timeline = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scrollToX]);
 
-  var scaleBy = 1.04;
+  const sliderSteps = 9;
+
   return (
     <div>
-      <div className="timeline-top" style={{ height: topBarHeight }}>
+      <div
+        className="timeline-top"
+        style={{ height: topBarHeight, position: 'relative' }}
+      >
         <MediaControls />
+        <div style={{ position: 'absolute', top: 0, right: 0 }}>
+          <Slider
+            min={1}
+            max={sliderSteps}
+            step={1}
+            value={
+              zoom < 1
+                ? zoom * Math.ceil(sliderSteps / 2)
+                : zoom + Math.floor(sliderSteps / 2)
+            }
+            onChange={(val) => {
+              if (val >= Math.ceil(sliderSteps / 2)) {
+                setZoom(val - Math.floor(sliderSteps / 2));
+              } else {
+                setZoom(val / Math.ceil(sliderSteps / 2));
+              }
+            }}
+            tipFormatter={() => {
+              return `Zoom: ${(Math.round(zoom * 100) / 100).toFixed(1)}x`;
+            }}
+            style={{ width: 80, height: 19, margin: '3px 10px' }}
+          />
+        </div>
       </div>
       <Stage
         className="timeline"
@@ -182,8 +213,11 @@ export const Timeline = () => {
             const pointer = stageRef.current.getPointerPosition();
 
             const mousePointTo = (pointer.x - layerX) / oldZoom;
-            const newScale = Math.max(
-              e.evt.deltaY < 0 ? oldZoom * scaleBy : oldZoom / scaleBy,
+            const newScale = Math.min(
+              Math.max(
+                e.evt.deltaY < 0 ? oldZoom * scaleBy : oldZoom / scaleBy,
+                minZoom
+              ),
               maxZoom
             );
 
@@ -193,7 +227,7 @@ export const Timeline = () => {
               // only moving to "the right"
               setLayerX(newLayerX);
             }
-          } else if (zoom !== maxZoom) {
+          } else if (zoom !== minZoom) {
             const dx = e.evt.deltaX;
 
             const minX = -(canvasWidth - stageWidth);
