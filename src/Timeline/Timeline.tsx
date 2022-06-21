@@ -117,12 +117,10 @@ export const Timeline = () => {
 
   return (
     <div>
-      <div
-        className="timeline-top"
-        style={{ height: topBarHeight, position: 'relative' }}
-      >
+      <div className="timeline-top" style={{ height: topBarHeight }}>
+        <div className="timeline-menu"></div>
         <MediaControls />
-        <div style={{ position: 'absolute', top: 0, right: 0 }}>
+        <div>
           <Slider
             min={1}
             max={sliderSteps}

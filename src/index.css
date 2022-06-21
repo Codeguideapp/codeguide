@@ -167,12 +167,23 @@ code {
   background: var(--background-2);
   border-bottom: 1px solid #191c1f;
   text-align: center;
+  display: flex;
+  justify-content: space-between;
+}
+.timeline-top > div {
+  width: 100px;
+}
+.timeline-top .timeline-menu {
+  display: flex;
+  padding-left: 10px;
+  align-items: center;
 }
 .timeline-top .media-controls {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100%;
+  padding-left: 20px;
 }
 .timeline-top .media-controls .speed {
   font-size: 10px;
@@ -202,12 +213,12 @@ code {
 }
 
 .editor-top {
-  height: 25px;
+  height: 30px;
   width: 100%;
   background: var(--background-1);
 }
 .editor-bottom {
-  height: calc(100% - 25px);
+  height: calc(100% - 30px);
 }
 .editor-statusbar {
   height: 20px;
@@ -272,6 +283,9 @@ body .monaco-diff-editor.side-by-side .editor.modified {
 
 .insert-highlight {
   background: rgba(213, 255, 116, 0.3);
+}
+.select-highlight {
+  background: rgba(116, 162, 255, 0.3);
 }
 .replace-highlight {
   background: rgba(116, 162, 255, 0.3);

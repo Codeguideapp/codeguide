@@ -13,7 +13,7 @@ export type Change = {
   highlight: {
     offset: number;
     length: number;
-    type: 'delete' | 'insert' | 'replace';
+    type: 'delete' | 'insert' | 'replace' | 'selection';
     options: monaco.editor.IModelDecorationOptions;
   }[];
   parentChangeId?: string;
@@ -23,7 +23,7 @@ export type Change = {
   isFileDepChange: boolean;
   delta?: Delta;
   deltaInverted?: Delta;
-  stat: [number, number];
+  stat?: [number, number];
   id: string;
   x: number;
   path: string;

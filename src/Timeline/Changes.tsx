@@ -175,10 +175,11 @@ export function Changes({
             >
               {withChildren.map((id, i) => {
                 const parentChangeId = changes[id].parentChangeId;
-                const [inserts, deletes] = parentChangeId
+                const stat = parentChangeId
                   ? changes[parentChangeId].stat
                   : changes[id].stat;
 
+                const [inserts, deletes] = stat || [1, 0];
                 const total = inserts + deletes;
 
                 return (
