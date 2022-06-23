@@ -130,6 +130,33 @@ code {
   -moz-user-select: none;
   -khtml-user-select: none;
   -webkit-user-select: none;
+  position: relative;
+}
+
+.main-right .subtitle {
+  position: absolute;
+  bottom: 35px;
+  left: 15%;
+  right: 20%;
+  border-radius: 2px;
+  color: #000;
+  display: flex;
+  align-items: center;
+  font-weight: bold;
+  color: #000;
+  padding: 2px 16px;
+  background: #fff;
+  border-radius: 2px;
+  box-shadow: 0 3px 6px -4px #0000001f, 0 6px 16px #00000014,
+    0 9px 28px 8px #0000000d;
+}
+.main-right .subtitle .icon {
+  font-size: 22px;
+  padding: 0 10px;
+  height: 32px;
+}
+.main-right .subtitle .text {
+  padding: 14px 4px;
 }
 
 .split-horiz {
@@ -177,6 +204,8 @@ code {
   display: flex;
   padding-left: 10px;
   align-items: center;
+  font-size: 12px;
+  color: #707070;
 }
 .timeline-top .media-controls {
   display: flex;

@@ -18,6 +18,8 @@ import {
   windowWidthAtom,
 } from './atoms/layout';
 import { canEditAtom } from './atoms/playhead';
+import { ContextMenu } from './ContextMenu/ContextMenu';
+import { AddComment } from './Dialog/AddComment';
 import { Editor } from './Editor/Editor';
 import { defaultDarkTheme } from './Editor/monaco-themes/defaultDark';
 import { LeftSide } from './LeftSide/LeftSide';
@@ -73,6 +75,8 @@ function App() {
 
         <Timeline />
       </Split>
+      <ContextMenu />
+      <AddComment />
     </div>
   );
 }

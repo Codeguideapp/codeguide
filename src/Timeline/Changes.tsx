@@ -6,12 +6,14 @@ import {
   activeChangeIdAtom,
   changesAtom,
   changesOrderAtom,
+  selectedChangeIdsAtom,
   sortBy,
   swapChanges,
   updateChangesAtom,
   updateChangesX,
 } from '../atoms/changes';
 import { Change } from '../atoms/changes';
+import { contextMenuAtom, showAddCommentDialogAtom } from '../atoms/layout';
 
 export function Changes({
   layerX,
@@ -29,8 +31,13 @@ export function Changes({
   const [changes] = useAtom(changesAtom);
   const [changesOrder, setChangesOrder] = useAtom(changesOrderAtom);
   const [, updateChanges] = useAtom(updateChangesAtom);
+  const [, setContextMenu] = useAtom(contextMenuAtom);
   const changesOrderRef = useRef<string[]>([]);
   const activeChangeId = useAtomValue(activeChangeIdAtom);
+  const [, setAhowAddCommentDialog] = useAtom(showAddCommentDialogAtom);
+  const [selectedChangeIds, setSelectedChangeIds] = useAtom(
+    selectedChangeIdsAtom
+  );
 
   const fileWrappers = useMemo(() => {
     const paths: {
@@ -109,14 +116,34 @@ export function Changes({
             sortBy(changesOrder)
           );
           const first = changes[withChildren[0]];
-          const swapFrom = first;
+          const refChange = first;
 
           return (
             <Group
-              key={swapFrom.id}
-              x={swapFrom.x * zoom}
+              key={refChange.id}
+              x={refChange.x * zoom}
               y={y}
               draggable
+              onContextMenu={(e) => {
+                if (selectedChangeIds.length === 0) {
+                  setSelectedChangeIds([
+                    refChange.parentChangeId || refChange.id,
+                  ]);
+                }
+
+                setContextMenu({
+                  left: e.evt.pageX,
+                  top: e.evt.pageY,
+                  items: [
+                    {
+                      label: 'Add Comment',
+                      onClick: () => setAhowAddCommentDialog(true),
+                    },
+                  ],
+                });
+                e.evt.stopPropagation();
+                e.evt.preventDefault();
+              }}
               onDragStart={() => {
                 changesOrderRef.current = changesOrder;
               }}
@@ -125,8 +152,8 @@ export function Changes({
 
                 let swapToId = changesOrderRef.current.find(
                   (id) =>
-                    changes[id].x < swapFrom.x &&
-                    changes[id].x + changes[id].width > swapFrom.x
+                    changes[id].x < refChange.x &&
+                    changes[id].x + changes[id].width > refChange.x
                 );
 
                 try {
@@ -144,7 +171,7 @@ export function Changes({
                   const newChangesOrder = swapChanges({
                     changes,
                     changesOrder,
-                    from: swapFrom.id,
+                    from: refChange.id,
                     to: swapToId,
                     length: withChildren.length,
                   });
@@ -157,7 +184,7 @@ export function Changes({
                 } catch (err) {
                   // forbidden swap, ignore here
                   updateChanges((changes) => {
-                    changes[swapFrom.id].x = pos.x;
+                    changes[refChange.id].x = pos.x;
                   });
                   return;
                 }
@@ -181,26 +208,43 @@ export function Changes({
 
                 const [inserts, deletes] = stat || [1, 0];
                 const total = inserts + deletes;
+                const heightWoSubtitle = changes[id].text
+                  ? height - 15
+                  : height;
 
                 return (
-                  <Group key={changes[id].id}>
+                  <Group
+                    key={changes[id].id}
+                    x={i === 0 ? 0 : changes[withChildren[i - 1]].width * zoom}
+                  >
                     <Rect
-                      x={
-                        i === 0 ? 0 : changes[withChildren[i - 1]].width * zoom
-                      }
+                      x={0}
                       fill={getColor(changes[id], activeChangeId, 'green')}
                       width={changes[id].width * zoom}
-                      height={(inserts / total) * height}
+                      height={(inserts / total) * heightWoSubtitle}
                     />
                     <Rect
-                      y={(inserts / total) * height}
-                      x={
-                        i === 0 ? 0 : changes[withChildren[i - 1]].width * zoom
-                      }
+                      y={(inserts / total) * heightWoSubtitle}
+                      x={0}
                       fill={getColor(changes[id], activeChangeId, 'red')}
                       width={changes[id].width * zoom}
-                      height={(deletes / total) * height}
+                      height={(deletes / total) * heightWoSubtitle}
                     />
+                    {changes[id].text && (
+                      <Rect
+                        y={height - 10}
+                        x={0}
+                        fill={
+                          changes[id].textType === 'question'
+                            ? '#74188B'
+                            : changes[id].textType === 'warn'
+                            ? '#8B5D18'
+                            : '#23688E'
+                        }
+                        width={changes[id].width * zoom}
+                        height={10}
+                      />
+                    )}
                   </Group>
                 );
               })}
@@ -212,7 +256,21 @@ export function Changes({
                     0
                   )}
                   height={height}
-                  stroke="#c2c2c2"
+                  stroke="#9E9E9E"
+                  strokeWidth={1}
+                />
+              )}
+              {selectedChangeIds.includes(
+                change.parentChangeId || change.id
+              ) && (
+                <Rect
+                  x={0}
+                  width={withChildren.reduce(
+                    (acc, id) => acc + changes[id].width * zoom,
+                    0
+                  )}
+                  height={height}
+                  stroke="yellow"
                   strokeWidth={1}
                 />
               )}

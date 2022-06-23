@@ -4,7 +4,11 @@ import type Konva from 'konva';
 import React, { useCallback, useEffect, useRef } from 'react';
 import { Layer, Rect, Stage } from 'react-konva';
 
-import { changesAtom, changesOrderAtom } from '../atoms/changes';
+import {
+  changesAtom,
+  changesOrderAtom,
+  selectedChangeIdsAtom,
+} from '../atoms/changes';
 import {
   layoutSplitRatioAtom,
   windowHeightAtom,
@@ -20,6 +24,7 @@ import {
 import { Changes } from './Changes';
 import { MediaControls } from './MediaControls';
 import { Playhead, PreviewPlayhead } from './Playhead';
+import { TimelineMenu } from './TimelineMenu';
 
 const topBarHeight = 19;
 const gutterSize = 1;
@@ -36,6 +41,7 @@ export const Timeline = () => {
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
   const [scrollToX] = useAtom(scrollToAtom);
+  const [, setSelectedChangeIds] = useAtom(selectedChangeIdsAtom);
   const interval = useRef<NodeJS.Timeout>();
 
   const stageHeight = React.useMemo(
@@ -118,7 +124,7 @@ export const Timeline = () => {
   return (
     <div>
       <div className="timeline-top" style={{ height: topBarHeight }}>
-        <div className="timeline-menu"></div>
+        <TimelineMenu />
         <MediaControls />
         <div>
           <Slider
@@ -236,10 +242,28 @@ export const Timeline = () => {
           }
         }}
         onClick={(e) => {
-          setPlayheadX({
-            x: (e.evt.x - layerX) / zoom,
-            type: 'ref',
+          const x = (e.evt.x - layerX) / zoom;
+          setPlayheadX({ x, type: 'ref' });
+
+          const change = Object.values(changes).find((c) => {
+            if (x >= c.x && x <= c.x + c.width) {
+              return true;
+            }
+            return false;
           });
+
+          if (!change) {
+            setSelectedChangeIds([]);
+            return;
+          }
+
+          const parentId = change.parentChangeId || change.id;
+
+          if (e.evt.shiftKey) {
+            setSelectedChangeIds((current) => [...current, parentId]);
+          } else {
+            setSelectedChangeIds([parentId]);
+          }
         }}
       >
         <Changes

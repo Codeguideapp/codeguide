@@ -16,6 +16,8 @@ export type Change = {
     type: 'delete' | 'insert' | 'replace' | 'selection';
     options: monaco.editor.IModelDecorationOptions;
   }[];
+  text?: string;
+  textType?: 'info' | 'warn' | 'question';
   parentChangeId?: string;
   diffMarker?: DiffMarker;
   diffMarkers: DiffMarkers;
@@ -41,6 +43,7 @@ export type Change = {
 export const changesAtom = atom<Changes>(produce({}, () => {}));
 export const changesOrderAtom = atom<string[]>([]);
 export const activeChangeIdAtom = atom<string | null>(null);
+export const selectedChangeIdsAtom = atom<string[]>([]);
 
 export const updateChangesAtom = atom(
   null,
