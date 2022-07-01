@@ -10,7 +10,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useAtom, useAtomValue } from 'jotai';
-import React, { useCallback } from 'react';
+import Mousetrap from 'mousetrap';
+import React, { useCallback, useEffect } from 'react';
 
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import {
@@ -66,6 +67,14 @@ export function MediaControls() {
       type: 'ref',
     });
   }, [setPlayheadX, changes, playHeadX]);
+
+  useEffect(() => {
+    Mousetrap.bind('left', prevHandler);
+  }, [prevHandler]);
+
+  useEffect(() => {
+    Mousetrap.bind('right', nextHandler);
+  }, [nextHandler]);
 
   const stepBackwardHandler = useCallback(
     () => setPlayheadX({ x: 10, type: 'ref' }),
