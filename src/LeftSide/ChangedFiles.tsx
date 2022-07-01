@@ -7,7 +7,6 @@ import classNames from 'classnames';
 import { useAtom } from 'jotai';
 import React, { useMemo } from 'react';
 
-import { DiffMarkers } from '../api/diffMarkers';
 import {
   activeChangeIdAtom,
   changesAtom,
@@ -148,6 +147,10 @@ export function ChangedFiles() {
         onSelect={(selected) => {
           const file = fileChanges.find((f) => f.path === selected[0]);
           setActiveFile(file);
+          setPlayheadX({
+            x: Infinity,
+            type: 'ref',
+          });
         }}
       />
     </div>

@@ -16,7 +16,6 @@ import {
 } from '../atoms/layout';
 import {
   isPlayheadVisibleAtom,
-  isPlayingAtom,
   refPlayheadXAtom,
   scrollToAtom,
   setPlayheadXAtom,
@@ -37,7 +36,6 @@ export const Timeline = () => {
   const [, setPlayheadX] = useAtom(setPlayheadXAtom);
   const [refPlayHeadX] = useAtom(refPlayheadXAtom);
   const [, setPlayheadVisible] = useAtom(isPlayheadVisibleAtom);
-  const [isPlaying] = useAtom(isPlayingAtom);
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
   const [scrollToX] = useAtom(scrollToAtom);
@@ -156,7 +154,6 @@ export const Timeline = () => {
         height={stageHeight}
         ref={stageRef}
         onMouseLeave={() => {
-          if (isPlaying) return;
           setPlayheadVisible(false);
           setPlayheadX({
             x: refPlayHeadX,
@@ -164,7 +161,6 @@ export const Timeline = () => {
           });
         }}
         onMouseMove={(e) => {
-          if (isPlaying) return;
           const x = (e.evt.x - layerX) / zoom;
           const rightMax = stageWidth - 20;
 

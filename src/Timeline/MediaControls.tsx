@@ -1,26 +1,28 @@
 import { library } from '@fortawesome/fontawesome-svg-core';
 import {
+  faArrowLeft,
+  faArrowRight,
   faBackward,
   faBackwardStep,
   faForward,
   faForwardStep,
   faPause,
-  faPlay,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useAtom } from 'jotai';
+import { useAtom, useAtomValue } from 'jotai';
 import React, { useCallback } from 'react';
 
+import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import {
-  isPlayingAtom,
-  playheadSpeedAtom,
-  setIsPlayingAtom,
+  canEditAtom,
+  playheadXAtom,
   setPlayheadXAtom,
 } from '../atoms/playhead';
 
 library.add(
   faPause,
-  faPlay,
+  faArrowRight,
+  faArrowLeft,
   faBackward,
   faForward,
   faBackwardStep,
@@ -28,13 +30,43 @@ library.add(
 );
 
 export function MediaControls() {
+  const changes = useAtomValue(changesAtom);
   const [, setPlayheadX] = useAtom(setPlayheadXAtom);
-  const [isPlaying] = useAtom(isPlayingAtom);
-  const [, setIsPlaying] = useAtom(setIsPlayingAtom);
-  const [playheadSpeed, setPlayheadSpeed] = useAtom(playheadSpeedAtom);
+  const playHeadX = useAtomValue(playheadXAtom);
+  const canEdit = useAtomValue(canEditAtom);
+  const changesOrder = useAtomValue(changesOrderAtom);
+  const firstChange = changesOrder
+    .map((id) => changes[id])
+    .filter((c) => !c.isFileDepChange)[0];
 
-  const playHandler = useCallback(() => setIsPlaying(true), [setIsPlaying]);
-  const pauseHandler = useCallback(() => setIsPlaying(false), [setIsPlaying]);
+  const nextHandler = useCallback(() => {
+    const sortedChanges = Object.values(changes).sort((a, b) => a.x - b.x);
+    const nexChange = sortedChanges.find(
+      (c) => c.isFileDepChange === false && c.x >= playHeadX
+    );
+
+    if (!nexChange) return;
+
+    setPlayheadX({
+      x: nexChange.x + nexChange.width,
+      type: 'ref',
+    });
+  }, [setPlayheadX, changes, playHeadX]);
+
+  const prevHandler = useCallback(() => {
+    const sortedChanges = Object.values(changes).sort((a, b) => b.x - a.x);
+    const nexChange = sortedChanges.find(
+      (c) => c.isFileDepChange === false && playHeadX > c.x + c.width
+    );
+
+    if (!nexChange) return;
+
+    setPlayheadX({
+      x: nexChange.x + nexChange.width,
+      type: 'ref',
+    });
+  }, [setPlayheadX, changes, playHeadX]);
+
   const stepBackwardHandler = useCallback(
     () => setPlayheadX({ x: 10, type: 'ref' }),
     [setPlayheadX]
@@ -43,27 +75,23 @@ export function MediaControls() {
     () => setPlayheadX({ x: Infinity, type: 'ref' }),
     [setPlayheadX]
   );
-  const setSpeedHandler = useCallback(() => {
-    let newSpeed = playheadSpeed * 2;
-    if (newSpeed > 8) {
-      newSpeed = 1;
-    }
-    setPlayheadSpeed(newSpeed);
-  }, [playheadSpeed, setPlayheadSpeed]);
 
   return (
     <div className="media-controls">
       <FontAwesomeIcon icon="backward-step" onClick={stepBackwardHandler} />
-
-      {isPlaying ? (
-        <FontAwesomeIcon icon="pause" onClick={pauseHandler} />
-      ) : (
-        <FontAwesomeIcon icon="play" onClick={playHandler} />
-      )}
+      <FontAwesomeIcon
+        icon="arrow-left"
+        onClick={prevHandler}
+        className={
+          playHeadX <= firstChange?.x + firstChange?.width ? 'disable' : ''
+        }
+      />
+      <FontAwesomeIcon
+        icon="arrow-right"
+        onClick={nextHandler}
+        className={canEdit ? 'disable' : ''}
+      />
       <FontAwesomeIcon icon="forward-step" onClick={stepForwardHandler} />
-      <div className="speed" onClick={setSpeedHandler}>
-        {playheadSpeed}x
-      </div>
     </div>
   );
 }

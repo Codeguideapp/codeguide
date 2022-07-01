@@ -3,7 +3,6 @@ import { Group, Layer, Rect } from 'react-konva';
 
 import {
   isPlayheadVisibleAtom,
-  isPlayingAtom,
   playheadXAtom,
   refPlayheadXAtom,
   setPlayheadXAtom,
@@ -18,7 +17,6 @@ export function Playhead({
   zoom: number;
   height: number;
 }) {
-  const [isPlaying] = useAtom(isPlayingAtom);
   const [playHeadX] = useAtom(refPlayheadXAtom);
   const [, setPlayheadX] = useAtom(setPlayheadXAtom);
 
@@ -42,11 +40,7 @@ export function Playhead({
           };
         }}
       >
-        <Rect
-          width={1}
-          height={height}
-          fill={isPlaying ? '#ECFF75' : '#666666'}
-        />
+        <Rect width={1} height={height} fill={'#666666'} />
         <Rect x={1} width={6} height={height} fill="red" opacity={0} />
       </Group>
     </Layer>
