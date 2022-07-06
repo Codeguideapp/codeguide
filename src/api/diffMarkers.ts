@@ -80,6 +80,19 @@ export function getDiffMarkers(params: {
   return res;
 }
 
+// head-manager.ts ko referenca
+// dobivene markere analiziraj i skuži indente
+// tab je svaki whitespace ili \t na početku linije (matcha onaj regex)
+// ako ga nađeš, treba razbit marker na dijelove whitespacea i non-whitespacea
+// ne razbijaj ako se briše cijela linija
+// onda whitespace marker stavit na početak linije (jer ionako matcha regex)
+// spojit whitespace markere u istoj liniji
+// spojit whitespace markere ako su jedan ispod drugog
+
+// side-effect.tsx ko referenca
+// nema smisla vezat char diff ins / delete ako se nešto proteže kroz više linija
+// al moguće da je ovo već rješeno
+
 function getDiffMarkersPerMode({
   modifiedValue,
   originalValue,
@@ -113,8 +126,8 @@ function getDiffMarkersPerMode({
   let originalOffset = 0;
   let i = 0;
   for (const [type, value] of diffs) {
-    const prev = diffs[i - 1];
-    const next = diffs[i + 1];
+    //const prev = diffs[i - 1];
+    //const next = diffs[i + 1];
 
     if (type === DIFF_EQUAL) {
       modifiedOffset += value.length;
@@ -122,9 +135,7 @@ function getDiffMarkersPerMode({
     } else if (type === DIFF_DELETE) {
       const id = nanoid();
 
-      if (next?.[0] === DIFF_INSERT) {
-        // delete + insert = replace, skip it
-      } else if (value.length) {
+      if (value.length) {
         // only delete
         markers[id] = {
           id,
@@ -150,48 +161,29 @@ function getDiffMarkersPerMode({
       }
     } else if (type === DIFF_INSERT && value.length !== 0) {
       const id = nanoid();
-
-      if (prev?.[0] === DIFF_DELETE) {
+      markers[id] = {
+        id,
+        modifiedOffset,
+        originalOffset,
+        operation: 'insert',
+        length: value.length,
+        stat: [value.length, 0],
+        delta: new Delta([{ retain: modifiedOffset }, { insert: value }]),
+      };
+      if (isIndent(value)) {
         markers[id] = {
-          id,
-          modifiedOffset,
-          originalOffset,
-          operation: 'replace',
-          length: value.length,
-          stat: [value.length, prev[1].length],
-          delta: new Delta([
-            { retain: modifiedOffset },
-            { delete: prev[1].length },
-            { insert: value },
-          ]),
+          ...markers[id],
+          type: 'indent',
+          indentVal: value.split(tab).length - 1,
         };
-        modifiedOffset += prev[1].length;
-        originalOffset += value.length;
-      } else {
-        markers[id] = {
-          id,
-          modifiedOffset,
-          originalOffset,
-          operation: 'insert',
-          length: value.length,
-          stat: [value.length, 0],
-          delta: new Delta([{ retain: modifiedOffset }, { insert: value }]),
-        };
-        if (isIndent(value)) {
-          markers[id] = {
-            ...markers[id],
-            type: 'indent',
-            indentVal: value.split(tab).length - 1,
-          };
-        }
-        originalOffset += value.length;
       }
+      originalOffset += value.length;
     }
     i++;
   }
 
-  separateTabsAndNewLines(markers, tab, eol);
-  mergeIndents(markers, modifiedValue, originalValue, tab, eol);
+  //separateTabsAndNewLines(markers, tab, eol);
+  //mergeIndents(markers, modifiedValue, originalValue, tab, eol);
   addMarkerPreview(markers, modifiedValue, eol);
   return markers;
 }
