@@ -15,6 +15,7 @@ interface BaseDiffMarker {
   operation: 'replace' | 'insert' | 'delete';
   delta: Delta;
   stat: [number, number];
+  value?: string; // only for simple inserts/deletes
   preview?: Record<
     number,
     {
@@ -26,7 +27,6 @@ interface BaseDiffMarker {
 
 interface IndentDiffMarker extends BaseDiffMarker {
   type: 'indent';
-  indentVal: number;
 }
 
 export type DiffMarker = BaseDiffMarker | IndentDiffMarker;
@@ -77,6 +77,7 @@ export function getDiffMarkers(params: {
     }
   }
 
+  console.log(res);
   return res;
 }
 
@@ -90,8 +91,10 @@ export function getDiffMarkers(params: {
 // spojit whitespace markere ako su jedan ispod drugog
 
 // side-effect.tsx ko referenca
-// nema smisla vezat char diff ins / delete ako se nešto proteže kroz više linija
-// al moguće da je ovo već rješeno
+// nema smisla vezat char diff ins / delete (replace) ako se nešto proteže kroz više linija
+// u tom slučaju treba koristit line diff
+// char diff je samo za unutar linije
+// možda onda treba i pokrenut diff unutar linije? + trim line diffa da ne obuhvaća cijelu ako ne treba
 
 function getDiffMarkersPerMode({
   modifiedValue,
@@ -115,16 +118,9 @@ function getDiffMarkersPerMode({
 
   mergeTabsInSequence(diffs, tab);
 
-  const isIndent = (value: string) => {
-    const pattern = `^[${tab}]+$`;
-    const re = new RegExp(pattern, 'g');
-    return re.test(value);
-  };
-
   const markers: DiffMarkers = {};
   let modifiedOffset = 0;
   let originalOffset = 0;
-  let i = 0;
   for (const [type, value] of diffs) {
     //const prev = diffs[i - 1];
     //const next = diffs[i + 1];
@@ -135,30 +131,24 @@ function getDiffMarkersPerMode({
     } else if (type === DIFF_DELETE) {
       const id = nanoid();
 
-      if (value.length) {
-        // only delete
-        markers[id] = {
-          id,
+      markers[id] = {
+        id,
+        modifiedOffset,
+        originalOffset,
+        value: modifiedValue.slice(
           modifiedOffset,
-          originalOffset,
-          operation: 'delete',
-          length: value.length,
-          stat: [0, value.length],
-          delta: new Delta([
-            { retain: modifiedOffset },
-            { delete: value.length },
-          ]),
-        };
+          modifiedOffset + value.length
+        ),
+        operation: 'delete',
+        length: value.length,
+        stat: [0, value.length],
+        delta: new Delta([
+          { retain: modifiedOffset },
+          { delete: value.length },
+        ]),
+      };
 
-        if (isIndent(value)) {
-          markers[id] = {
-            ...markers[id],
-            type: 'indent',
-            indentVal: value.split(tab).length - 1,
-          };
-        }
-        modifiedOffset += value.length;
-      }
+      modifiedOffset += value.length;
     } else if (type === DIFF_INSERT && value.length !== 0) {
       const id = nanoid();
       markers[id] = {
@@ -166,152 +156,539 @@ function getDiffMarkersPerMode({
         modifiedOffset,
         originalOffset,
         operation: 'insert',
+        value: value,
         length: value.length,
         stat: [value.length, 0],
         delta: new Delta([{ retain: modifiedOffset }, { insert: value }]),
       };
-      if (isIndent(value)) {
-        markers[id] = {
-          ...markers[id],
-          type: 'indent',
-          indentVal: value.split(tab).length - 1,
-        };
-      }
       originalOffset += value.length;
     }
-    i++;
   }
 
   //separateTabsAndNewLines(markers, tab, eol);
   //mergeIndents(markers, modifiedValue, originalValue, tab, eol);
+  // trimStart(markers, modifiedValue, eol, '\t');
+  // trimEnd(markers, modifiedValue, eol, '\t');
+  // trimStart(markers, modifiedValue, eol, ' ');
+  // trimEnd(markers, modifiedValue, eol, ' ');
+  detectIndents(markers, modifiedValue, eol, ' ');
+  detectIndents(markers, modifiedValue, eol, '\t');
+  mergeIndentsInSameLine(markers, modifiedValue, eol, ' ');
+  mergeIndentsInSameLine(markers, modifiedValue, eol, '\t');
+  mergeConsecutiveIndents(markers, modifiedValue, eol, ' ');
+  mergeConsecutiveIndents(markers, modifiedValue, eol, '\t');
+  makeReplaceMarkers(markers);
   addMarkerPreview(markers, modifiedValue, eol);
   return markers;
 }
 
-function mergeIndents(
+function makeReplaceMarkers(markers: DiffMarkers) {
+  const markersArr = Object.values(markers).sort(
+    (a, b) => a.originalOffset - b.originalOffset
+  );
+
+  let lastMarker: DiffMarker | undefined;
+  for (const marker of markersArr) {
+    if (
+      lastMarker &&
+      getDeltaOffset(lastMarker.delta) === marker.modifiedOffset
+    ) {
+      const id = nanoid();
+      markers[id] = {
+        id,
+        modifiedOffset: lastMarker.modifiedOffset,
+        originalOffset: lastMarker.originalOffset,
+        operation: 'replace',
+        length: marker.length,
+        stat: [marker.length, lastMarker.length],
+        delta: new Delta([
+          { retain: lastMarker.modifiedOffset },
+          { delete: lastMarker.length },
+          { insert: marker.value },
+        ]),
+      };
+      delete markers[marker.id];
+      delete markers[lastMarker.id];
+      lastMarker = markers[id];
+    } else {
+      lastMarker = marker;
+    }
+  }
+}
+
+function getDeltaOffset(delta: Delta) {
+  let offset = 0;
+
+  for (const op of delta.ops) {
+    if (op.retain) {
+      offset += op.retain;
+    } else if (typeof op.insert === 'string') {
+      offset += op.insert.length;
+    } else if (op.delete) {
+      offset += op.delete;
+    }
+  }
+  return offset;
+}
+
+function trimStart(
   markers: DiffMarkers,
   modifiedValue: string,
-  originalValue: string,
-  tab: string,
-  eol: string
+  eol: string,
+  indentChar: string
 ) {
-  const markersArr = Object.values(markers).sort(
-    (a, b) => a.originalOffset - b.originalOffset
-  );
-  const toDelete: string[] = [];
+  for (const [, marker] of Object.entries(markers)) {
+    if (!marker.value) continue;
 
-  let refI = 0;
-  for (const refMarker of markersArr) {
-    if (toDelete.includes(refMarker.id)) {
-      delete markers[refMarker.id];
-    } else if (isIndentMarker(refMarker) && refMarker.operation === 'insert') {
-      const toMerge: IndentDiffMarker[] = [];
-      const refMarkerOrigLine = getLineNum(
-        refMarker.originalOffset,
-        originalValue,
-        eol
-      );
+    const isInsert = marker.operation === 'insert';
 
-      for (let nextI = refI + 1; nextI < markersArr.length; nextI++) {
-        // check if currLine = nextLine + 1 for another 'add-indent'
-        // and then currLine = nextLine + 2 for next one etc
-        const nextMarker = markersArr[nextI];
-        const nextOrigLineNum = getLineNum(
-          nextMarker.originalOffset,
-          originalValue,
-          eol
-        );
+    const lineOffset = indexInLineStart(
+      modifiedValue,
+      marker.modifiedOffset,
+      eol
+    );
 
-        if (
-          isIndentMarker(nextMarker) &&
-          nextMarker.operation === 'insert' &&
-          nextOrigLineNum === refMarkerOrigLine + (nextI - refI)
-        ) {
-          // add-indent found in next line
-          toMerge.push(nextMarker);
-        }
-      }
+    // starts with indentChar, but doesnt end with indentChar
+    const intentAtStart = `^(${indentChar}+)[^${indentChar}]+`;
+    const match = marker.value.match(new RegExp(intentAtStart));
 
-      if (toMerge.length) {
-        // create new Delta() which inserts tab(s)
-        const refModLine = getLineNum(
-          refMarker.modifiedOffset,
-          modifiedValue,
-          eol
-        );
-        const offset = getLineOffset(refModLine, modifiedValue, eol);
-
-        let resDelta = new Delta()
-          .retain(offset)
-          .insert(tab.repeat(refMarker.indentVal));
-
-        for (const marker of toMerge) {
-          const modLineNum = getLineNum(
-            marker.modifiedOffset,
-            modifiedValue,
-            eol
-          );
-          const offset = getLineOffset(modLineNum, modifiedValue, eol);
-
-          resDelta = resDelta.compose(
-            new Delta().retain(offset).insert(tab.repeat(marker.indentVal))
-          );
-          toDelete.push(marker.id);
-        }
-
-        markers[refMarker.id].delta = resDelta;
-      }
-    }
-    refI++;
-  }
-}
-
-function separateTabsAndNewLines(
-  markers: DiffMarkers,
-  tab: string,
-  eol: string
-) {
-  const markersArr = Object.values(markers).sort(
-    (a, b) => a.originalOffset - b.originalOffset
-  );
-  const pattern = `${eol}[${tab}]+$`;
-  const re = new RegExp(pattern, 'g');
-
-  let i = 0;
-  for (const marker of markersArr) {
-    const nextMarker = markersArr[i + 1];
-    const oldVal = deltaToString([marker.delta]);
-    let matched = oldVal.match(re);
+    //od lineOffset do marker.modifiedOffset moraju bit whitespace
+    const fromLineStartToMarker = modifiedValue.slice(
+      lineOffset,
+      marker.modifiedOffset
+    );
 
     if (
-      isIndentMarker(nextMarker) &&
-      marker.operation === 'insert' &&
-      matched
+      match &&
+      fromLineStartToMarker.match(new RegExp(`^${indentChar}+$`)) &&
+      !marker.value.endsWith(eol) // is not entire line
     ) {
-      const tabs = matched[0].slice(1, matched[0].length); // removing matched /n at the beginning
-      const newInsertVal = oldVal.slice(0, oldVal.length - tabs.length); // removing tab(s) at the end
+      const trimmed = match[1];
 
-      marker.delta = new Delta([
-        { retain: marker.modifiedOffset },
-        { insert: newInsertVal },
-      ]);
+      marker.value = marker.value.slice(trimmed.length);
 
-      const newId = nanoid();
-      markers[newId] = {
-        id: newId,
-        length: marker.length,
-        modifiedOffset: marker.modifiedOffset,
-        originalOffset: marker.originalOffset + newInsertVal.length,
-        operation: 'insert',
-        delta: new Delta([{ retain: marker.modifiedOffset }, { insert: tabs }]),
-        stat: [tabs.length, 0],
-        type: 'indent',
-        indentVal: tabs.split(tab).length - 1,
+      const oldModOffset = marker.modifiedOffset;
+      const oldOrgOffset = marker.originalOffset;
+      const newModOffset = marker.modifiedOffset + trimmed.length;
+      const newOrgOffset = marker.originalOffset + trimmed.length;
+      const newLength = marker.value.length;
+
+      marker.modifiedOffset = newModOffset;
+      marker.originalOffset = newOrgOffset;
+      marker.delta = isInsert
+        ? new Delta([{ retain: newModOffset }, { insert: marker.value }])
+        : new Delta([{ retain: newModOffset }, { delete: newLength }]);
+
+      marker.stat = isInsert ? [newLength, 0] : [0, newLength];
+
+      const id = nanoid();
+      markers[id] = {
+        id,
+        modifiedOffset: oldModOffset,
+        originalOffset: oldOrgOffset,
+        operation: marker.operation,
+        value: trimmed,
+        length: trimmed.length,
+        stat: isInsert ? [trimmed.length, 0] : [0, trimmed.length],
+        delta: isInsert
+          ? new Delta([{ retain: oldModOffset }, { insert: trimmed }])
+          : new Delta([{ retain: oldModOffset }, { delete: trimmed.length }]),
       };
     }
-    i++;
   }
 }
+
+function trimEnd(
+  markers: DiffMarkers,
+  modifiedValue: string,
+  eol: string,
+  indentChar: string
+) {
+  for (const [, marker] of Object.entries(markers)) {
+    if (!marker.value) {
+      continue;
+    }
+
+    const isInsert = marker.operation === 'insert';
+    const isDelete = marker.operation === 'delete';
+    const intentAtEnd = `(\n)(${indentChar}+)$`;
+    const matchEnd = marker.value.match(new RegExp(intentAtEnd));
+
+    const lineOffset = indexInLineStart(
+      modifiedValue,
+      marker.modifiedOffset,
+      eol
+    );
+
+    if (matchEnd && lineOffset === marker.modifiedOffset) {
+      const trimmed = matchEnd[2];
+
+      marker.value = marker.value.slice(0, -trimmed.length);
+      marker.delta = isInsert
+        ? new Delta([
+            { retain: marker.modifiedOffset },
+            { insert: marker.value },
+          ])
+        : new Delta([
+            { retain: marker.modifiedOffset },
+            { delete: marker.value.length },
+          ]);
+      marker.stat = isInsert
+        ? [marker.value.length, 0]
+        : [0, marker.value.length];
+
+      const id = nanoid();
+      markers[id] = {
+        id,
+        modifiedOffset: isDelete
+          ? marker.modifiedOffset + marker.value.length
+          : marker.modifiedOffset,
+        originalOffset: isInsert
+          ? marker.originalOffset + marker.value.length
+          : marker.originalOffset,
+        operation: marker.operation,
+        value: trimmed,
+        length: trimmed.length,
+        stat: isInsert ? [trimmed.length, 0] : [0, trimmed.length],
+        delta: isInsert
+          ? new Delta([{ retain: marker.modifiedOffset }, { insert: trimmed }])
+          : new Delta([
+              { retain: marker.modifiedOffset + marker.value.length },
+              { delete: trimmed.length },
+            ]),
+      };
+    }
+  }
+}
+
+function detectIndents(
+  markers: DiffMarkers,
+  modifiedValue: string,
+  eol: string,
+  indentChar: string
+) {
+  for (const [, marker] of Object.entries(markers)) {
+    const pattern = `^${indentChar}+$`;
+    const re = new RegExp(pattern, 'g');
+    if (marker.value && marker.value.match(re)) {
+      const lineOffset = indexInLineStart(
+        modifiedValue,
+        marker.modifiedOffset,
+        eol
+      );
+      const [firstNonIndentOffset] = firstNextDiferentChar(
+        modifiedValue,
+        lineOffset,
+        indentChar
+      );
+
+      if (
+        lineOffset === marker.modifiedOffset ||
+        modifiedValue.slice(lineOffset, firstNonIndentOffset).match(re)
+      ) {
+        markers[marker.id] = {
+          ...marker,
+          type: 'indent',
+        };
+
+        if (lineOffset !== marker.modifiedOffset) {
+          markers[marker.id] = {
+            ...markers[marker.id],
+            modifiedOffset: lineOffset,
+            delta:
+              marker.operation === 'insert'
+                ? new Delta([{ retain: lineOffset }, { insert: marker.value }])
+                : new Delta([
+                    { retain: lineOffset },
+                    { delete: marker.value.length },
+                  ]),
+          };
+        }
+      }
+    }
+  }
+}
+
+function firstNextDiferentChar(
+  value: string,
+  startOffset: number,
+  stopChar: string
+): [number, string | undefined] {
+  let checkIndex = startOffset;
+  while (value.at(checkIndex) === stopChar) {
+    checkIndex++;
+  }
+  return [checkIndex, value.at(checkIndex)];
+}
+
+function indexInLineStart(value: string, offset: number, eol: string) {
+  let checkIndex = offset - 1;
+  while (checkIndex >= 0) {
+    if (value.at(checkIndex) === eol) {
+      break;
+    }
+    checkIndex--;
+  }
+  return checkIndex + 1;
+}
+
+function mergeIndentsInSameLine(
+  markers: DiffMarkers,
+  modifiedValue: string,
+  eol: string,
+  indentChar: string
+) {
+  const markersPerLine: Record<number, DiffMarker> = {};
+
+  for (const [, marker] of Object.entries(markers)) {
+    if (
+      !isIndentMarker(marker) ||
+      !marker.value?.match(new RegExp(`^${indentChar}+$`))
+    ) {
+      continue;
+    }
+
+    const lineNum = getLineNum(marker.modifiedOffset, modifiedValue, eol);
+
+    if (!markersPerLine[lineNum]) {
+      markersPerLine[lineNum] = marker;
+    } else {
+      const first =
+        marker.value.length * (marker.operation === 'delete' ? -1 : 1);
+      const second =
+        markersPerLine[lineNum].value!.length *
+        (markersPerLine[lineNum].operation === 'delete' ? -1 : 1);
+
+      const total = first + second;
+
+      const id = nanoid();
+
+      if (total > 0) {
+        markers[id] = {
+          id,
+          type: 'indent',
+          operation: 'insert',
+          delta: new Delta([
+            { retain: marker.modifiedOffset },
+            { insert: indentChar.repeat(total) },
+          ]),
+          value: indentChar.repeat(total),
+          length: total,
+          modifiedOffset: marker.modifiedOffset,
+          originalOffset: marker.originalOffset,
+          stat: [total, 0],
+        };
+      } else if (total < 0) {
+        const length = -total;
+        markers[id] = {
+          id,
+          type: 'indent',
+          operation: 'delete',
+          delta: new Delta([
+            { retain: marker.modifiedOffset },
+            { delete: length },
+          ]),
+          value: indentChar.repeat(length),
+          length: length,
+          modifiedOffset: marker.modifiedOffset,
+          originalOffset: marker.originalOffset,
+          stat: [0, length],
+        };
+      }
+
+      delete markers[marker.id];
+      delete markers[markersPerLine[lineNum].id];
+
+      markersPerLine[lineNum] = markers[id];
+    }
+  }
+}
+
+function mergeConsecutiveIndents(
+  markers: DiffMarkers,
+  modifiedValue: string,
+  eol: string,
+  indentChar: string
+) {
+  const markersArr = Object.values(markers).sort(
+    (a, b) => a.originalOffset - b.originalOffset
+  );
+
+  let lastMarker:
+    | {
+        line: number;
+        marker: DiffMarker;
+      }
+    | undefined;
+
+  for (const marker of markersArr) {
+    if (
+      !isIndentMarker(marker) ||
+      !marker.value?.match(new RegExp(`^${indentChar}+$`))
+    ) {
+      continue;
+    }
+
+    const lineNum = getLineNum(marker.modifiedOffset, modifiedValue, eol);
+
+    if (
+      lastMarker?.line === lineNum - 1 &&
+      lastMarker.marker.operation === marker.operation
+    ) {
+      const id = nanoid();
+      const length = lastMarker.marker.length + marker.length;
+      markers[id] = {
+        id,
+        type: 'indent',
+        operation: marker.operation,
+        delta: lastMarker.marker.delta.compose(marker.delta),
+        value: undefined,
+        length,
+        modifiedOffset: marker.modifiedOffset,
+        originalOffset: marker.originalOffset,
+        stat: marker.operation === 'insert' ? [length, 0] : [0, length],
+      };
+
+      delete markers[lastMarker.marker.id];
+      delete markers[marker.id];
+
+      lastMarker = {
+        line: lineNum,
+        marker: markers[id],
+      };
+    } else {
+      lastMarker = {
+        line: lineNum,
+        marker,
+      };
+    }
+    // getLineContent
+  }
+}
+// function mergeIndents(
+//   markers: DiffMarkers,
+//   modifiedValue: string,
+//   originalValue: string,
+//   tab: string,
+//   eol: string
+// ) {
+//   const markersArr = Object.values(markers).sort(
+//     (a, b) => a.originalOffset - b.originalOffset
+//   );
+//   const toDelete: string[] = [];
+
+//   let refI = 0;
+//   for (const refMarker of markersArr) {
+//     if (toDelete.includes(refMarker.id)) {
+//       delete markers[refMarker.id];
+//     } else if (isIndentMarker(refMarker) && refMarker.operation === 'insert') {
+//       const toMerge: IndentDiffMarker[] = [];
+//       const refMarkerOrigLine = getLineNum(
+//         refMarker.originalOffset,
+//         originalValue,
+//         eol
+//       );
+
+//       for (let nextI = refI + 1; nextI < markersArr.length; nextI++) {
+//         // check if currLine = nextLine + 1 for another 'add-indent'
+//         // and then currLine = nextLine + 2 for next one etc
+//         const nextMarker = markersArr[nextI];
+//         const nextOrigLineNum = getLineNum(
+//           nextMarker.originalOffset,
+//           originalValue,
+//           eol
+//         );
+
+//         if (
+//           isIndentMarker(nextMarker) &&
+//           nextMarker.operation === 'insert' &&
+//           nextOrigLineNum === refMarkerOrigLine + (nextI - refI)
+//         ) {
+//           // add-indent found in next line
+//           toMerge.push(nextMarker);
+//         }
+//       }
+
+//       if (toMerge.length) {
+//         // create new Delta() which inserts tab(s)
+//         const refModLine = getLineNum(
+//           refMarker.modifiedOffset,
+//           modifiedValue,
+//           eol
+//         );
+//         const offset = getLineOffset(refModLine, modifiedValue, eol);
+
+//         let resDelta = new Delta()
+//           .retain(offset)
+//           .insert(tab.repeat(refMarker.indentVal));
+
+//         for (const marker of toMerge) {
+//           const modLineNum = getLineNum(
+//             marker.modifiedOffset,
+//             modifiedValue,
+//             eol
+//           );
+//           const offset = getLineOffset(modLineNum, modifiedValue, eol);
+
+//           resDelta = resDelta.compose(
+//             new Delta().retain(offset).insert(tab.repeat(marker.indentVal))
+//           );
+//           toDelete.push(marker.id);
+//         }
+
+//         markers[refMarker.id].delta = resDelta;
+//       }
+//     }
+//     refI++;
+//   }
+// }
+
+// function separateTabsAndNewLines(
+//   markers: DiffMarkers,
+//   tab: string,
+//   eol: string
+// ) {
+//   const markersArr = Object.values(markers).sort(
+//     (a, b) => a.originalOffset - b.originalOffset
+//   );
+//   const pattern = `${eol}[${tab}]+$`;
+//   const re = new RegExp(pattern, 'g');
+
+//   let i = 0;
+//   for (const marker of markersArr) {
+//     const nextMarker = markersArr[i + 1];
+//     const oldVal = deltaToString([marker.delta]);
+//     let matched = oldVal.match(re);
+
+//     if (
+//       isIndentMarker(nextMarker) &&
+//       marker.operation === 'insert' &&
+//       matched
+//     ) {
+//       const tabs = matched[0].slice(1, matched[0].length); // removing matched /n at the beginning
+//       const newInsertVal = oldVal.slice(0, oldVal.length - tabs.length); // removing tab(s) at the end
+
+//       marker.delta = new Delta([
+//         { retain: marker.modifiedOffset },
+//         { insert: newInsertVal },
+//       ]);
+
+//       const newId = nanoid();
+//       markers[newId] = {
+//         id: newId,
+//         length: marker.length,
+//         modifiedOffset: marker.modifiedOffset,
+//         originalOffset: marker.originalOffset + newInsertVal.length,
+//         operation: 'insert',
+//         delta: new Delta([{ retain: marker.modifiedOffset }, { insert: tabs }]),
+//         stat: [tabs.length, 0],
+//         type: 'indent',
+//         indentVal: tabs.split(tab).length - 1,
+//       };
+//     }
+//     i++;
+//   }
+// }
 
 function addMarkerPreview(
   markers: DiffMarkers,
@@ -342,7 +719,7 @@ function addMarkerPreview(
           if (!lineContent) continue;
 
           const code = isIndentMarker(marker)
-            ? '▶'.repeat(marker.indentVal)
+            ? '▶'.repeat(marker.value?.length || 0)
             : lineContent;
 
           if (!preview[lineNum]) {
@@ -371,18 +748,22 @@ function addMarkerPreview(
 function getLineNum(index: number, modifiedValue: string, eol: string): number {
   return modifiedValue.slice(0, index).split(eol).length;
 }
-function getLineOffset(
-  line: number,
-  modifiedValue: string,
-  eol: string
-): number {
-  const splitted = modifiedValue.split(eol);
-  if (line <= 1) {
-    return 0;
-  }
-  if (line > splitted.length) {
-    return modifiedValue.length;
-  }
-  splitted.splice(line - 1);
-  return splitted.join(eol).length + 1;
+
+function getLineContent(value: string, line: number, eol: string): string {
+  return value.split(eol)[line];
 }
+// function getLineOffset(
+//   line: number,
+//   modifiedValue: string,
+//   eol: string
+// ): number {
+//   const splitted = modifiedValue.split(eol);
+//   if (line <= 1) {
+//     return 0;
+//   }
+//   if (line > splitted.length) {
+//     return modifiedValue.length;
+//   }
+//   splitted.splice(line - 1);
+//   return splitted.join(eol).length + 1;
+// }
