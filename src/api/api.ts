@@ -20,17 +20,30 @@ const octokit = new Octokit({
 });
 
 export const getFiles = async (pr: number): Promise<ApiFile[]> => {
-  return mockFiles;
+  //return [mockFiles[1]];
   const files: ApiFile[] = [];
+
+  let owner = '';
+  let repo = '';
+  let pull_number = '';
+
+  const paths = document.location.pathname.split('/');
+  if (paths.length > 4) {
+    owner = paths[1];
+    repo = paths[2];
+    pull_number = paths[4];
+  } else {
+    return mockFiles;
+  }
 
   //const owner = 'stoplightio';
   //const repo = 'elements';
   //const pull_number = 153;
   //const pull_number = 1693;
 
-  const owner = 'webiny';
-  const repo = 'webiny-js';
-  const pull_number = 2402;
+  // const owner = 'webiny';
+  // const repo = 'webiny-js';
+  // const pull_number = 2402;
 
   const prReq = await octokit.request(
     `GET /repos/${owner}/${repo}/pulls/${pull_number}`,
@@ -56,14 +69,24 @@ export const getFiles = async (pr: number): Promise<ApiFile[]> => {
       `https://raw.githubusercontent.com/${owner}/${repo}/${baseSha}/${encodeURIComponent(
         file.filename
       )}`
-    ).then((r) => r.text());
+    ).then((r) => {
+      if (r.status === 404) {
+        return '';
+      }
+      return r.text();
+    });
 
     //console.log(file);
     const newVal = await fetch(
       `https://raw.githubusercontent.com/${owner}/${repo}/${
         prReq.data.merge_commit_sha
       }/${encodeURIComponent(file.filename)}`
-    ).then((r) => r.text());
+    ).then((r) => {
+      if (r.status === 404) {
+        return '';
+      }
+      return r.text();
+    });
 
     files.push({
       path: file.filename,

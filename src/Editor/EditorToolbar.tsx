@@ -10,7 +10,6 @@ import { useCallback } from 'react';
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
 import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
-import { getTabChar } from '../utils/monaco';
 
 library.add(faHighlighter);
 
@@ -43,7 +42,6 @@ export function EditorToolbar({
             isFileDepChange: true,
             delta: new Delta().insert(activeFile.oldVal),
             eolChar: monacoModel.getEOL(),
-            tabChar: getTabChar(monacoModel),
           });
         }
 

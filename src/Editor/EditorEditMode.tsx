@@ -11,12 +11,7 @@ import { activeFileAtom } from '../atoms/files';
 import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
 import { composeDeltas } from '../utils/deltaUtils';
 import { getFileContent } from '../utils/getFileContent';
-import {
-  getTabChar,
-  modifiedModel,
-  originalModel,
-  previewModel,
-} from '../utils/monaco';
+import { modifiedModel, originalModel, previewModel } from '../utils/monaco';
 import { DiffMarkersList } from './DiffMarkers';
 import { EditorToolbar } from './EditorToolbar';
 
@@ -145,7 +140,6 @@ export function EditorEditMode() {
           isFileDepChange: true,
           delta: new Delta().insert(activeFile.oldVal),
           eolChar: modifiedModel.getEOL(),
-          tabChar: getTabChar(modifiedModel),
         });
       }
 
@@ -163,7 +157,6 @@ export function EditorEditMode() {
         delta: composeDeltas(deltas),
         file: activeFile,
         eolChar: modifiedModel.getEOL(),
-        tabChar: getTabChar(modifiedModel),
         diffMarker: isEqual(
           appliedMarkerRef.current?.edits,
           e.changes.map((c) => ({ range: c.range, text: c.text }))

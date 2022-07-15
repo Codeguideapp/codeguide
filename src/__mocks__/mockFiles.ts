@@ -2,6 +2,528 @@ import { ApiFile } from '../api/api';
 
 export const mockFiles: ApiFile[] = [
   {
+    path: 'side-effect.ts',
+    status: 'modified',
+    oldVal: `import React, { Component } from 'react'
+
+const isServer = typeof window === 'undefined'
+
+type State = JSX.Element[] | undefined
+
+type SideEffectProps = {
+  reduceComponentsToState: <T>(
+    components: Array<React.ReactElement<any>>,
+    props: T
+  ) => State
+  handleStateChange?: (state: State) => void
+  headManager: any
+  inAmpMode?: boolean
+}
+
+export default class extends Component<SideEffectProps> {
+  private _hasHeadManager: boolean
+
+  emitChange = (): void => {
+    if (this._hasHeadManager) {
+      this.props.headManager.updateHead(
+        this.props.reduceComponentsToState(
+          [...this.props.headManager.mountedInstances],
+          this.props
+        )
+      )
+    }
+  }
+
+  constructor(props: any) {
+    super(props)
+    this._hasHeadManager =
+      this.props.headManager && this.props.headManager.mountedInstances
+
+    if (isServer && this._hasHeadManager) {
+      this.props.headManager.mountedInstances.add(this)
+      this.emitChange()
+    }
+  }
+  componentDidMount() {
+    if (this._hasHeadManager) {
+      this.props.headManager.mountedInstances.add(this)
+    }
+    this.emitChange()
+  }
+  componentDidUpdate() {
+    this.emitChange()
+  }
+  componentWillUnmount() {
+    if (this._hasHeadManager) {
+      this.props.headManager.mountedInstances.delete(this)
+    }
+    this.emitChange()
+  }
+
+  render() {
+    return null
+  }
+}
+`,
+    newVal: `import React, { Children, useEffect, useLayoutEffect } from 'react'
+
+type State = JSX.Element[] | undefined
+
+type SideEffectProps = {
+  reduceComponentsToState: <T>(
+    components: Array<React.ReactElement<any>>,
+    props: T
+  ) => State
+  handleStateChange?: (state: State) => void
+  headManager: any
+  inAmpMode?: boolean
+  children: React.ReactNode
+}
+
+const isServer = typeof window === 'undefined'
+const useClientOnlyLayoutEffect = isServer ? () => {} : useLayoutEffect
+const useClientOnlyEffect = isServer ? () => {} : useEffect
+
+export default function SideEffect(props: SideEffectProps) {
+  const { headManager, reduceComponentsToState } = props
+
+  function emitChange() {
+    if (headManager && headManager.mountedInstances) {
+      const headElements = Children.toArray(
+        headManager.mountedInstances
+      ).filter(Boolean) as React.ReactElement[]
+      headManager.updateHead(reduceComponentsToState(headElements, props))
+    }
+  }
+
+  if (isServer) {
+    headManager?.mountedInstances?.add(props.children)
+    emitChange()
+  }
+
+  useClientOnlyLayoutEffect(() => {
+    headManager?.mountedInstances?.add(props.children)
+    return () => {
+      headManager?.mountedInstances?.delete(props.children)
+    }
+  })
+
+  // We need to call \`updateHead\` method whenever the \`SideEffect\` is trigger in all
+  // life-cycles: mount, update, unmount. However, if there are multiple \`SideEffect\`s
+  // being rendered, we only trigger the method from the last one.
+  // This is ensured by keeping the last unflushed \`updateHead\` in the \`_pendingUpdate\`
+  // singleton in the layout effect pass, and actually trigger it in the effect pass.
+  useClientOnlyLayoutEffect(() => {
+    if (headManager) {
+      headManager._pendingUpdate = emitChange
+    }
+    return () => {
+      if (headManager) {
+        headManager._pendingUpdate = emitChange
+      }
+    }
+  })
+
+  useClientOnlyEffect(() => {
+    if (headManager && headManager._pendingUpdate) {
+      headManager._pendingUpdate()
+      headManager._pendingUpdate = null
+    }
+    return () => {
+      if (headManager && headManager._pendingUpdate) {
+        headManager._pendingUpdate()
+        headManager._pendingUpdate = null
+      }
+    }
+  })
+
+  return null
+}
+`,
+  },
+  {
+    path: 'import.ts',
+    status: 'modified',
+    oldVal: `export const httpOperation = {
+  id: '?http-operation-id?',
+  iid: 'POST_todos',
+  description: 'This creates a Todo object.Testing inline code.',
+  method: 'post',
+  path: '/todos',
+  summary: 'Create Todo'
+}`,
+    newVal: `import { IHttpOperation } from '@stoplight/types';
+import type { JSONSchema7 } from 'json-schema';
+
+export const httpOperation: IHttpOperation & { __bundled__: unknown } = {
+  id: '?http-operation-id?',
+  iid: 'POST_todos',
+  description: 'This creates a Todo object.Testing inline code.',
+  method: 'post',
+  path: '/todos',
+  summary: 'Create Todo'
+}`,
+  },
+  {
+    path: 'lockfile.lock',
+    status: 'modified',
+    oldVal: `
+moment@^2.29.1:
+  version "2.29.1"
+  resolved "https://registry.yarnpkg.com/moment/-/moment-2.29.1.tgz#b2be769fa31940be9eeea6469c075e35006fa3d3"
+  integrity sha512-kHmoybcPV8Sqy59DwNDY3Jefr64lK/by/da0ViFcuA4DH0vQg5Q6Ze5VimxkfQNSC+Mls/Kx53s7TjP1RhFEDQ==`,
+    newVal: `
+moment@^2.29.1:
+  version "2.29.4"
+  resolved "https://registry.yarnpkg.com/moment/-/moment-2.29.4.tgz#3dbe052889fe7c1b2ed966fcb3a77328964ef108"
+  integrity sha512-5LC9SOxjSc2HF6vO2CyuTDNivEdoz2IvyJJGj6X8DJ0eFyfszE0QiEd+iXmBvUP3WHxSjFH/vIsA0EN00cgr8w==`,
+  },
+  {
+    path: 'vercel/head-manager.ts',
+    status: 'modified',
+    oldVal: `export const DOMAttributeNames: Record<string, string> = {
+  acceptCharset: 'accept-charset',
+  className: 'class',
+  htmlFor: 'for',
+  httpEquiv: 'http-equiv',
+  noModule: 'noModule',
+}
+
+function reactElementToDOM({ type, props }: JSX.Element): HTMLElement {
+  const el: HTMLElement = document.createElement(type)
+  for (const p in props) {
+    if (!props.hasOwnProperty(p)) continue
+    if (p === 'children' || p === 'dangerouslySetInnerHTML') continue
+
+    // we don't render undefined props to the DOM
+    if (props[p] === undefined) continue
+
+    const attr = DOMAttributeNames[p] || p.toLowerCase()
+    if (
+      type === 'script' &&
+      (attr === 'async' || attr === 'defer' || attr === 'noModule')
+    ) {
+      ;(el as HTMLScriptElement)[attr] = !!props[p]
+    } else {
+      el.setAttribute(attr, props[p])
+    }
+  }
+
+  const { children, dangerouslySetInnerHTML } = props
+  if (dangerouslySetInnerHTML) {
+    el.innerHTML = dangerouslySetInnerHTML.__html || ''
+  } else if (children) {
+    el.textContent =
+      typeof children === 'string'
+        ? children
+        : Array.isArray(children)
+        ? children.join('')
+        : ''
+  }
+  return el
+}
+
+/**
+ * When a \`nonce\` is present on an element, browsers such as Chrome and Firefox strip it out of the
+ * actual HTML attributes for security reasons *when the element is added to the document*. Thus,
+ * given two equivalent elements that have nonces, \`Element,isEqualNode()\` will return false if one
+ * of those elements gets added to the document. Although the \`element.nonce\` property will be the
+ * same for both elements, the one that was added to the document will return an empty string for
+ * its nonce HTML attribute value.
+ *
+ * This custom \`isEqualNode()\` function therefore removes the nonce value from the \`newTag\` before
+ * comparing it to \`oldTag\`, restoring it afterwards.
+ *
+ * For more information, see:
+ * https://bugs.chromium.org/p/chromium/issues/detail?id=1211471#c12
+ */
+export function isEqualNode(oldTag: Element, newTag: Element) {
+  if (oldTag instanceof HTMLElement && newTag instanceof HTMLElement) {
+    const nonce = newTag.getAttribute('nonce')
+    // Only strip the nonce if \`oldTag\` has had it stripped. An element's nonce attribute will not
+    // be stripped if there is no content security policy response header that includes a nonce.
+    if (nonce && !oldTag.getAttribute('nonce')) {
+      const cloneTag = newTag.cloneNode(true) as typeof newTag
+      cloneTag.setAttribute('nonce', '')
+      cloneTag.nonce = nonce
+      return nonce === oldTag.nonce && oldTag.isEqualNode(cloneTag)
+    }
+  }
+
+  return oldTag.isEqualNode(newTag)
+}
+
+function updateElements(type: string, components: JSX.Element[]): void {
+  const headEl = document.getElementsByTagName('head')[0]
+  const headCountEl: HTMLMetaElement = headEl.querySelector(
+    'meta[name=next-head-count]'
+  ) as HTMLMetaElement
+  if (process.env.NODE_ENV !== 'production') {
+    if (!headCountEl) {
+      console.error(
+        'Warning: next-head-count is missing. https://nextjs.org/docs/messages/next-head-count-missing'
+      )
+      return
+    }
+  }
+
+  const headCount = Number(headCountEl.content)
+  const oldTags: Element[] = []
+
+  for (
+    let i = 0, j = headCountEl.previousElementSibling;
+    i < headCount;
+    i++, j = j?.previousElementSibling || null
+  ) {
+    if (j?.tagName?.toLowerCase() === type) {
+      oldTags.push(j)
+    }
+  }
+  const newTags = (components.map(reactElementToDOM) as HTMLElement[]).filter(
+    (newTag) => {
+      for (let k = 0, len = oldTags.length; k < len; k++) {
+        const oldTag = oldTags[k]
+        if (isEqualNode(oldTag, newTag)) {
+          oldTags.splice(k, 1)
+          return false
+        }
+      }
+      return true
+    }
+  )
+
+  oldTags.forEach((t) => t.parentNode?.removeChild(t))
+  newTags.forEach((t) => headEl.insertBefore(t, headCountEl))
+  headCountEl.content = (headCount - oldTags.length + newTags.length).toString()
+}
+
+export default function initHeadManager(): {
+  mountedInstances: Set<unknown>
+  updateHead: (head: JSX.Element[]) => void
+} {
+  let updatePromise: Promise<void> | null = null
+
+  return {
+    mountedInstances: new Set(),
+    updateHead: (head: JSX.Element[]) => {
+      const promise = (updatePromise = Promise.resolve().then(() => {
+        if (promise !== updatePromise) return
+
+        updatePromise = null
+        const tags: Record<string, JSX.Element[]> = {}
+
+        head.forEach((h) => {
+          if (
+            // If the font tag is loaded only on client navigation
+            // it won't be inlined. In this case revert to the original behavior
+            h.type === 'link' &&
+            h.props['data-optimized-fonts']
+          ) {
+            if (
+              document.querySelector(
+                \`style[data-href="\${h.props['data-href']}"]\`
+              )
+            ) {
+              return
+            } else {
+              h.props.href = h.props['data-href']
+              h.props['data-href'] = undefined
+            }
+          }
+
+          const components = tags[h.type] || []
+          components.push(h)
+          tags[h.type] = components
+        })
+
+        const titleComponent = tags.title ? tags.title[0] : null
+        let title = ''
+        if (titleComponent) {
+          const { children } = titleComponent.props
+          title =
+            typeof children === 'string'
+              ? children
+              : Array.isArray(children)
+              ? children.join('')
+              : ''
+        }
+        if (title !== document.title) document.title = title
+        ;['meta', 'base', 'link', 'style', 'script'].forEach((type) => {
+          updateElements(type, tags[type] || [])
+        })
+      }))
+    },
+  }
+}
+`,
+    newVal: `export const DOMAttributeNames: Record<string, string> = {
+  acceptCharset: 'accept-charset',
+  className: 'class',
+  htmlFor: 'for',
+  httpEquiv: 'http-equiv',
+  noModule: 'noModule',
+}
+
+function reactElementToDOM({ type, props }: JSX.Element): HTMLElement {
+  const el: HTMLElement = document.createElement(type)
+  for (const p in props) {
+    if (!props.hasOwnProperty(p)) continue
+    if (p === 'children' || p === 'dangerouslySetInnerHTML') continue
+
+    // we don't render undefined props to the DOM
+    if (props[p] === undefined) continue
+
+    const attr = DOMAttributeNames[p] || p.toLowerCase()
+    if (
+      type === 'script' &&
+      (attr === 'async' || attr === 'defer' || attr === 'noModule')
+    ) {
+      ;(el as HTMLScriptElement)[attr] = !!props[p]
+    } else {
+      el.setAttribute(attr, props[p])
+    }
+  }
+
+  const { children, dangerouslySetInnerHTML } = props
+  if (dangerouslySetInnerHTML) {
+    el.innerHTML = dangerouslySetInnerHTML.__html || ''
+  } else if (children) {
+    el.textContent =
+      typeof children === 'string'
+        ? children
+        : Array.isArray(children)
+        ? children.join('')
+        : ''
+  }
+  return el
+}
+
+/**
+ * When a \`nonce\` is present on an element, browsers such as Chrome and Firefox strip it out of the
+ * actual HTML attributes for security reasons *when the element is added to the document*. Thus,
+ * given two equivalent elements that have nonces, \`Element,isEqualNode()\` will return false if one
+ * of those elements gets added to the document. Although the \`element.nonce\` property will be the
+ * same for both elements, the one that was added to the document will return an empty string for
+ * its nonce HTML attribute value.
+ *
+ * This custom \`isEqualNode()\` function therefore removes the nonce value from the \`newTag\` before
+ * comparing it to \`oldTag\`, restoring it afterwards.
+ *
+ * For more information, see:
+ * https://bugs.chromium.org/p/chromium/issues/detail?id=1211471#c12
+ */
+export function isEqualNode(oldTag: Element, newTag: Element) {
+  if (oldTag instanceof HTMLElement && newTag instanceof HTMLElement) {
+    const nonce = newTag.getAttribute('nonce')
+    // Only strip the nonce if \`oldTag\` has had it stripped. An element's nonce attribute will not
+    // be stripped if there is no content security policy response header that includes a nonce.
+    if (nonce && !oldTag.getAttribute('nonce')) {
+      const cloneTag = newTag.cloneNode(true) as typeof newTag
+      cloneTag.setAttribute('nonce', '')
+      cloneTag.nonce = nonce
+      return nonce === oldTag.nonce && oldTag.isEqualNode(cloneTag)
+    }
+  }
+
+  return oldTag.isEqualNode(newTag)
+}
+
+function updateElements(type: string, components: JSX.Element[]): void {
+  const headEl = document.getElementsByTagName('head')[0]
+  const headCountEl: HTMLMetaElement = headEl.querySelector(
+    'meta[name=next-head-count]'
+  ) as HTMLMetaElement
+  if (process.env.NODE_ENV !== 'production') {
+    if (!headCountEl) {
+      console.error(
+        'Warning: next-head-count is missing. https://nextjs.org/docs/messages/next-head-count-missing'
+      )
+      return
+    }
+  }
+
+  const headCount = Number(headCountEl.content)
+  const oldTags: Element[] = []
+
+  for (
+    let i = 0, j = headCountEl.previousElementSibling;
+    i < headCount;
+    i++, j = j?.previousElementSibling || null
+  ) {
+    if (j?.tagName?.toLowerCase() === type) {
+      oldTags.push(j)
+    }
+  }
+  const newTags = (components.map(reactElementToDOM) as HTMLElement[]).filter(
+    (newTag) => {
+      for (let k = 0, len = oldTags.length; k < len; k++) {
+        const oldTag = oldTags[k]
+        if (isEqualNode(oldTag, newTag)) {
+          oldTags.splice(k, 1)
+          return false
+        }
+      }
+      return true
+    }
+  )
+
+  oldTags.forEach((t) => t.parentNode?.removeChild(t))
+  newTags.forEach((t) => headEl.insertBefore(t, headCountEl))
+  headCountEl.content = (headCount - oldTags.length + newTags.length).toString()
+}
+
+export default function initHeadManager(): {
+  mountedInstances: Set<unknown>
+  updateHead: (head: JSX.Element[]) => void
+} {
+  return {
+    mountedInstances: new Set(),
+    updateHead: (head: JSX.Element[]) => {
+      const tags: Record<string, JSX.Element[]> = {}
+
+      head.forEach((h) => {
+        if (
+          // If the font tag is loaded only on client navigation
+          // it won't be inlined. In this case revert to the original behavior
+          h.type === 'link' &&
+          h.props['data-optimized-fonts']
+        ) {
+          if (
+            document.querySelector(\`style[data-href="\${h.props['data-href']}"]\`)
+          ) {
+            return
+          } else {
+            h.props.href = h.props['data-href']
+            h.props['data-href'] = undefined
+          }
+        }
+
+        const components = tags[h.type] || []
+        components.push(h)
+        tags[h.type] = components
+      })
+
+      const titleComponent = tags.title ? tags.title[0] : null
+      let title = ''
+      if (titleComponent) {
+        const { children } = titleComponent.props
+        title =
+          typeof children === 'string'
+            ? children
+            : Array.isArray(children)
+            ? children.join('')
+            : ''
+      }
+      if (title !== document.title) document.title = title
+      ;['meta', 'base', 'link', 'style', 'script'].forEach((type) => {
+        updateElements(type, tags[type] || [])
+      })
+    },
+  }
+}
+`,
+  },
+  {
     path: 'some/path/old-tests.ts',
     status: 'modified',
     oldVal: `
@@ -40,7 +562,7 @@ export const mockFiles: ApiFile[] = [
 {examplesSelect || (
 \t\t\t<P>
 \t\t\t\t<D>
-\t\t\t\t<T>
+<T>
 \t\t\t</P>
 )}
 `,
@@ -60,6 +582,24 @@ export const mockFiles: ApiFile[] = [
 123\t\t<D>
 123\t\t<T>
 123\t</P>
+)}
+`,
+  },
+  {
+    path: 'indent-spaces2.ts',
+    status: 'modified',
+    newVal: `-
+<Text color="body" role="heading">
+  Example
+  Second
+</Text>
+`,
+    oldVal: `-
+{examplesSelect || (
+  <Text color="body" role="heading">
+    Example
+    Second
+  </Text>
 )}
 `,
   },

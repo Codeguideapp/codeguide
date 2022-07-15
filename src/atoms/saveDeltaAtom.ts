@@ -28,7 +28,6 @@ interface SaveDeltaParams {
 export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
   const { delta, file, diffMarker, highlight, isFileDepChange } = params;
   const eolChar = params.eolChar || '\n';
-  const tabChar = params.tabChar || '\t';
   const newChangeId = nanoid();
   const highlightChangeId = nanoid();
   const changes = get(changesAtom);
@@ -43,7 +42,6 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
   const diffMarkers = getDiffMarkers({
     modifiedValue: after,
     originalValue: file.newVal,
-    tab: tabChar,
     eol: eolChar,
   });
 

@@ -2,7 +2,7 @@ import { useAtom } from 'jotai';
 import * as monaco from 'monaco-editor';
 import { useCallback, useRef } from 'react';
 
-import { DiffMarker, DiffMarkers, isIndentMarker } from '../api/diffMarkers';
+import { DiffMarker, DiffMarkers } from '../api/diffMarkers';
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { getFileContent } from '../utils/getFileContent';
 import {
@@ -78,14 +78,15 @@ export function DiffMarkersList({
 
       if (marker.operation === 'delete') {
         const edits = getMonacoEdits(marker.delta, previewModel);
-        decorations.current = editor!.deltaDecorations(decorations.current, [
-          {
-            range: edits[0].range,
+        decorations.current = editor!.deltaDecorations(
+          decorations.current,
+          edits.map((edit) => ({
+            range: edit.range,
             options: {
               className: 'delete-highlight',
             },
-          },
-        ]);
+          }))
+        );
         editor?.revealRangeInCenterIfOutsideViewport(
           edits[0].range,
           monaco.editor.ScrollType.Smooth
@@ -238,7 +239,7 @@ function DiffMarkerButton({
   onMouseLeave?: () => void;
   onClick?: () => void;
 }) {
-  const markerType = isIndentMarker(marker) ? 'indent' : marker.operation;
+  const markerType = marker.type ? marker.type : marker.operation;
 
   return (
     <div
