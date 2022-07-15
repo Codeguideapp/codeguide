@@ -3,7 +3,6 @@ import { DIFF_DELETE, DIFF_EQUAL, DIFF_INSERT } from 'diff-match-patch';
 import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 
-import { applyDeltasOnString } from '../utils/deltaUtils';
 import { diff_charMode, diff_lineMode } from './diffMatchPatch';
 
 export interface DiffMarker {
@@ -443,75 +442,6 @@ function createIndentMarkers(
       delta: delIndent.delta,
     };
   }
-}
-
-export function applyMarkersForLine(
-  fileConent: string,
-  eol: string,
-  markers: DiffMarkers,
-  line: number,
-  lineOffset: number
-) {
-  const fileLines = fileConent.split(eol);
-  let newLineValue = fileLines[line - 1];
-
-  const markersArr = Object.values(markers).sort((a, b) => {
-    let sortByOp = 0;
-    if (a.operation === 'delete') {
-      sortByOp = -1;
-    } else if (b.operation === 'delete') {
-      sortByOp = 1;
-    }
-
-    return b.originalOffset - a.originalOffset || sortByOp;
-  });
-
-  for (let marker of markersArr) {
-    if (marker.equivalentReplaceMarker) {
-      marker = marker.equivalentReplaceMarker;
-    }
-    if (marker.type === 'indent') {
-      continue;
-    }
-    if (marker.operation === 'insert' && marker.modifiedOffset < lineOffset) {
-      continue;
-    }
-
-    const markerLines = marker.value.split(eol);
-    let markerLineStart = getLineNum(marker.modifiedOffset, fileConent, eol);
-    let markerLineEnd = markerLineStart + markerLines.length - 1;
-    const isInRange = line >= markerLineStart && line <= markerLineEnd;
-
-    if (isInRange === false) {
-      continue;
-    }
-
-    let newDeltaOffset = 0;
-    let newValue = '';
-    for (
-      let deltaLine = markerLineStart;
-      deltaLine <= markerLineEnd;
-      deltaLine++
-    ) {
-      if (deltaLine === line) {
-        newDeltaOffset += marker.modifiedOffset - lineOffset;
-        newValue = markerLines[deltaLine - markerLineStart];
-        break;
-      }
-
-      newDeltaOffset +=
-        markerLines[deltaLine - markerLineStart].length + eol.length;
-    }
-
-    const newDelta =
-      marker.operation === 'insert' || marker.operation === 'replace'
-        ? new Delta([{ retain: newDeltaOffset }, { insert: newValue }])
-        : new Delta([{ retain: newDeltaOffset }, { delete: newValue.length }]);
-
-    newLineValue = applyDeltasOnString([newDelta], newLineValue);
-  }
-
-  return newLineValue;
 }
 
 function getDiffMarkersDMP({
