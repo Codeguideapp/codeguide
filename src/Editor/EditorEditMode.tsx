@@ -183,8 +183,8 @@ export function EditorEditMode() {
     <Split
       className="split-editor"
       direction="horizontal"
-      sizes={[70, 30]}
-      minSize={200}
+      sizes={[75, 25]}
+      minSize={250}
       gutterSize={1}
     >
       <div style={{ position: 'relative' }}>

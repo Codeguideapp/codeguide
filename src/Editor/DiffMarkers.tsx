@@ -1,8 +1,9 @@
+import classNames from 'classnames';
 import { useAtom } from 'jotai';
 import * as monaco from 'monaco-editor';
 import { useCallback, useRef } from 'react';
 
-import { DiffMarker, DiffMarkers } from '../api/diffMarkers';
+import { DiffMarker, DiffMarkers, isMultiLineDelta } from '../api/diffMarkers';
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { getFileContent } from '../utils/getFileContent';
 import {
@@ -83,7 +84,7 @@ export function DiffMarkersList({
           edits.map((edit) => ({
             range: edit.range,
             options: {
-              className: 'delete-highlight',
+              className: 'delete-highlight delete-cursor',
             },
           }))
         );
@@ -99,19 +100,43 @@ export function DiffMarkersList({
 
         if (editsIns.length === 0) return;
 
+        const lastDelOffset = modifiedModel.getOffsetAt(
+          new monaco.Position(
+            editsDel[editsDel.length - 1].range.endLineNumber,
+            editsDel[editsDel.length - 1].range.endColumn
+          )
+        );
+        modifiedValue.at(lastDelOffset);
+        if (
+          modifiedValue.at(lastDelOffset) === modifiedModel.getEOL() &&
+          isMultiLineDelta(
+            marker.delta,
+            modifiedModel.getValue(),
+            modifiedModel.getEOL()
+          )
+        ) {
+          const startPos = modifiedModel.getPositionAt(lastDelOffset + 1);
+          editsIns[0].range = new monaco.Range(
+            startPos.lineNumber,
+            startPos.column,
+            startPos.lineNumber,
+            startPos.column
+          );
+        }
+
         highlightUndo.current = previewModel.applyEdits(editsIns, true);
 
         decorations.current = editor!.deltaDecorations(decorations.current, [
           ...editsDel.map((edit) => ({
             range: edit.range,
             options: {
-              className: 'delete-highlight',
+              className: 'delete-highlight delete-cursor',
             },
           })),
           ...highlightUndo.current.map((edit) => ({
             range: edit.range,
             options: {
-              className: 'insert-highlight',
+              className: 'insert-highlight insert-cursor',
             },
           })),
         ]);
@@ -140,7 +165,7 @@ export function DiffMarkersList({
           highlightUndo.current.map((edit) => ({
             range: edit.range,
             options: {
-              className: 'insert-highlight',
+              className: 'insert-highlight insert-cursor',
             },
           }))
         );
@@ -240,25 +265,21 @@ function DiffMarkerButton({
   onClick?: () => void;
 }) {
   const markerType = marker.type ? marker.type : marker.operation;
-
+  const totalChars = marker.stat[0] + marker.stat[1];
   return (
     <div
-      className={`diff-marker ${marker.changeId ? 'applied' : ''}`}
+      className={classNames(
+        {
+          'diff-marker': true,
+          applied: marker.changeId,
+        },
+        markerType
+      )}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       onClick={marker.changeId ? undefined : onClick}
       style={{ cursor: marker.changeId ? 'default' : 'pointer' }}
     >
-      <div className="head">
-        <div className="operation">
-          <span className={`dot ${markerType}`}></span>
-          <span className="text">{markerType}</span>
-        </div>
-        <span className="stat">
-          <span className="additions">+{marker.stat[0]}</span>
-          <span className="deletions">-{marker.stat[1]}</span>
-        </span>
-      </div>
       <div className="code-preview">
         {Object.entries(marker.preview || {}).map(([line, content]) => (
           <div key={line}>
@@ -267,7 +288,10 @@ function DiffMarkerButton({
               return (
                 <span
                   key={`${line}-${i}`}
-                  className={c.isDelete ? 'strikethrough' : ''}
+                  className={classNames({
+                    code: true,
+                    deleted: c.isDelete,
+                  })}
                 >
                   {c.code}
                 </span>
@@ -275,6 +299,22 @@ function DiffMarkerButton({
             })}
           </div>
         ))}
+      </div>
+      <div className="bottom">
+        <div className="line">
+          <span
+            className="insert"
+            style={{ width: `${(marker.stat[0] / totalChars) * 100}%` }}
+          ></span>
+          <span
+            className="delete"
+            style={{ width: `${(marker.stat[1] / totalChars) * 100}%` }}
+          ></span>
+        </div>
+        <span className="stat">
+          <span className="additions">+{marker.stat[0]}</span>
+          <span className="deletions">-{marker.stat[1]}</span>
+        </span>
       </div>
     </div>
   );

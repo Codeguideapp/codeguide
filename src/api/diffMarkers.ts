@@ -13,10 +13,10 @@ export interface DiffMarker {
   modifiedOffset: number;
   originalOffset: number;
   operation: 'replace' | 'insert' | 'delete';
-  equivalentReplaceMarker?: DiffMarker;
   delta: Delta;
   stat: [number, number];
   value: string;
+  prev?: string;
   preview?: Record<
     number,
     {
@@ -242,7 +242,7 @@ export function getDiffMarkers(params: {
       for (const marker of Object.values(lineMarkers)) {
         if (marker.operation !== 'replace') continue;
 
-        if (isMultineDelta(marker.delta, params.modifiedValue, params.eol)) {
+        if (isMultiLineDelta(marker.delta, params.modifiedValue, params.eol)) {
           lineMarkers = getDiffMarkersDMP({
             modifiedValue: modifiedBlock.join(params.eol),
             originalValue: originalBlock.join(params.eol),
@@ -285,12 +285,42 @@ export function getDiffMarkers(params: {
     params.eol,
     '\t'
   );
-  addMarkerPreview(markers, params.modifiedValue, params.eol);
 
+  analyzeMultilineReplace(markers, params.eol);
+  addMarkerPreview(markers, params.modifiedValue, params.eol);
   return markers;
 }
 
-function isMultineDelta(delta: Delta, fileContent: string, eol: string) {
+function analyzeMultilineReplace(markers: DiffMarkers, eol: string) {
+  for (const marker of Object.values(markers)) {
+    if (marker.operation !== 'replace' || !marker.prev) {
+      continue;
+    }
+    if (
+      marker.value.split(eol).length - 1 > 1 ||
+      marker.prev.split(eol).length - 1 > 1
+    ) {
+      const newMarkers = getDiffMarkersDMP({
+        modifiedValue: marker.prev,
+        originalValue: marker.value,
+        modOffset: marker.modifiedOffset,
+        orgOffset: marker.originalOffset,
+      });
+      if (Object.values(newMarkers).length > 1) {
+        for (const newMarker of Object.values(newMarkers)) {
+          markers[newMarker.id] = newMarker;
+        }
+        delete markers[marker.id];
+      }
+    }
+  }
+}
+
+export function isMultiLineDelta(
+  delta: Delta,
+  fileContent: string,
+  eol: string
+) {
   let index = 0;
   for (const op of delta.ops) {
     if (op.retain !== undefined) {
@@ -510,6 +540,7 @@ function getDiffMarkersDMP({
           length: value.length,
           value,
           stat: [value.length, prev[1].length],
+          prev: prev[1],
           delta: new Delta([
             { retain: modifiedOffset },
             { delete: prev[1].length },
@@ -523,7 +554,6 @@ function getDiffMarkersDMP({
           const idIns = nanoid();
           const idDel = nanoid();
           markers[idIns] = {
-            equivalentReplaceMarker: replaceMarker,
             id: idIns,
             modifiedOffset,
             originalOffset,
@@ -535,7 +565,6 @@ function getDiffMarkersDMP({
           };
 
           markers[idDel] = {
-            equivalentReplaceMarker: replaceMarker,
             id: idDel,
             modifiedOffset,
             originalOffset,
@@ -590,7 +619,7 @@ function addMarkerPreview(
       if (op.retain !== undefined) {
         index += op.retain;
       } else {
-        const value =
+        let value =
           typeof op.insert === 'string'
             ? op.insert
             : op.delete !== undefined
@@ -602,8 +631,14 @@ function addMarkerPreview(
         const valueSplitted = value.split(eol);
 
         for (let lineNum = startLineNum; lineNum <= endLineNum; lineNum++) {
-          const lineContent = valueSplitted[lineNum - startLineNum];
-          if (!lineContent) continue;
+          let lineContent = valueSplitted[lineNum - startLineNum];
+          if (!lineContent) {
+            lineContent = '\\n';
+          }
+
+          if (value.match(/^ +$/)) {
+            value = '[whitespace]';
+          }
 
           let code =
             marker.type === 'indent'
