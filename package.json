@@ -20,6 +20,7 @@
     "@types/react-dom": "^17.0.0",
     "antd": "^4.19.5",
     "classnames": "^2.3.1",
+    "diff": "^5.1.0",
     "diff-match-patch": "^1.0.5",
     "immer": "^9.0.12",
     "jotai": "^1.6.2",
