@@ -1,6 +1,6 @@
 import { Octokit } from 'octokit';
 
-import { mockFiles } from '../__mocks__/mockFiles';
+//import { mockFiles } from '../__mocks__/mockFiles';
 
 export type ApiFile = {
   status: 'added' | 'modified' | 'deleted';
@@ -16,7 +16,7 @@ export const getFile = async (path: string) => {
 };
 
 const octokit = new Octokit({
-  auth: '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',
+  auth: '',
 });
 
 export const getFiles = async (pr: number): Promise<ApiFile[]> => {
@@ -33,7 +33,10 @@ export const getFiles = async (pr: number): Promise<ApiFile[]> => {
     repo = paths[2];
     pull_number = paths[4];
   } else {
-    return mockFiles;
+    alert(
+      'No pull request found. Open URL in this: format:\n\nhttps://app.gitline.io/org/reponame/pull/123'
+    );
+    return [];
   }
 
   //const owner = 'stoplightio';
