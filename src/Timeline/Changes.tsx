@@ -1,5 +1,4 @@
 import { useAtom, useAtomValue } from 'jotai';
-import { last } from 'lodash';
 import React, { useMemo, useRef } from 'react';
 import { Group, Layer, Rect, Text } from 'react-konva';
 
@@ -14,9 +13,7 @@ import {
   updateChangesX,
 } from '../atoms/changes';
 import { Change } from '../atoms/changes';
-import { activeFileAtom } from '../atoms/files';
 import { contextMenuAtom, showAddCommentDialogAtom } from '../atoms/layout';
-import { canEditAtom } from '../atoms/playhead';
 
 export function Changes({
   layerX,
@@ -41,7 +38,6 @@ export function Changes({
   const [selectedChangeIds, setSelectedChangeIds] = useAtom(
     selectedChangeIdsAtom
   );
-  const activeFile = useAtomValue(activeFileAtom);
 
   const fileWrappers = useMemo(() => {
     const paths: {
@@ -78,21 +74,8 @@ export function Changes({
       };
     });
 
-    const lastChange = changes[last(changesOrder) || ''];
-    if (lastChange && wrappers.length && activeFile?.path === lastChange.path) {
-      wrappers[wrappers.length - 1].lastX += 50;
-    } else if (activeFile) {
-      const lastWrapper = last(wrappers);
-      wrappers.push({
-        id: 'draft',
-        path: activeFile.path,
-        x: (lastWrapper?.lastX || 0) + 35,
-        lastX: (lastWrapper?.lastX || 0) + 75,
-      });
-    }
-
     return wrappers;
-  }, [changes, changesOrder, activeFile]);
+  }, [changes, changesOrder]);
 
   return (
     <Layer x={layerX}>
@@ -299,47 +282,7 @@ export function Changes({
       {snapPosX !== -1 && (
         <Rect x={snapPosX} y={y} width={50} height={height} stroke="black" />
       )}
-      <DraftChange y={y} height={height} zoom={zoom} />
     </Layer>
-  );
-}
-
-function DraftChange({
-  y,
-  height,
-  zoom,
-}: {
-  y: number;
-  height: number;
-  zoom: number;
-}) {
-  const [changes] = useAtom(changesAtom);
-  const [changesOrder] = useAtom(changesOrderAtom);
-  const [canEdit] = useAtom(canEditAtom);
-  const activeFile = useAtomValue(activeFileAtom);
-
-  if (!activeFile) {
-    return null;
-  }
-
-  const lastId = last(changesOrder);
-  const lastChange = lastId ? changes[lastId] : undefined;
-
-  let x = lastChange ? lastChange.x + lastChange.width : 0;
-
-  return (
-    <Rect
-      x={
-        activeFile.path === lastChange?.path ? (x + 10) * zoom : (x + 35) * zoom
-      }
-      y={y}
-      width={40 * zoom}
-      height={height}
-      stroke="#9E9E9E"
-      fill="#32383f"
-      strokeWidth={canEdit ? 1 : 0}
-      dash={[2, 2]}
-    />
   );
 }
 

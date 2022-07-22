@@ -13,6 +13,7 @@ import {
   changesOrderAtom,
 } from '../atoms/changes';
 import { activeFileAtom, fileChangesAtom } from '../atoms/files';
+import { toggleBackToEditButtonAtom } from '../atoms/layout';
 import { canEditAtom, setPlayheadXAtom } from '../atoms/playhead';
 
 library.add(faCheck);
@@ -27,6 +28,7 @@ export function ChangedFiles() {
   const [activeChangeId] = useAtom(activeChangeIdAtom);
   const [canEdit] = useAtom(canEditAtom);
   const [, setPlayheadX] = useAtom(setPlayheadXAtom);
+  const [, toggleBacktoEditButton] = useAtom(toggleBackToEditButtonAtom);
 
   // const hiddenFiles = useMemo(() => {
   //   const appliedIds = activeChangeId
@@ -105,30 +107,12 @@ export function ChangedFiles() {
     };
   }, [changesOrder, changes, activeChangeId, fileChanges, canEdit]);
 
-  // const directory = useMemo(() => {
-  //   return modifiedFiles.filter((file) => hiddenFiles[file.key]);
-  // }, [modifiedFiles, hiddenFiles]);
-
   if (!fileChanges || fileChanges.length === 0) {
     return <div className="file-tree">loading...</div>;
   }
 
   return (
-    <div className="file-tree">
-      {/* <div>directory</div>
-      <br />
-      <DirectoryTree
-        treeData={directory}
-        onSelect={(selected) => {
-          const file = data.find((f) => f.path === selected[0]);
-          setActiveFile(file);
-          setPlayheadX({
-            x: Infinity,
-            type: 'ref',
-          });
-        }}
-      /> 
-     */}
+    <div className="file-tree" onClick={toggleBacktoEditButton}>
       <div className="header">
         <span className="title">Changed files</span>
         <span className="right">{percentage}%</span>

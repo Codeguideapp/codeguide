@@ -254,7 +254,16 @@ code {
   height: 30px;
   width: 100%;
   background: var(--background-1);
+  text-align: right;
 }
+.editor-top .bact-to-edit-button {
+  -webkit-animation: color_change 1s infinite alternate;
+  -moz-animation: color_change 1s infinite alternate;
+  -ms-animation: color_change 1s infinite alternate;
+  -o-animation: color_change 1s infinite alternate;
+  animation: color_change 1s infinite alternate;
+}
+
 .editor-bottom {
   height: calc(100% - 30px);
 }

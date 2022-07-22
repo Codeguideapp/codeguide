@@ -2,7 +2,6 @@ import { atom } from 'jotai';
 import { last } from 'lodash';
 
 import { activeChangeIdAtom, changesAtom, changesOrderAtom } from './changes';
-import { activeFileAtom } from './files';
 
 export const playheadXAtom = atom(10);
 export const refPlayheadXAtom = atom(10);
@@ -16,15 +15,10 @@ export const setPlayheadXAtom = atom(
   (get, set, { x, type }: { x: number; type: 'ref' | 'preview' }) => {
     const changes = get(changesAtom);
     const changesOrder = get(changesOrderAtom);
-    const activeFile = get(activeFileAtom);
 
     const lastChangeId = last(changesOrder);
     const lastChange = lastChangeId ? changes[lastChangeId] : undefined;
-    let maxPlayheadX = lastChange ? lastChange.x + lastChange.width + 60 : 60;
-
-    if (lastChange?.path !== activeFile?.path) {
-      maxPlayheadX += 25;
-    }
+    let maxPlayheadX = lastChange ? lastChange.x + lastChange.width + 10 : 10;
 
     const canEditTreshold = lastChangeId
       ? changes[lastChangeId].x + changes[lastChangeId].width

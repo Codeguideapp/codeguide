@@ -46,24 +46,45 @@ export function MediaControls() {
       (c) => c.isFileDepChange === false && c.x >= playHeadX
     );
 
-    if (!nexChange) return;
+    if (!nexChange) {
+      return setPlayheadX({
+        x: Infinity,
+        type: 'ref',
+      });
+    }
+
+    let newX = nexChange.x + nexChange.width;
+
+    const noDepsChanges = sortedChanges.filter((c) => !c.isFileDepChange);
+    const lastId = noDepsChanges?.[noDepsChanges.length - 1]?.id;
+
+    if (nexChange?.id === lastId && noDepsChanges[1]) {
+      newX -= 1;
+    }
 
     setPlayheadX({
-      x: nexChange.x + nexChange.width,
+      x: newX,
       type: 'ref',
     });
   }, [setPlayheadX, changes, playHeadX]);
 
   const prevHandler = useCallback(() => {
     const sortedChanges = Object.values(changes).sort((a, b) => b.x - a.x);
-    const nexChange = sortedChanges.find(
+    let nexChange = sortedChanges.find(
       (c) => c.isFileDepChange === false && playHeadX > c.x + c.width
     );
 
     if (!nexChange) return;
 
+    let newX = nexChange.x + nexChange.width;
+
+    const noDepsChanges = sortedChanges.filter((c) => !c.isFileDepChange);
+    if (nexChange?.id === noDepsChanges?.[0]?.id && noDepsChanges[1]) {
+      newX -= 1;
+    }
+
     setPlayheadX({
-      x: nexChange.x + nexChange.width,
+      x: newX,
       type: 'ref',
     });
   }, [setPlayheadX, changes, playHeadX]);
