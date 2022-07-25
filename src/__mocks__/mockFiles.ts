@@ -2,7 +2,7 @@ import { ApiFile } from '../api/api';
 
 export const mockFiles: ApiFile[] = [
   {
-    path: 'side-effect.ts',
+    path: 'side-effect-big-filename-test-test.ts',
     status: 'modified',
     oldVal: `import React, { Component } from 'react'
 

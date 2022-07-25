@@ -81,11 +81,13 @@ body {
   width: calc(100% - 24px);
 }
 .file-tree .tree-file-node .percentage {
-  float: right;
-  padding-right: 10px;
+  padding: 0 10px;
   font-size: 80%;
-  opacity: 0.7;
+  position: absolute;
+  right: 0;
+  color: #8d8d8d;
 }
+
 /* .file-tree .tree-file-node.completed {
   color: #35b05f;
 } */
@@ -98,6 +100,15 @@ body {
   .ant-tree.ant-tree-directory
   .ant-tree-treenode-selected::before {
   background: #2c3137;
+}
+.file-tree
+  .ant-tree.ant-tree-block-node
+  .ant-tree-list-holder-inner
+  .ant-tree-node-content-wrapper {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  padding-right: 30px;
 }
 
 .read-mode .file-tree .ant-tree.ant-tree-directory .ant-tree-treenode {
