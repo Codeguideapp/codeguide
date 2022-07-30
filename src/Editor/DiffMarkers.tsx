@@ -1,9 +1,9 @@
 import classNames from 'classnames';
-import { useAtom } from 'jotai';
+import { atom, useAtom } from 'jotai';
 import * as monaco from 'monaco-editor';
 import { useCallback, useRef } from 'react';
 
-import { DiffMarker, DiffMarkers, isMultiLineDelta } from '../api/diffMarkers';
+import { DiffMarker, DiffMarkers } from '../api/diffMarkers';
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { getFileContent } from '../utils/getFileContent';
 import {
@@ -11,6 +11,9 @@ import {
   removeDeletions,
   removeInserts,
 } from '../utils/monaco';
+
+const markerStepAtom = atom(0);
+const activeMarkerAtom = atom('');
 
 export function DiffMarkersList({
   markerIds,
@@ -44,7 +47,7 @@ export function DiffMarkersList({
   >([]);
 
   const activateDiffMarker = useCallback(
-    (marker: DiffMarker) => {
+    (marker: DiffMarker, step?: number) => {
       const viewstate = editor?.saveViewState();
 
       editor?.updateOptions({
@@ -93,67 +96,66 @@ export function DiffMarkersList({
           monaco.editor.ScrollType.Smooth
         );
       } else if (marker.operation === 'replace') {
-        const deltaIns = removeDeletions(marker.delta);
-        const deltaDel = removeInserts(marker.delta);
-        const editsIns = getMonacoEdits(deltaIns, previewModel);
-        const editsDel = getMonacoEdits(deltaDel, previewModel);
+        if (step === 2) {
+          const deltaDel = removeInserts(marker.delta);
+          const editsDel = getMonacoEdits(deltaDel, previewModel);
+          const deltaIns = removeDeletions(marker.delta);
+          const editsIns = getMonacoEdits(deltaIns, previewModel);
 
-        if (editsIns.length === 0) return;
+          previewModel.applyEdits(editsDel);
 
-        const lastDelOffset = modifiedModel.getOffsetAt(
-          new monaco.Position(
-            editsDel[editsDel.length - 1].range.endLineNumber,
-            editsDel[editsDel.length - 1].range.endColumn
-          )
-        );
-        modifiedValue.at(lastDelOffset);
-        if (
-          modifiedValue.at(lastDelOffset) === modifiedModel.getEOL() &&
-          isMultiLineDelta(
-            marker.delta,
-            modifiedModel.getValue(),
-            modifiedModel.getEOL()
-          )
-        ) {
-          const startPos = modifiedModel.getPositionAt(lastDelOffset + 1);
-          editsIns[0].range = new monaco.Range(
-            startPos.lineNumber,
-            startPos.column,
-            startPos.lineNumber,
-            startPos.column
+          if (editsIns.length === 0) return;
+
+          highlightUndo.current = previewModel.applyEdits(editsIns, true);
+
+          decorations.current = editor!.deltaDecorations(decorations.current, [
+            ...highlightUndo.current.map((edit) => ({
+              range: edit.range,
+              options: {
+                className: 'insert-highlight insert-cursor',
+              },
+            })),
+          ]);
+
+          const startRange = highlightUndo.current[0].range;
+          const endRange =
+            highlightUndo.current[highlightUndo.current.length - 1].range;
+
+          editor?.revealRangeInCenterIfOutsideViewport(
+            new monaco.Range(
+              startRange.startLineNumber,
+              startRange.startColumn,
+              endRange.endLineNumber,
+              endRange.endColumn
+            ),
+            monaco.editor.ScrollType.Smooth
+          );
+        } else {
+          const deltaDel = removeInserts(marker.delta);
+          const editsDel = getMonacoEdits(deltaDel, previewModel);
+
+          decorations.current = editor!.deltaDecorations(decorations.current, [
+            ...editsDel.map((edit) => ({
+              range: edit.range,
+              options: {
+                className: 'delete-highlight delete-cursor',
+              },
+            })),
+          ]);
+
+          const startRange = editsDel[0].range;
+          const endRange = editsDel[editsDel.length - 1].range;
+
+          editor?.revealRangeInCenterIfOutsideViewport(
+            new monaco.Range(
+              startRange.startLineNumber,
+              startRange.startColumn,
+              endRange.endLineNumber,
+              endRange.endColumn
+            ),
+            monaco.editor.ScrollType.Smooth
           );
         }
-
-        highlightUndo.current = previewModel.applyEdits(editsIns, true);
-
-        decorations.current = editor!.deltaDecorations(decorations.current, [
-          ...editsDel.map((edit) => ({
-            range: edit.range,
-            options: {
-              className: 'delete-highlight delete-cursor',
-            },
-          })),
-          ...highlightUndo.current.map((edit) => ({
-            range: edit.range,
-            options: {
-              className: 'insert-highlight insert-cursor',
-            },
-          })),
-        ]);
-
-        const startRange = highlightUndo.current[0].range;
-        const endRange =
-          highlightUndo.current[highlightUndo.current.length - 1].range;
-
-        editor?.revealRangeInCenterIfOutsideViewport(
-          new monaco.Range(
-            startRange.startLineNumber,
-            startRange.startColumn,
-            endRange.endLineNumber,
-            endRange.endColumn
-          ),
-          monaco.editor.ScrollType.Smooth
-        );
       } else {
         const edits = getMonacoEdits(marker.delta, previewModel);
         if (edits.length === 0) return;
@@ -228,6 +230,9 @@ export function DiffMarkersList({
     [appliedMarkerRef, editor, modifiedModel]
   );
 
+  const [markerStep, setMarkerStep] = useAtom(markerStepAtom);
+  const [, setActiveMarker] = useAtom(activeMarkerAtom);
+
   return (
     <div className="diff-markers-wrap">
       {markerIds.map((markerId) => {
@@ -238,13 +243,23 @@ export function DiffMarkersList({
             key={markerId}
             marker={marker}
             onMouseEnter={() => {
+              setMarkerStep(1);
+              setActiveMarker(marker.id);
               activateDiffMarker(marker);
             }}
             onMouseLeave={() => {
+              setMarkerStep(0);
+              setActiveMarker('');
               resetDiffMarkers();
             }}
             onClick={() => {
-              applyDiffMarker(marker);
+              if (marker.operation === 'replace' && markerStep !== 2) {
+                setMarkerStep(2);
+                activateDiffMarker(marker, 2);
+              } else {
+                setMarkerStep(0);
+                applyDiffMarker(marker);
+              }
             }}
           />
         );
@@ -264,6 +279,9 @@ function DiffMarkerButton({
   onMouseLeave?: () => void;
   onClick?: () => void;
 }) {
+  const [markerStep] = useAtom(markerStepAtom);
+  const [activeMarker] = useAtom(activeMarkerAtom);
+
   const markerType = marker.type ? marker.type : marker.operation;
   const totalChars = marker.stat[0] + marker.stat[1];
   return (
@@ -272,6 +290,14 @@ function DiffMarkerButton({
         {
           'diff-marker': true,
           applied: marker.changeId,
+          'highlight-delete':
+            activeMarker === marker.id &&
+            marker.operation === 'replace' &&
+            markerStep === 1,
+          'highlight-insert':
+            activeMarker === marker.id &&
+            marker.operation === 'replace' &&
+            markerStep === 2,
         },
         markerType
       )}

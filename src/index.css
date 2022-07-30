@@ -66,7 +66,7 @@ body {
   padding-left: 22px;
   text-transform: uppercase;
   justify-content: space-between;
-  padding-right: 13px;
+  padding-right: 9px;
 }
 
 .file-tree .header .title {
@@ -439,6 +439,13 @@ body .monaco-diff-editor.side-by-side .editor.modified {
 .diff-marker .bottom .line .delete {
   border-bottom: 1px solid #9a1b20;
 }
+.diff-marker.highlight-delete .bottom .line .delete {
+  border-bottom: 2px solid #d32329;
+}
+.diff-marker.highlight-insert .bottom .line .insert {
+  border-bottom: 2px solid #11b434;
+}
+
 .diff-marker.indent .bottom .line > span {
   border-bottom-style: dotted;
   border-bottom-width: 2px;

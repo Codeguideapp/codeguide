@@ -74,9 +74,6 @@ export function removeDeletions(delta: Delta) {
     if (op.insert) {
       resDelta = resDelta.insert(op.insert);
     }
-    if (op.delete) {
-      resDelta = resDelta.retain(op.delete);
-    }
   }
 
   return resDelta;
