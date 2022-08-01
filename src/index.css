@@ -417,10 +417,27 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   flex-direction: column;
   justify-content: space-between;
   border: 1px solid var(--background-4);
+  position: relative;
 }
 
-.diff-marker:hover {
-  border: 1px solid #3c3c3c;
+.diff-marker .buttons {
+  position: absolute;
+  right: 0;
+  display: none;
+}
+.diff-marker .buttons svg {
+  background: var(--background-4);
+  padding: 5px;
+  color: #666;
+}
+.diff-marker .buttons svg:hover {
+  color: #ccc;
+}
+.diff-marker.active {
+  border: 1px solid #606060;
+}
+.diff-marker.active .buttons {
+  display: block;
 }
 
 .diff-marker .bottom {

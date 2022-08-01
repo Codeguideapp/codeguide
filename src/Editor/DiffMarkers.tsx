@@ -1,3 +1,6 @@
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classNames from 'classnames';
 import { atom, useAtom } from 'jotai';
 import * as monaco from 'monaco-editor';
@@ -11,6 +14,8 @@ import {
   removeDeletions,
   removeInserts,
 } from '../utils/monaco';
+
+library.add(faEyeSlash);
 
 const markerStepAtom = atom(0);
 const activeMarkerAtom = atom('');
@@ -282,6 +287,7 @@ function DiffMarkerButton({
   const [markerStep] = useAtom(markerStepAtom);
   const [activeMarker] = useAtom(activeMarkerAtom);
 
+  const isApplied = marker.changeId;
   const markerType = marker.type ? marker.type : marker.operation;
   const totalChars = marker.stat[0] + marker.stat[1];
   return (
@@ -289,7 +295,8 @@ function DiffMarkerButton({
       className={classNames(
         {
           'diff-marker': true,
-          applied: marker.changeId,
+          applied: isApplied,
+          active: !isApplied && activeMarker === marker.id,
           'highlight-delete':
             activeMarker === marker.id &&
             marker.operation === 'replace' &&
@@ -302,10 +309,25 @@ function DiffMarkerButton({
         markerType
       )}
       onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      onClick={marker.changeId ? undefined : onClick}
-      style={{ cursor: marker.changeId ? 'default' : 'pointer' }}
+      onMouseLeave={() => {
+        if (isApplied && onMouseLeave) {
+          onMouseLeave();
+        }
+      }}
+      onClick={isApplied ? undefined : onClick}
+      style={{ cursor: isApplied ? 'default' : 'pointer' }}
     >
+      <div className="buttons">
+        <div
+          onClick={(e) => {
+            e.stopPropagation();
+            e.nativeEvent.stopImmediatePropagation();
+            onMouseLeave?.();
+          }}
+        >
+          <FontAwesomeIcon icon="eye-slash" size="xs" />
+        </div>
+      </div>
       <div className="code-preview">
         {Object.entries(marker.preview || {}).map(([line, content]) => (
           <div key={line}>
