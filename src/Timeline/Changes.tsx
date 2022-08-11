@@ -6,6 +6,7 @@ import {
   activeChangeIdAtom,
   changesAtom,
   changesOrderAtom,
+  mergeChangesAtom,
   selectedChangeIdsAtom,
   sortBy,
   swapChanges,
@@ -38,6 +39,7 @@ export function Changes({
   const [selectedChangeIds, setSelectedChangeIds] = useAtom(
     selectedChangeIdsAtom
   );
+  const [, mergeChanges] = useAtom(mergeChangesAtom);
 
   const fileWrappers = useMemo(() => {
     const paths: {
@@ -140,6 +142,12 @@ export function Changes({
                     {
                       label: 'Add Comment',
                       onClick: () => setAhowAddCommentDialog(true),
+                    },
+                    {
+                      label: 'Merge',
+                      onClick: () => {
+                        mergeChanges(selectedChangeIds.length * 2);
+                      },
                     },
                   ],
                 });
