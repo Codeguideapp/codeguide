@@ -2,6 +2,597 @@ import { ApiFile } from '../api/api';
 
 export const mockFiles: ApiFile[] = [
   {
+    path: 'saveDeltaAtom.ts',
+    status: 'modified',
+    oldVal: `import produce from 'immer';
+import { atom } from 'jotai';
+import { uniq } from 'lodash';
+import { nanoid } from 'nanoid';
+import Delta from 'quill-delta';
+
+import { composeDeltas, deltaToString } from '../utils/deltaUtils';
+import { changesAtom, changesOrderAtom } from './changes';
+import { activeFileAtom } from './files';
+import { setPlayheadXAtom } from './playhead';
+
+// todo: find ways to refactor
+
+export const saveDeltaAtom = atom(null, (get, set, delta: Delta) => {
+  const newDraftId = nanoid();
+
+  const file = get(activeFileAtom);
+  let changes = get(changesAtom);
+  let changesOrder = get(changesOrderAtom);
+
+  if (!file) throw new Error('no file is active');
+
+  const isFileFirstChange =
+    Object.values(changes).find(({ path }) => path === file.path) === undefined;
+
+  if (
+    (file.status === 'modified' || file.status === 'deleted') &&
+    isFileFirstChange
+  ) {
+    // in case this is the first change for a file
+    // we need to add an initial "isFileDepChange" change
+    const id = nanoid();
+
+    const newChangesOrder = [id, ...changesOrder];
+    const newChanges = produce(changes, (changesDraft) => {
+      changesDraft[id] = {
+        isFileDepChange: true,
+        status: 'modified',
+        id,
+        actions: {},
+        color: '#0074bb',
+        delta: new Delta().insert(file.oldVal),
+        deltaInverted: new Delta(),
+        deps: [],
+        path: file.path,
+        width: 0,
+        x: 0,
+      };
+    });
+
+    set(changesAtom, newChanges);
+    set(changesOrderAtom, newChangesOrder);
+    changes = get(changesAtom);
+    changesOrder = get(changesOrderAtom);
+  }
+
+  let changeType = file.status;
+  if (file.status === 'added') {
+    if (isFileFirstChange) {
+      changeType = 'added';
+    } else {
+      changeType = 'modified';
+    }
+  } else if (file.status === 'deleted') {
+    const deltas = Object.values(changes)
+      .filter(({ path }) => path === file.path)
+      .map((c) => c.delta);
+
+    if (deltaToString([...deltas, delta]) === '') {
+      changeType = 'deleted';
+    } else {
+      changeType = 'modified';
+    }
+  }
+
+  const appliedIds = changesOrder.filter(
+    (id) => changes[id].path === file.path
+  );
+
+  const takenCoordinates = calcCoordinates(
+    appliedIds.map((id) => ({
+      id,
+      delta: changes[id].delta,
+    }))
+  );
+
+  const foundDeps = takenCoordinates
+    .filter((taken) => {
+      // first transforming draft to the point when "taken" was applied
+      const toUndo = appliedIds.slice(appliedIds.indexOf(taken.id) + 1);
+
+      const toUndoDelta = composeDeltas(
+        toUndo.map((id) => changes[id].deltaInverted)
+      );
+      const draftTransformed = toUndoDelta.transform(delta);
+      const draftCoordinates = calcCoordinates([
+        {
+          id: newDraftId,
+          delta: draftTransformed,
+        },
+      ]);
+
+      return draftCoordinates.find((draft) => {
+        // check if it's overlapping
+        if (!taken || !draft) {
+          return false;
+        }
+        if (taken.op === 'insert' && draft.op === 'insert') {
+          return taken.to >= draft.from && taken.from <= draft.from;
+        }
+        return taken.to >= draft.from && taken.from <= draft.to;
+      });
+    })
+    .map(({ id }) => {
+      return [...changes[id].deps, id];
+    })
+    .flat();
+
+  const deps = uniq(foundDeps).sort(
+    (a, b) => changesOrder.indexOf(a) - changesOrder.indexOf(b)
+  );
+
+  const baseIds = appliedIds.filter((id) => deps.includes(id));
+  const idsToUndo = appliedIds.filter((id) => !deps.includes(id));
+
+  const baseComposed = composeDeltas(baseIds.map((id) => changes[id].delta));
+  const toUndoComposed = composeDeltas(
+    idsToUndo.map((id) => changes[id].delta)
+  );
+  const undoChanges = toUndoComposed.invert(baseComposed);
+  const draftChangeTransformed = undoChanges.transform(delta);
+
+  const newChangesOrder = [...changesOrder, newDraftId];
+
+  const newChanges = produce(changes, (changesDraft) => {
+    changesDraft[newDraftId] = {
+      isFileDepChange: false,
+      status: changeType,
+      id: newDraftId,
+      color: changeType === 'modified' ? '#374957' : '#0074bb',
+      width: 50,
+      x: 0,
+      actions: {
+        discardDraft: {
+          label: 'Discard Draft',
+          color: 'red',
+          callback: () => {},
+        },
+        saveChanges: {
+          label: 'Save Changes',
+          color: 'green',
+          callback: () => {},
+        },
+      },
+      deps,
+      path: file.path,
+      delta: draftChangeTransformed,
+      deltaInverted: draftChangeTransformed.invert(baseComposed),
+    };
+
+    let x = 10;
+    for (const id of newChangesOrder) {
+      if (changesDraft[id].isFileDepChange) {
+        continue;
+      }
+      changesDraft[id].x = x;
+      x += changesDraft[id].width + 10;
+    }
+  });
+
+  set(changesAtom, newChanges);
+  set(changesOrderAtom, newChangesOrder);
+  set(setPlayheadXAtom, Infinity);
+});
+
+type Coordinate = {
+  from: number;
+  to: number;
+  id: string;
+  op: 'insert' | 'delete';
+};
+
+export function calcCoordinates(
+  data: { delta: Delta; id: string }[]
+): Coordinate[] {
+  return data
+    .map(({ delta, id }) => {
+      let index = 0;
+      return delta
+        .map((op) => {
+          if (op.retain) {
+            index += op.retain;
+            return null;
+          } else if (op.delete) {
+            return {
+              id,
+              from: index,
+              to: index + op.delete,
+              op: 'delete',
+            };
+          } else if (typeof op.insert === 'string') {
+            return {
+              id,
+              from: index,
+              to: index + op.insert.length,
+              op: 'insert',
+            };
+          }
+          return null;
+        })
+        .filter((op) => op !== null);
+    })
+    .flat() as Coordinate[];
+}
+
+`,
+    newVal: `import produce from 'immer';
+import { atom } from 'jotai';
+import { uniq } from 'lodash';
+import { nanoid } from 'nanoid';
+import Delta from 'quill-delta';
+
+import { deltaToString } from '../utils/deltaUtils';
+import { getDeltas } from '../utils/getFileContent';
+import { changesAtom, changesOrderAtom } from './changes';
+import { activeFileAtom } from './files';
+import { setPlayheadXAtom } from './playhead';
+
+// todo: find ways to refactor
+
+// parent?: string
+// add new group change with children: []
+// create new delta for that change
+
+export const saveDeltaAtom = atom(
+  null,
+  (get, set, { delta, groupId }: { delta: Delta; groupId?: string }) => {
+    const newDraftId = nanoid();
+
+    const file = get(activeFileAtom);
+    let changes = get(changesAtom);
+    let changesOrder = get(changesOrderAtom);
+
+    if (!file) throw new Error('no file is active');
+
+    const isFileFirstChange =
+      Object.values(changes).find(({ path }) => path === file.path) ===
+      undefined;
+
+    if (
+      (file.status === 'modified' || file.status === 'deleted') &&
+      isFileFirstChange
+    ) {
+      // in case this is the first change for a file
+      // we need to add an initial "isFileDepChange" change
+      const id = nanoid();
+
+      const newChangesOrder = [id, ...changesOrder];
+      const newChanges = produce(changes, (changesDraft) => {
+        changesDraft[id] = {
+          isFileDepChange: true,
+          parent: groupId,
+          chldren: [],
+          status: 'modified',
+          id,
+          actions: {},
+          color: '#0074bb',
+          delta: new Delta().insert(file.oldVal),
+          deps: [],
+          path: file.path,
+          width: 0,
+          x: 0,
+        };
+      });
+
+      set(changesAtom, newChanges);
+      set(changesOrderAtom, newChangesOrder);
+      changes = get(changesAtom);
+      changesOrder = get(changesOrderAtom);
+    }
+
+    let changeType = file.status;
+    if (file.status === 'added') {
+      if (isFileFirstChange) {
+        changeType = 'added';
+      } else {
+        changeType = 'modified';
+      }
+    } else if (file.status === 'deleted') {
+      const deltas = Object.values(changes)
+        .filter(({ path }) => path === file.path)
+        .map((c) => c.delta);
+
+      if (deltaToString([...deltas, delta]) === '') {
+        changeType = 'deleted';
+      } else {
+        changeType = 'modified';
+      }
+    }
+
+    const appliedIds = changesOrder.filter(
+      (id) => changes[id].path === file.path
+    );
+
+    const deltasToNow = getDeltas({
+      changeId: appliedIds[appliedIds.length - 1],
+      changes,
+      changesOrder: appliedIds,
+    });
+
+    const takenCoordinates = calcCoordinates(deltasToNow);
+
+    // const foundDeps1 = takenCoordinates
+    //   .filter((taken) => {
+    //     // first transform draft as if it is applied after taken.id
+    //     const deltasToTaken = getDeltas({
+    //       changeId: taken.id,
+    //       changes,
+    //       changesOrder,
+    //     });
+
+    //     // deltas after taken id:
+
+    //   })
+    //   .map(({ id }) => {
+    //     return [...changes[id].deps, id];
+    //   })
+    //   .flat();
+
+    const draftCoordinates = calcCoordinates([
+      {
+        id: newDraftId,
+        delta,
+      },
+    ]);
+    const draftStartOffset = draftCoordinates[0].from;
+
+    const foundDeps = takenCoordinates
+      .filter((taken) => {
+        // first transforming draft to the point when "taken" was applied
+        const deltasToTaken = deltasToNow.slice(
+          deltasToNow.findIndex((d) => d.id === taken.id) + 1
+        );
+
+        const aa = calcCoordinates(deltasToTaken.reverse());
+        let offset = 0;
+        for (const toUndoCoordinate of aa) {
+          if (toUndoCoordinate.from < draftStartOffset) {
+            // happend before new change (changes offset)
+            const to =
+              draftStartOffset < toUndoCoordinate.to
+                ? draftStartOffset
+                : toUndoCoordinate.to;
+
+            if (toUndoCoordinate.op === 'insert') {
+              offset += to - toUndoCoordinate.from;
+            } else if (toUndoCoordinate.op === 'delete') {
+              offset -= to - toUndoCoordinate.from;
+            }
+          }
+        }
+
+        const transformBase =
+          offset >= 0
+            ? new Delta().delete(offset)
+            : new Delta().insert(' '.repeat(offset));
+
+        // let composedDelta = new Delta();
+        // for (let i = toUndo.length - 1; i >= 0; i--) {
+        //   composedDelta = composedDelta.compose(toUndo[i].delta);
+        // }
+        // const inverted = composedDelta.invert(new Delta());
+
+        const draftTransformed = transformBase.transform(delta);
+        const draftCoordinates = calcCoordinates([
+          {
+            id: newDraftId,
+            delta: draftTransformed,
+          },
+        ]);
+
+        return draftCoordinates.find((draft) => {
+          // check if it's overlapping
+          if (!taken || !draft) {
+            return false;
+          }
+          if (taken.op === 'insert' && draft.op === 'insert') {
+            return taken.to >= draft.from && taken.from <= draft.from;
+          }
+          return taken.to >= draft.from && taken.from <= draft.to;
+        });
+      })
+      .map(({ id }) => {
+        return [...changes[id].deps, id];
+      })
+      .flat();
+
+    const deps = uniq(foundDeps).sort(
+      (a, b) => changesOrder.indexOf(a) - changesOrder.indexOf(b)
+    );
+    // transform delta to the point when last dep was inserted
+    const dep = deps[deps.length - 1];
+    const deltasToLastDep = deltasToNow.slice(
+      deltasToNow.findIndex((d) => d.id === dep) + 1
+    );
+
+    // sad se gleda samo zadnji dep, vj treba sve
+
+    // const baseIds = appliedIds.filter((id) => deps.includes(id));
+    // const idsToUndo = appliedIds.filter((id) => !deps.includes(id));
+
+    const toUndoCoordinates = calcCoordinates(deltasToLastDep);
+
+    let transformBase = new Delta();
+    for (const toUndoCoordinate of toUndoCoordinates) {
+      if (
+        !deps.includes(toUndoCoordinate.id) &&
+        toUndoCoordinate.to < draftStartOffset
+      ) {
+        // happend before new change (changes offset)
+        transformBase = transformBase.compose(toUndoCoordinate.delta);
+      }
+    }
+
+    transformBase = transformBase.invert(new Delta());
+    const draftTransformed = transformBase.transform(delta);
+
+    console.log(
+      deps.map((d) => changes[d].delta),
+      draftTransformed
+    );
+    // todo: refactor ugly tenery:
+    const newChangesOrder = groupId
+      ? changes[groupId]
+        ? changesOrder
+        : [...changesOrder, groupId]
+      : [...changesOrder, newDraftId];
+
+    const newChanges = produce(changes, (changesDraft) => {
+      changesDraft[newDraftId] = {
+        parent: groupId,
+        isFileDepChange: false,
+        chldren: [],
+        status: changeType,
+        id: newDraftId,
+        color: changeType === 'modified' ? '#374957' : '#0074bb',
+        width: 50,
+        x: 0,
+        actions: {
+          discardDraft: {
+            label: 'Discard Draft',
+            color: 'red',
+            callback: () => {},
+          },
+          saveChanges: {
+            label: 'Save Changes',
+            color: 'green',
+            callback: () => {},
+          },
+        },
+        deps,
+        path: file.path,
+        delta: draftTransformed,
+      };
+
+      const newChangesOrder = [...changesOrder, newDraftId];
+
+      let x = 10;
+      for (const id of newChangesOrder) {
+        if (changesDraft[id].isFileDepChange) {
+          continue;
+        }
+        changesDraft[id].x = x;
+        x += changesDraft[id].width + 10;
+      }
+    });
+
+    if (groupId) {
+      set(
+        changesAtom,
+        produce(newChanges, (changesDraft) => {
+          if (changesDraft[groupId]) {
+            changesDraft[groupId].chldren.push(newDraftId);
+            changesDraft[groupId].deps = uniq([
+              ...changesDraft[groupId].deps,
+              ...changesDraft[newDraftId].deps,
+            ]);
+          } else {
+            changesDraft[groupId] = {
+              isFileDepChange: false,
+              chldren: [newDraftId],
+              status: changeType,
+              id: groupId,
+              color: changeType === 'modified' ? '#374957' : '#0074bb',
+              width: 50,
+              x: 0,
+              actions: {
+                discardDraft: {
+                  label: 'Discard Draft',
+                  color: 'red',
+                  callback: () => {},
+                },
+                saveChanges: {
+                  label: 'Save Changes',
+                  color: 'green',
+                  callback: () => {},
+                },
+              },
+              deps,
+              path: file.path,
+              delta: new Delta(),
+            };
+          }
+        })
+      );
+    } else {
+      set(changesAtom, newChanges);
+    }
+    set(changesOrderAtom, newChangesOrder);
+    set(setPlayheadXAtom, Infinity);
+  }
+);
+
+type Coordinate = {
+  from: number;
+  to: number;
+  id: string;
+  delta: Delta;
+  op: 'insert' | 'delete';
+};
+
+export function calcCoordinates(
+  data: { delta: Delta; id: string }[]
+): Coordinate[] {
+  return data
+    .map(({ delta, id }) => {
+      let index = 0;
+      return delta
+        .map((op) => {
+          if (op.retain) {
+            index += op.retain;
+            return null;
+          } else if (op.delete) {
+            const toReturn = {
+              id,
+              from: index,
+              to: index + op.delete,
+              delta: new Delta().retain(index).delete(op.delete),
+              op: 'delete',
+            };
+            index -= op.delete;
+            return toReturn;
+          } else if (typeof op.insert === 'string') {
+            const toReturn = {
+              id,
+              from: index,
+              to: index + op.insert.length,
+              delta: new Delta().retain(index).insert(op.insert),
+              op: 'insert',
+            };
+            index += op.insert.length;
+            return toReturn;
+          }
+          return null;
+        })
+        .filter((op) => op !== null);
+    })
+    .flat() as Coordinate[];
+}
+
+export function getOffset(delta: Delta): number {
+  let offset = 0;
+  delta.forEach((op) => {
+    if (op.retain) {
+      offset += op.retain;
+      return null;
+    } else if (op.delete) {
+      offset = offset - op.delete;
+    } else if (typeof op.insert === 'string') {
+      offset = offset + op.insert.length;
+    }
+  });
+
+  return offset;
+}
+
+`,
+  },
+  {
     path: 'side-effect-big-filename-test-test.ts',
     status: 'modified',
     oldVal: `import React, { Component } from 'react'
