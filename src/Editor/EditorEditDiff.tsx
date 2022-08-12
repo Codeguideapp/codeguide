@@ -141,7 +141,7 @@ export function EditorEditDiff() {
       <div
         ref={editorDiffDom}
         className="monaco edit-mode"
-        style={{ height: 'calc(100% - 20px)' }}
+        style={{ height: 'calc(100% - 50px)' }}
       ></div>
       <div className="editor-statusbar" style={{ height: 20 }}>
         <div className="path">{activeFile?.path}</div>

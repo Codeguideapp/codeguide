@@ -27,7 +27,7 @@ export function EditorEditStepByStep() {
   const [, saveDelta] = useAtom(saveDeltaAtom);
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
-  const [appliedMarkersNew] = useAtom(appliedMarkersAtom);
+  const [appliedMarkers] = useAtom(appliedMarkersAtom);
   const appliedMarkerRef = useRef<{
     edits: monaco.editor.IIdentifiedSingleEditOperation[];
     marker: DiffMarker;
@@ -111,7 +111,17 @@ export function EditorEditStepByStep() {
 
     const markers = activeFile.diffMarkers;
 
-    setDiffMarkers({ ...markers, ...appliedMarkersNew });
+    setDiffMarkers({
+      ...markers,
+      ...appliedMarkers
+        .filter((m) => m.path === activeFile.path)
+        .reduce((acc, curr) => {
+          return {
+            ...acc,
+            [curr.id]: curr,
+          };
+        }, {} as DiffMarkers),
+    });
 
     modifiedContentListener.current = modifiedModel.onDidChangeContent((e) => {
       const deltas: Delta[] = [];
@@ -166,38 +176,40 @@ export function EditorEditStepByStep() {
   }, [
     activeFile,
     changesOrder,
-    appliedMarkersNew,
+    appliedMarkers,
     saveDelta,
     setDiffMarkers,
     setSelections,
   ]); // not watching changes as dep, because it is covered by changesOrder
 
   return (
-    <Split
-      className="split-editor"
-      direction="horizontal"
-      sizes={[25, 75]}
-      minSize={250}
-      gutterSize={1}
-    >
-      <DiffMarkersList
-        appliedMarkerRef={appliedMarkerRef}
-        diffMarkers={diffMarkers}
-        markerIds={markerIds}
-        modifiedModel={modifiedModel}
-        previewModel={previewModel}
-        editor={editor.current}
-      />
-      <div style={{ position: 'relative' }}>
-        <div
-          ref={monacoDom}
-          className="monaco edit-mode"
-          style={{ height: 'calc(100% - 20px)' }}
-        ></div>
-        <div className="editor-statusbar" style={{ height: 20 }}>
-          <div className="path">{activeFile?.path}</div>
+    <div style={{ height: 'calc(100% - 50px)' }}>
+      <Split
+        className="split-editor"
+        direction="horizontal"
+        sizes={[25, 75]}
+        minSize={250}
+        gutterSize={1}
+      >
+        <DiffMarkersList
+          appliedMarkerRef={appliedMarkerRef}
+          diffMarkers={diffMarkers}
+          markerIds={markerIds}
+          modifiedModel={modifiedModel}
+          previewModel={previewModel}
+          editor={editor.current}
+        />
+        <div style={{ position: 'relative' }}>
+          <div
+            ref={monacoDom}
+            className="monaco edit-mode"
+            style={{ height: '100%' }}
+          ></div>
         </div>
+      </Split>
+      <div className="editor-statusbar" style={{ height: 20 }}>
+        <div className="path">{activeFile?.path}</div>
       </div>
-    </Split>
+    </div>
   );
 }

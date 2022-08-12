@@ -3,7 +3,7 @@ import { atom } from 'jotai';
 import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 
-import { DiffMarker, DiffMarkers, getDiffMarkers } from '../api/diffMarkers';
+import { DiffMarker, getDiffMarkers } from '../api/diffMarkers';
 import {
   calcStat,
   composeDeltas,
@@ -25,7 +25,7 @@ interface SaveDeltaParams {
   diffMarker?: DiffMarker;
 }
 
-export const appliedMarkersAtom = atom<DiffMarkers>({});
+export const appliedMarkersAtom = atom<(DiffMarker & { path: string })[]>([]);
 
 export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
   const { delta, file, diffMarker, highlight, isFileDepChange } = params;
@@ -103,13 +103,10 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
   set(scrollToAtom, get(playheadXAtom));
 
   if (diffMarker) {
-    set(appliedMarkersAtom, {
+    set(appliedMarkersAtom, [
       ...get(appliedMarkersAtom),
-      [diffMarker.id]: {
-        ...diffMarker,
-        changeId: newChangeId,
-      },
-    });
+      { ...diffMarker, path: file.path, changeId: newChangeId },
+    ]);
   }
 });
 
