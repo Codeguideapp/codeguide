@@ -173,6 +173,7 @@ code {
 .split-horiz {
   display: flex;
   flex-direction: row;
+  height: 100%;
 }
 .split-editor {
   display: flex;
@@ -265,14 +266,9 @@ code {
   height: 30px;
   width: 100%;
   background: var(--background-1);
-  text-align: right;
-}
-.editor-top .bact-to-edit-button {
-  -webkit-animation: color_change 1s infinite alternate;
-  -moz-animation: color_change 1s infinite alternate;
-  -ms-animation: color_change 1s infinite alternate;
-  -o-animation: color_change 1s infinite alternate;
-  animation: color_change 1s infinite alternate;
+  text-align: left;
+  display: flex;
+  align-items: center;
 }
 
 .editor-bottom {
@@ -306,6 +302,17 @@ code {
   line-height: 35px;
   min-width: 120px;
   text-align: center;
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding-left: 10px;
+}
+.editor-toolbar svg {
+  cursor: pointer;
+  margin-left: 10px;
 }
 
 .monaco.edit-mode .diffglyph {
@@ -403,20 +410,25 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   font-weight: bold;
 }
 
-.diff-markers-wrap {
+.guide {
   overflow: auto;
   background: var(--background-1);
   padding: 15px;
 }
+.diff-markers-wrap {
+  overflow: auto;
+  background: var(--background-1);
+  padding: 15px;
+  height: 100%;
+}
 .diff-marker {
-  background: var(--background-4);
+  background: #202326;
   border-radius: 4px;
   min-height: 60px;
   margin-bottom: 15px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  border: 1px solid var(--background-4);
   position: relative;
 }
 
@@ -434,7 +446,7 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   color: #ccc;
 }
 .diff-marker.active {
-  border: 1px solid #606060;
+  background: #303539;
 }
 .diff-marker.active .buttons {
   display: block;
@@ -509,7 +521,11 @@ body .monaco-diff-editor.side-by-side .editor.modified {
 }
 
 .diff-marker.applied {
-  opacity: 0.2;
+  opacity: 0.3;
+  background: #181a1c;
+}
+.diff-marker.applied .code-preview {
+  opacity: 0.5;
 }
 
 .diff-marker .code-preview .linenumber {

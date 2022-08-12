@@ -123,7 +123,7 @@ export function EditorReadMode() {
   }, [editorDiffDom]);
 
   return (
-    <div style={{ height: 'calc(100% - 20px)' }}>
+    <div style={{ height: 'calc(100% - 20px)', width: '100%' }}>
       <div ref={editorDiffDom} className="monaco read-mode"></div>
       <div className="editor-statusbar" style={{ height: 20 }}>
         <div className="path">{path}</div>

@@ -1,5 +1,8 @@
 import { library } from '@fortawesome/fontawesome-svg-core';
-import { faHighlighter } from '@fortawesome/free-solid-svg-icons';
+import {
+  faCodeCompare,
+  faHighlighter,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Tooltip } from 'antd';
 import { useAtom } from 'jotai';
@@ -9,21 +12,23 @@ import { useCallback } from 'react';
 
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
+import { selectionsAtom } from '../atoms/monaco';
+import { useStepByStepDiffAtom } from '../atoms/options';
 import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
+import { modifiedModel } from '../utils/monaco';
+import { ReactComponent as WhitespaceIcon } from './whitespace.svg';
 
-library.add(faHighlighter);
+library.add(faHighlighter, faCodeCompare);
 
-export function EditorToolbar({
-  selections,
-  monacoModel,
-}: {
-  selections: monaco.Selection[];
-  monacoModel: monaco.editor.ITextModel;
-}) {
+export function EditorToolbar() {
   const [activeFile] = useAtom(activeFileAtom);
   const [, saveDelta] = useAtom(saveDeltaAtom);
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
+  const [useStepByStepDiff, setUseStepByStepDiff] = useAtom(
+    useStepByStepDiffAtom
+  );
+  const [selections] = useAtom(selectionsAtom);
 
   const highligterClickHandler = useCallback(() => {
     if (!activeFile) return;
@@ -41,14 +46,14 @@ export function EditorToolbar({
             file: activeFile,
             isFileDepChange: true,
             delta: new Delta().insert(activeFile.oldVal),
-            eolChar: monacoModel.getEOL(),
+            eolChar: modifiedModel.getEOL(),
           });
         }
 
-        const start = monacoModel.getOffsetAt(
+        const start = modifiedModel.getOffsetAt(
           new monaco.Position(sel.startLineNumber, sel.startColumn)
         );
-        const end = monacoModel.getOffsetAt(
+        const end = modifiedModel.getOffsetAt(
           new monaco.Position(sel.endLineNumber, sel.endColumn)
         );
 
@@ -62,19 +67,39 @@ export function EditorToolbar({
         };
       }),
     });
-  }, [activeFile, changes, changesOrder, saveDelta, selections, monacoModel]);
+  }, [activeFile, changes, changesOrder, saveDelta, selections]);
 
-  return selections.length ? (
-    <Tooltip title="Save selection">
-      <FontAwesomeIcon
-        icon="highlighter"
-        style={{ cursor: 'pointer' }}
-        onClick={highligterClickHandler}
-      />
-    </Tooltip>
-  ) : (
-    <Tooltip title="Select code in order to enable highlighter">
-      <FontAwesomeIcon icon="highlighter" style={{ opacity: 0.2 }} />
+  return (
+    <div className="editor-toolbar">
+      <Tooltip title={`Step-By-Step Diff: ${useStepByStepDiff ? 'ON' : 'OFF'}`}>
+        <FontAwesomeIcon
+          icon="code-compare"
+          style={{ color: useStepByStepDiff ? 'rgb(178 97 201)' : '#666' }}
+          onClick={() => setUseStepByStepDiff(!useStepByStepDiff)}
+        />
+      </Tooltip>
+
+      {selections.length ? (
+        <Tooltip title="Save selection">
+          <FontAwesomeIcon
+            icon="highlighter"
+            style={{ cursor: 'pointer' }}
+            onClick={highligterClickHandler}
+          />
+        </Tooltip>
+      ) : (
+        <Tooltip title="Select code in order to enable highlighter">
+          <FontAwesomeIcon icon="highlighter" style={{ opacity: 0.2 }} />
+        </Tooltip>
+      )}
+    </div>
+  );
+}
+
+export function EditorToolbarRight() {
+  return (
+    <Tooltip title="Show Leading/Trailing Whitespace Differences">
+      <WhitespaceIcon width={16} />
     </Tooltip>
   );
 }

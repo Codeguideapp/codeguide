@@ -4,7 +4,6 @@ import { isEqual } from 'lodash';
 import type * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 
-import { DiffMarker, DiffMarkers } from '../api/diffMarkers';
 import { composeDeltas } from '../utils/deltaUtils';
 import { fileChangesAtom } from './files';
 import { saveDeltaAtom } from './saveDeltaAtom';
@@ -21,10 +20,7 @@ export type Change = {
   }[];
   text?: string;
   textType?: 'info' | 'warn' | 'question';
-  parentChangeId?: string;
-  diffMarker?: DiffMarker;
-  diffMarkers: DiffMarkers;
-  children: string[];
+  diffMarkersNum: number;
   isFileDepChange: boolean;
   delta?: Delta;
   deltaInverted?: Delta;
@@ -79,7 +75,7 @@ export const mergeChangesAtom = atom(null, (get, set, mergeNum: number) => {
   }
 
   const deltas = toMergeChanges
-    .filter((c) => c.children.length)
+    //.filter((c) => c.children.length)
     .map((c) => c.delta!);
 
   const newDelta = composeDeltas(deltas);
@@ -152,27 +148,6 @@ export function swapChanges({
 
   return newChangesOrder;
 }
-
-export const updateChangesX =
-  (changesOrder: string[]) => (changes: Record<string, Change>) => {
-    let x = 20;
-    let lastId = '';
-    for (const id of changesOrder) {
-      if (changes[id].isFileDepChange) {
-        continue;
-      }
-
-      if (lastId && changes[lastId]?.path !== changes[id].path) {
-        x += 30;
-      }
-
-      changes[id].x = x;
-      const space = changes[id].parentChangeId ? 0 : 5;
-      x += changes[id].width + space;
-
-      lastId = id;
-    }
-  };
 
 export const sortBy = (sortRef: string[]) => (a: string, b: string) =>
   sortRef.indexOf(a) - sortRef.indexOf(b);

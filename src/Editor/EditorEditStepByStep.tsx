@@ -8,25 +8,26 @@ import Split from 'react-split';
 import { DiffMarker, DiffMarkers } from '../api/diffMarkers';
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
-import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
+import { selectionsAtom } from '../atoms/monaco';
+import { appliedMarkersAtom, saveDeltaAtom } from '../atoms/saveDeltaAtom';
 import { composeDeltas } from '../utils/deltaUtils';
 import { getFileContent } from '../utils/getFileContent';
 import { modifiedModel, originalModel, previewModel } from '../utils/monaco';
 import { DiffMarkersList } from './DiffMarkers';
-import { EditorToolbar } from './EditorToolbar';
 
-export function EditorEditMode() {
+export function EditorEditStepByStep() {
   const modifiedContentListener = useRef<monaco.IDisposable>();
   const diffListener = useRef<monaco.IDisposable>();
   const diffMouseDownListener = useRef<monaco.IDisposable>();
   const selectionListener = useRef<monaco.IDisposable>();
-  const [selections, setSelections] = useState<monaco.Selection[]>([]);
+  const [, setSelections] = useAtom(selectionsAtom);
   const monacoDom = useRef<HTMLDivElement>(null);
   const editor = useRef<monaco.editor.IStandaloneCodeEditor>();
   const [activeFile] = useAtom(activeFileAtom);
   const [, saveDelta] = useAtom(saveDeltaAtom);
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
+  const [appliedMarkersNew] = useAtom(appliedMarkersAtom);
   const appliedMarkerRef = useRef<{
     edits: monaco.editor.IIdentifiedSingleEditOperation[];
     marker: DiffMarker;
@@ -53,9 +54,10 @@ export function EditorEditMode() {
     editor.current = monaco.editor.create(monacoDom.current, {
       automaticLayout: true,
       theme: 'defaultDark',
-      glyphMargin: true,
+      glyphMargin: false,
       smoothScrolling: true,
       tabSize: 2,
+
       //wordWrap: 'on',
     });
 
@@ -69,7 +71,7 @@ export function EditorEditMode() {
       modifiedModel.setValue('');
       originalModel.setValue('');
     };
-  }, [monacoDom]);
+  }, [monacoDom, setSelections]);
 
   useEffect(() => {
     modifiedContentListener.current?.dispose();
@@ -109,23 +111,7 @@ export function EditorEditMode() {
 
     const markers = activeFile.diffMarkers;
 
-    const appliedMarkers: DiffMarkers = Object.values(changes).reduce(
-      (acc, c) => {
-        if (!c.diffMarker || c.path !== activeFile.path) {
-          return acc;
-        }
-        return {
-          ...acc,
-          [c.diffMarker.id]: {
-            ...c.diffMarker,
-            changeId: c.id,
-          },
-        };
-      },
-      {} as DiffMarkers
-    );
-
-    setDiffMarkers({ ...markers, ...appliedMarkers });
+    setDiffMarkers({ ...markers, ...appliedMarkersNew });
 
     modifiedContentListener.current = modifiedModel.onDidChangeContent((e) => {
       const deltas: Delta[] = [];
@@ -177,16 +163,31 @@ export function EditorEditMode() {
         );
       }
     );
-  }, [activeFile, changesOrder, saveDelta, setDiffMarkers]); // not watching changes as dep, because it is covered by changesOrder
+  }, [
+    activeFile,
+    changesOrder,
+    appliedMarkersNew,
+    saveDelta,
+    setDiffMarkers,
+    setSelections,
+  ]); // not watching changes as dep, because it is covered by changesOrder
 
   return (
     <Split
       className="split-editor"
       direction="horizontal"
-      sizes={[75, 25]}
+      sizes={[25, 75]}
       minSize={250}
       gutterSize={1}
     >
+      <DiffMarkersList
+        appliedMarkerRef={appliedMarkerRef}
+        diffMarkers={diffMarkers}
+        markerIds={markerIds}
+        modifiedModel={modifiedModel}
+        previewModel={previewModel}
+        editor={editor.current}
+      />
       <div style={{ position: 'relative' }}>
         <div
           ref={monacoDom}
@@ -196,18 +197,7 @@ export function EditorEditMode() {
         <div className="editor-statusbar" style={{ height: 20 }}>
           <div className="path">{activeFile?.path}</div>
         </div>
-        <div style={{ position: 'absolute', top: -28, right: 0 }}>
-          <EditorToolbar selections={selections} monacoModel={modifiedModel} />
-        </div>
       </div>
-      <DiffMarkersList
-        appliedMarkerRef={appliedMarkerRef}
-        diffMarkers={diffMarkers}
-        markerIds={markerIds}
-        modifiedModel={modifiedModel}
-        previewModel={previewModel}
-        editor={editor.current}
-      />
     </Split>
   );
 }

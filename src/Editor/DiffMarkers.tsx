@@ -30,7 +30,7 @@ export function DiffMarkersList({
 }: {
   markerIds: string[];
   diffMarkers: DiffMarkers;
-  editor?: monaco.editor.IStandaloneCodeEditor;
+  editor?: monaco.editor.ICodeEditor;
   previewModel: monaco.editor.ITextModel;
   modifiedModel: monaco.editor.ITextModel;
   appliedMarkerRef: React.MutableRefObject<
@@ -309,25 +309,10 @@ function DiffMarkerButton({
         markerType
       )}
       onMouseEnter={onMouseEnter}
-      onMouseLeave={() => {
-        if (isApplied && onMouseLeave) {
-          onMouseLeave();
-        }
-      }}
+      onMouseLeave={onMouseLeave}
       onClick={isApplied ? undefined : onClick}
       style={{ cursor: isApplied ? 'default' : 'pointer' }}
     >
-      <div className="buttons">
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            e.nativeEvent.stopImmediatePropagation();
-            onMouseLeave?.();
-          }}
-        >
-          <FontAwesomeIcon icon="eye-slash" size="xs" />
-        </div>
-      </div>
       <div className="code-preview">
         {Object.entries(marker.preview || {}).map(([line, content]) => (
           <div key={line}>

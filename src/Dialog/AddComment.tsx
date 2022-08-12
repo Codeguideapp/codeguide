@@ -28,15 +28,8 @@ export function AddComment() {
 
             updateChanges((changes) => {
               for (const id of selectedChangeIds) {
-                const parentId = changes[id].parentChangeId || id;
-
-                for (const childId of [
-                  parentId,
-                  ...changes[parentId].children,
-                ]) {
-                  changes[childId].text = values.comment;
-                  changes[childId].textType = values.type;
-                }
+                changes[id].text = values.comment;
+                changes[id].textType = values.type;
               }
             });
             setAhowAddComment(false);

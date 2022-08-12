@@ -11,12 +11,7 @@ import ReactDOM from 'react-dom';
 import Split from 'react-split';
 
 import { setFileChangesAtom } from './atoms/files';
-import {
-  layoutSplitRatio,
-  layoutSplitRatioAtom,
-  windowHeightAtom,
-  windowWidthAtom,
-} from './atoms/layout';
+import { windowHeightAtom, windowWidthAtom } from './atoms/layout';
 import { canEditAtom } from './atoms/playhead';
 import { ContextMenu } from './ContextMenu/ContextMenu';
 import { AddComment } from './Dialog/AddComment';
@@ -24,10 +19,8 @@ import { Editor } from './Editor/Editor';
 import { defaultDarkTheme } from './Editor/monaco-themes/defaultDark';
 import { LeftSide } from './LeftSide/LeftSide';
 import reportWebVitals from './reportWebVitals';
-import { Timeline } from './Timeline/Timeline';
 
 function App() {
-  const [, setlLayoutSplitRatio] = useAtom(layoutSplitRatioAtom);
   const [, setWindowHeight] = useAtom(windowHeightAtom);
   const [, setWindowWidth] = useAtom(windowWidthAtom);
   const [, setFileChanges] = useAtom(setFileChangesAtom);
@@ -51,29 +44,14 @@ function App() {
   return (
     <div className={`main ${canEdit ? 'edit-mode' : 'read-mode'}`}>
       <Split
-        className="split"
-        direction="vertical"
+        className="split-horiz"
+        direction="horizontal"
+        sizes={[20, 80]}
+        minSize={[300, 300]}
         gutterSize={1}
-        snapOffset={10}
-        style={{ height: '100%' }}
-        sizes={layoutSplitRatio}
-        minSize={[100, 100]}
-        onDrag={([top, bottom]) => {
-          setlLayoutSplitRatio([top, bottom]);
-        }}
       >
-        <Split
-          className="split-horiz"
-          direction="horizontal"
-          sizes={[20, 80]}
-          minSize={[300, 300]}
-          gutterSize={1}
-        >
-          <LeftSide />
-          <Editor />
-        </Split>
-
-        <Timeline />
+        <LeftSide />
+        <Editor />
       </Split>
       <ContextMenu />
       <AddComment />

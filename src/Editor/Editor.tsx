@@ -1,36 +1,46 @@
-import { FastForwardFilled } from '@ant-design/icons';
-import { Button } from 'antd';
 import { useAtom } from 'jotai';
+import Split from 'react-split';
 
-import { highlightToEditButtonAtom } from '../atoms/layout';
-import { canEditAtom, setPlayheadXAtom } from '../atoms/playhead';
+import { useStepByStepDiffAtom } from '../atoms/options';
+import { canEditAtom } from '../atoms/playhead';
 import { Comments } from '../Comments/Comments';
-import { EditorEditMode } from './EditorEditMode';
+import { Guide } from '../Guide/Guide';
+import { EditorEditDiff } from './EditorEditDiff';
+import { EditorEditStepByStep } from './EditorEditStepByStep';
 import { EditorReadMode } from './EditorReadMode';
+import { EditorToolbar } from './EditorToolbar';
 
 export function Editor() {
   const [canEdit] = useAtom(canEditAtom);
-  const [highlightToEdit] = useAtom(highlightToEditButtonAtom);
-  const [, setPlayheadX] = useAtom(setPlayheadXAtom);
+  const [useStepByStepDiff] = useAtom(useStepByStepDiffAtom);
 
   return (
     <div className="main-right">
-      <div className="editor-top">
-        {!canEdit && (
-          <Button
-            className="bact-to-edit-button"
-            type="link"
-            style={highlightToEdit ? { color: 'white' } : {}}
-            onClick={() => setPlayheadX({ x: Infinity, type: 'ref' })}
-          >
-            Return to Edit Mode
-            <FastForwardFilled />
-          </Button>
-        )}
-      </div>
-      <div className="editor-bottom">
-        {canEdit ? <EditorEditMode /> : <EditorReadMode />}
-      </div>
+      <Split
+        className="split-editor"
+        direction="horizontal"
+        sizes={[75, 25]}
+        minSize={250}
+        gutterSize={1}
+      >
+        <div>
+          <div className="editor-top">
+            <EditorToolbar />
+          </div>
+          <div style={{ width: '100%', height: '100%' }}>
+            {canEdit ? (
+              useStepByStepDiff ? (
+                <EditorEditStepByStep />
+              ) : (
+                <EditorEditDiff />
+              )
+            ) : (
+              <EditorReadMode />
+            )}
+          </div>
+        </div>
+        <Guide />
+      </Split>
       <Comments />
     </div>
   );

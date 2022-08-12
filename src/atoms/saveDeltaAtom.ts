@@ -3,15 +3,15 @@ import { atom } from 'jotai';
 import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 
-import { DiffMarker, getDiffMarkers } from '../api/diffMarkers';
+import { DiffMarker, DiffMarkers, getDiffMarkers } from '../api/diffMarkers';
 import {
   calcStat,
   composeDeltas,
   countLines,
   deltaToString,
 } from '../utils/deltaUtils';
-import { getHighlightsAfter, getHighlightsBefore } from '../utils/monaco';
-import { changesAtom, changesOrderAtom, updateChangesX } from './changes';
+import { getHighlightsAfter } from '../utils/monaco';
+import { changesAtom, changesOrderAtom } from './changes';
 import { Change } from './changes';
 import { File, fileChangesAtom } from './files';
 import { playheadXAtom, scrollToAtom, setPlayheadXAtom } from './playhead';
@@ -25,11 +25,12 @@ interface SaveDeltaParams {
   diffMarker?: DiffMarker;
 }
 
+export const appliedMarkersAtom = atom<DiffMarkers>({});
+
 export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
   const { delta, file, diffMarker, highlight, isFileDepChange } = params;
   const eolChar = params.eolChar || '\n';
   const newChangeId = nanoid();
-  const highlightChangeId = nanoid();
   const changes = get(changesAtom);
   const changesOrder = get(changesOrderAtom);
 
@@ -59,9 +60,7 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
 
   const newChangesOrder = isFileDepChange
     ? [newChangeId, ...changesOrder]
-    : highlight
-    ? [...changesOrder, newChangeId]
-    : [...changesOrder, highlightChangeId, newChangeId];
+    : [...changesOrder, newChangeId];
 
   const width = highlight ? 50 : getChangeWidth(delta, before, eolChar);
   const newChanges = produce(changes, (changesDraft) => {
@@ -79,35 +78,11 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
       actions: {},
       path: file.path,
       delta,
-      diffMarker: !isFileDepChange ? diffMarker : undefined,
-      diffMarkers,
-      children: highlight || isFileDepChange ? [] : [highlightChangeId],
+      diffMarkersNum: Object.keys(diffMarkers).length,
       deltaInverted: delta.invert(composeDeltas(fileChanges)),
       stat: highlight ? undefined : calcStat(delta),
     };
-
-    if (!isFileDepChange && !highlight) {
-      changesDraft[highlightChangeId] = {
-        parentChangeId: newChangeId,
-        fileStatus: changesDraft[newChangeId].fileStatus,
-        path: changesDraft[newChangeId].path,
-        isFileDepChange: false,
-        children: [],
-        highlight: getHighlightsBefore(delta, before, eolChar),
-        diffMarkers,
-        id: highlightChangeId,
-        width: 10,
-        x: 0,
-        actions: {},
-        stat: [0, 0],
-      };
-    }
   });
-
-  const newChangesOrdered = produce(
-    newChanges,
-    updateChangesX(newChangesOrder)
-  );
 
   const savedFileChanges = get(fileChangesAtom);
   for (const savedFile of savedFileChanges) {
@@ -122,10 +97,20 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
   }
   set(fileChangesAtom, [...savedFileChanges]);
 
-  set(changesAtom, newChangesOrdered);
+  set(changesAtom, newChanges);
   set(changesOrderAtom, newChangesOrder);
   set(setPlayheadXAtom, { x: Infinity, type: 'ref' });
   set(scrollToAtom, get(playheadXAtom));
+
+  if (diffMarker) {
+    set(appliedMarkersAtom, {
+      ...get(appliedMarkersAtom),
+      [diffMarker.id]: {
+        ...diffMarker,
+        changeId: newChangeId,
+      },
+    });
+  }
 });
 
 function getChangeWidth(delta: Delta, before: string, eolChar: string): number {

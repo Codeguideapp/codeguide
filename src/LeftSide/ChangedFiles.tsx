@@ -61,7 +61,7 @@ export function ChangedFiles() {
     const markersNumPerFile: Record<string, number> = {};
     for (const id of appliedIds) {
       const change = changes[id];
-      markersNumPerFile[change.path] = Object.keys(change.diffMarkers).length;
+      markersNumPerFile[change.path] = change.diffMarkersNum;
     }
 
     for (const file of fileChanges || []) {
