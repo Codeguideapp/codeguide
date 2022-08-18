@@ -414,6 +414,7 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   overflow: auto;
   background: var(--background-1);
   padding: 15px;
+  padding-top: 30px;
 }
 .diff-markers-wrap {
   overflow: auto;

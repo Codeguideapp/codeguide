@@ -12,6 +12,7 @@ export type Changes = Record<string, Readonly<Change>>; // changes is updated us
 
 export type Change = {
   fileStatus: 'added' | 'modified' | 'deleted';
+  isDraft: boolean;
   highlight: {
     offset: number;
     length: number;
@@ -26,19 +27,10 @@ export type Change = {
   deltaInverted?: Delta;
   stat?: [number, number];
   id: string;
-  x: number;
   path: string;
-  width: number;
-  actions: Record<
-    string,
-    {
-      label: string;
-      color: string;
-      callback: () => void;
-    }
-  >;
 };
 
+export const canEditAtom = atom(true);
 export const changesAtom = atom<Changes>(produce({}, () => {}));
 export const changesOrderAtom = atom<string[]>([]);
 export const activeChangeIdAtom = atom<string | null>(null);

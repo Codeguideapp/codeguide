@@ -1,20 +1,15 @@
 import produce from 'immer';
 import { atom } from 'jotai';
+import { last } from 'lodash';
 import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 
 import { DiffMarker, getDiffMarkers } from '../api/diffMarkers';
-import {
-  calcStat,
-  composeDeltas,
-  countLines,
-  deltaToString,
-} from '../utils/deltaUtils';
+import { calcStat, composeDeltas, deltaToString } from '../utils/deltaUtils';
 import { getHighlightsAfter } from '../utils/monaco';
 import { changesAtom, changesOrderAtom } from './changes';
 import { Change } from './changes';
 import { File, fileChangesAtom } from './files';
-import { playheadXAtom, scrollToAtom, setPlayheadXAtom } from './playhead';
 interface SaveDeltaParams {
   delta: Delta;
   highlight?: Change['highlight'];
@@ -27,10 +22,17 @@ interface SaveDeltaParams {
 
 export const appliedMarkersAtom = atom<(DiffMarker & { path: string })[]>([]);
 
+export const undraftChangeAtom = atom(null, (get, set, id: string) => {
+  const changes = get(changesAtom);
+  const newChanges = produce(changes, (changesDraft) => {
+    changesDraft[id].isDraft = false;
+  });
+  set(changesAtom, newChanges);
+});
+
 export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
   const { delta, file, diffMarker, highlight, isFileDepChange } = params;
   const eolChar = params.eolChar || '\n';
-  const newChangeId = nanoid();
   const changes = get(changesAtom);
   const changesOrder = get(changesOrderAtom);
 
@@ -38,7 +40,6 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
     .filter((id) => changes[id].path === file.path && changes[id].delta)
     .map((id) => changes[id].delta!);
 
-  const before = deltaToString(fileChanges);
   const after = deltaToString([...fileChanges, delta]);
   const diffMarkers = getDiffMarkers({
     modifiedValue: after,
@@ -58,31 +59,66 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
       changeStatus = file.status;
   }
 
-  const newChangesOrder = isFileDepChange
-    ? [newChangeId, ...changesOrder]
-    : [...changesOrder, newChangeId];
+  const lastChangeId = last(changesOrder);
 
-  const width = highlight ? 50 : getChangeWidth(delta, before, eolChar);
-  const newChanges = produce(changes, (changesDraft) => {
-    changesDraft[newChangeId] = {
-      isFileDepChange: Boolean(isFileDepChange),
-      fileStatus: changeStatus,
-      highlight: highlight
-        ? highlight
-        : isFileDepChange
-        ? []
-        : getHighlightsAfter(delta, eolChar),
-      id: newChangeId,
-      width: isFileDepChange ? 0 : width,
-      x: 0,
-      actions: {},
-      path: file.path,
-      delta,
-      diffMarkersNum: Object.keys(diffMarkers).length,
-      deltaInverted: delta.invert(composeDeltas(fileChanges)),
-      stat: highlight ? undefined : calcStat(delta),
-    };
-  });
+  if (
+    !highlight &&
+    lastChangeId &&
+    changes[lastChangeId].isDraft &&
+    changes[lastChangeId].path === file.path
+  ) {
+    const newChanges = produce(changes, (changesDraft) => {
+      const newDelta = changesDraft[lastChangeId].delta!.compose(delta);
+
+      changesDraft[lastChangeId].delta = newDelta;
+      changesDraft[lastChangeId].deltaInverted = newDelta.invert(
+        composeDeltas(fileChanges)
+      );
+    });
+
+    set(changesAtom, newChanges);
+
+    if (diffMarker) {
+      set(appliedMarkersAtom, [
+        ...get(appliedMarkersAtom),
+        { ...diffMarker, path: file.path, changeId: lastChangeId },
+      ]);
+    }
+  } else {
+    const newChangeId = nanoid();
+    const newChangesOrder = isFileDepChange
+      ? [newChangeId, ...changesOrder]
+      : [...changesOrder, newChangeId];
+
+    const newChanges = produce(changes, (changesDraft) => {
+      changesDraft[newChangeId] = {
+        isDraft: isFileDepChange || highlight ? false : true,
+        isFileDepChange: Boolean(isFileDepChange),
+        fileStatus: changeStatus,
+        highlight: highlight
+          ? highlight
+          : isFileDepChange
+          ? []
+          : getHighlightsAfter(delta, eolChar),
+        id: newChangeId,
+        path: file.path,
+        delta,
+        diffMarkersNum: Object.keys(diffMarkers).length,
+        deltaInverted: delta.invert(composeDeltas(fileChanges)),
+        stat: highlight ? undefined : calcStat(delta),
+      };
+    });
+
+    set(changesAtom, newChanges);
+    set(changesOrderAtom, newChangesOrder);
+
+    if (diffMarker) {
+      set(appliedMarkersAtom, [
+        ...get(appliedMarkersAtom),
+        { ...diffMarker, path: file.path, changeId: newChangeId },
+      ]);
+    }
+  }
 
   const savedFileChanges = get(fileChangesAtom);
   for (const savedFile of savedFileChanges) {
@@ -96,43 +132,4 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
     }
   }
   set(fileChangesAtom, [...savedFileChanges]);
-
-  set(changesAtom, newChanges);
-  set(changesOrderAtom, newChangesOrder);
-  set(setPlayheadXAtom, { x: Infinity, type: 'ref' });
-  set(scrollToAtom, get(playheadXAtom));
-
-  if (diffMarker) {
-    set(appliedMarkersAtom, [
-      ...get(appliedMarkersAtom),
-      { ...diffMarker, path: file.path, changeId: newChangeId },
-    ]);
-  }
 });
-
-function getChangeWidth(delta: Delta, before: string, eolChar: string): number {
-  const stat = calcStat(delta);
-  const lines = countLines(delta, before, eolChar);
-  const widthFromChars = stat[0] + stat[1];
-  const widthFromLines = lines * 50;
-  const width =
-    widthFromLines > widthFromChars ? widthFromChars : widthFromLines;
-
-  let min = 20;
-  let max = 50;
-
-  if (width > 300) {
-    max = 60;
-  }
-  if (width > 800) {
-    max = 90;
-  }
-  if (width > 1000) {
-    max = 100;
-  }
-  if (width > 1500) {
-    max = 120;
-  }
-
-  return Math.max(min, Math.min(width, max));
-}

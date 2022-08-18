@@ -1,8 +1,8 @@
 import { useAtom } from 'jotai';
 import Split from 'react-split';
 
+import { canEditAtom } from '../atoms/changes';
 import { useStepByStepDiffAtom } from '../atoms/options';
-import { canEditAtom } from '../atoms/playhead';
 import { Comments } from '../Comments/Comments';
 import { Guide } from '../Guide/Guide';
 import { EditorEditDiff } from './EditorEditDiff';

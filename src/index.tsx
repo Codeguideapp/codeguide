@@ -10,9 +10,9 @@ import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Split from 'react-split';
 
+import { canEditAtom } from './atoms/changes';
 import { setFileChangesAtom } from './atoms/files';
 import { windowHeightAtom, windowWidthAtom } from './atoms/layout';
-import { canEditAtom } from './atoms/playhead';
 import { ContextMenu } from './ContextMenu/ContextMenu';
 import { AddComment } from './Dialog/AddComment';
 import { Editor } from './Editor/Editor';

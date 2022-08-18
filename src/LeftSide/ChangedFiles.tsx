@@ -9,12 +9,12 @@ import React, { useMemo } from 'react';
 
 import {
   activeChangeIdAtom,
+  canEditAtom,
   changesAtom,
   changesOrderAtom,
 } from '../atoms/changes';
 import { activeFileAtom, fileChangesAtom } from '../atoms/files';
 import { toggleBackToEditButtonAtom } from '../atoms/layout';
-import { canEditAtom, setPlayheadXAtom } from '../atoms/playhead';
 
 library.add(faCheck);
 
@@ -27,7 +27,7 @@ export function ChangedFiles() {
   const [changesOrder] = useAtom(changesOrderAtom);
   const [activeChangeId] = useAtom(activeChangeIdAtom);
   const [canEdit] = useAtom(canEditAtom);
-  const [, setPlayheadX] = useAtom(setPlayheadXAtom);
+  //const [, setPlayheadX] = useAtom(setPlayheadXAtom);
   const [, toggleBacktoEditButton] = useAtom(toggleBackToEditButtonAtom);
 
   // const hiddenFiles = useMemo(() => {
@@ -131,10 +131,6 @@ export function ChangedFiles() {
         onSelect={(selected) => {
           const file = fileChanges.find((f) => f.path === selected[0]);
           setActiveFile(file);
-          setPlayheadX({
-            x: Infinity,
-            type: 'ref',
-          });
         }}
       />
     </div>

@@ -1,6 +1,3 @@
-import { library } from '@fortawesome/fontawesome-svg-core';
-import { faEyeSlash } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classNames from 'classnames';
 import { atom, useAtom } from 'jotai';
 import * as monaco from 'monaco-editor';
@@ -8,14 +5,11 @@ import { useCallback, useRef } from 'react';
 
 import { DiffMarker, DiffMarkers } from '../api/diffMarkers';
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
-import { getFileContent } from '../utils/getFileContent';
 import {
   getMonacoEdits,
   removeDeletions,
   removeInserts,
 } from '../utils/monaco';
-
-library.add(faEyeSlash);
 
 const markerStepAtom = atom(0);
 const activeMarkerAtom = atom('');
@@ -65,16 +59,7 @@ export function DiffMarkersList({
       const modifiedValue = modifiedModel.getValue();
       const previewValue = previewModel.getValue();
 
-      if (marker.changeId) {
-        previewModel.setValue(
-          getFileContent({
-            upToChangeId: marker.changeId,
-            excludeChange: true,
-            changes,
-            changesOrder,
-          })
-        );
-      } else if (modifiedValue !== previewValue) {
+      if (modifiedValue !== previewValue) {
         previewModel.setValue(modifiedValue);
       }
 
@@ -248,16 +233,22 @@ export function DiffMarkersList({
             key={markerId}
             marker={marker}
             onMouseEnter={() => {
+              if (marker.changeId) return;
+
               setMarkerStep(1);
               setActiveMarker(marker.id);
               activateDiffMarker(marker);
             }}
             onMouseLeave={() => {
+              if (marker.changeId) return;
+
               setMarkerStep(0);
               setActiveMarker('');
               resetDiffMarkers();
             }}
             onClick={() => {
+              if (marker.changeId) return;
+
               if (marker.operation === 'replace' && markerStep !== 2) {
                 setMarkerStep(2);
                 activateDiffMarker(marker, 2);
