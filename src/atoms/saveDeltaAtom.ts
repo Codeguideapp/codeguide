@@ -30,6 +30,56 @@ export const undraftChangeAtom = atom(null, (get, set, id: string) => {
   set(changesAtom, newChanges);
 });
 
+export const saveFileNodeAtom = atom(null, (get, set, path: string) => {
+  const changes = get(changesAtom);
+  const changesOrder = get(changesOrderAtom);
+
+  const nonDepChanges = changesOrder
+    .filter((id) => !changes[id].isFileDepChange)
+    .map((id) => changes[id]);
+
+  const lastChange = last(nonDepChanges);
+  const secondLast = nonDepChanges[nonDepChanges.length - 2];
+
+  if (lastChange?.path !== path && lastChange?.isFileNode) {
+    if (secondLast?.path === path) {
+      const newChangesOrder = changesOrder.slice(0, changesOrder.length - 1);
+      const newChanges = produce(changes, (changesDraft) => {
+        delete changesDraft[lastChange.id];
+      });
+      set(changesAtom, newChanges);
+      set(changesOrderAtom, newChangesOrder);
+    } else {
+      const newChanges = produce(changes, (changesDraft) => {
+        changesDraft[lastChange.id].path = path;
+      });
+
+      set(changesAtom, newChanges);
+    }
+  } else if (!lastChange || lastChange.path !== path) {
+    const newChangeId = nanoid();
+    const newChangesOrder = [...changesOrder, newChangeId];
+
+    const newChanges = produce(changes, (changesDraft) => {
+      changesDraft[newChangeId] = {
+        isFileNode: true,
+        isDraft: false,
+        isFileDepChange: false,
+        fileStatus: 'modified', // todo
+        highlight: [],
+        id: newChangeId,
+        path,
+        delta: new Delta(),
+        diffMarkersNum: 0,
+        deltaInverted: new Delta(),
+      };
+    });
+
+    set(changesAtom, newChanges);
+    set(changesOrderAtom, newChangesOrder);
+  }
+});
+
 export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
   const { delta, file, diffMarker, highlight, isFileDepChange } = params;
   const eolChar = params.eolChar || '\n';

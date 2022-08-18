@@ -5,6 +5,7 @@ import { Tree } from 'antd';
 import { DataNode } from 'antd/lib/tree';
 import classNames from 'classnames';
 import { useAtom } from 'jotai';
+import Delta from 'quill-delta';
 import React, { useMemo } from 'react';
 
 import {
@@ -15,6 +16,7 @@ import {
 } from '../atoms/changes';
 import { activeFileAtom, fileChangesAtom } from '../atoms/files';
 import { toggleBackToEditButtonAtom } from '../atoms/layout';
+import { saveDeltaAtom, saveFileNodeAtom } from '../atoms/saveDeltaAtom';
 
 library.add(faCheck);
 
@@ -26,6 +28,8 @@ export function ChangedFiles() {
   const [fileChanges] = useAtom(fileChangesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
   const [activeChangeId] = useAtom(activeChangeIdAtom);
+  const [, saveFileNode] = useAtom(saveFileNodeAtom);
+  const [, saveDelta] = useAtom(saveDeltaAtom);
   const [canEdit] = useAtom(canEditAtom);
   //const [, setPlayheadX] = useAtom(setPlayheadXAtom);
   const [, toggleBacktoEditButton] = useAtom(toggleBackToEditButtonAtom);
@@ -131,6 +135,21 @@ export function ChangedFiles() {
         onSelect={(selected) => {
           const file = fileChanges.find((f) => f.path === selected[0]);
           setActiveFile(file);
+          if (file) {
+            if (
+              file.status !== 'added' &&
+              !changesOrder.find((id) => changes[id].path === file.path)
+            ) {
+              // this is first time change is saved for a file
+              saveDelta({
+                file,
+                isFileDepChange: true,
+                delta: new Delta().insert(file.oldVal),
+              });
+            }
+
+            saveFileNode(file.path);
+          }
         }}
       />
     </div>

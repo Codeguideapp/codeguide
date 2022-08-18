@@ -93,19 +93,6 @@ export function EditorEditDiff() {
     modifiedContentListener.current = modifiedModel.onDidChangeContent((e) => {
       const deltas: Delta[] = [];
 
-      if (
-        activeFile.status !== 'added' &&
-        !changesOrder.find((id) => changes[id].path === activeFile.path)
-      ) {
-        // this is first time change is saved for a file
-        saveDelta({
-          file: activeFile,
-          isFileDepChange: true,
-          delta: new Delta().insert(activeFile.oldVal),
-          eolChar: modifiedModel.getEOL(),
-        });
-      }
-
       e.changes
         .sort((c1, c2) => c2.rangeOffset - c1.rangeOffset)
         .forEach((change) => {

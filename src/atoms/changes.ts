@@ -12,6 +12,7 @@ export type Changes = Record<string, Readonly<Change>>; // changes is updated us
 
 export type Change = {
   fileStatus: 'added' | 'modified' | 'deleted';
+  isFileNode?: true;
   isDraft: boolean;
   highlight: {
     offset: number;
