@@ -377,14 +377,14 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   height: 100%;
   box-sizing: border-box;
 }
-.highlight-cursor::after {
+/* .highlight-cursor::after {
   position: absolute;
   content: ' ';
   border: 3px solid orange;
   border-radius: 4px;
   left: -4px;
   top: -5px;
-}
+} */
 
 .cursor-color-replace,
 .cursor-color-replace::after {

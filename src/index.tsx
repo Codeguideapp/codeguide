@@ -16,7 +16,10 @@ import { windowHeightAtom, windowWidthAtom } from './atoms/layout';
 import { ContextMenu } from './ContextMenu/ContextMenu';
 import { AddComment } from './Dialog/AddComment';
 import { Editor } from './Editor/Editor';
-import { defaultDarkTheme } from './Editor/monaco-themes/defaultDark';
+import {
+  darkTheme,
+  darkThemeInvertedDif,
+} from './Editor/monaco-themes/defaultDark';
 import { LeftSide } from './LeftSide/LeftSide';
 import reportWebVitals from './reportWebVitals';
 
@@ -60,7 +63,8 @@ function App() {
 }
 
 const renderApp = () => {
-  monaco.editor.defineTheme('defaultDark', defaultDarkTheme);
+  monaco.editor.defineTheme('darkInvertedDiff', darkThemeInvertedDif);
+  monaco.editor.defineTheme('darkTheme', darkTheme);
 
   ReactDOM.render(
     <React.StrictMode>

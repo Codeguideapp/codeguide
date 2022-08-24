@@ -32,7 +32,7 @@ export function EditorEditDiff() {
 
     diffEditor.current = monaco.editor.createDiffEditor(editorDiffDom.current, {
       automaticLayout: true,
-      theme: 'defaultDark',
+      theme: 'darkInvertedDiff',
       //originalEditable: true,
       //readOnly: false,
       glyphMargin: true,

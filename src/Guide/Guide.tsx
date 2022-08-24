@@ -5,6 +5,7 @@ import {
   canEditAtom,
   changesAtom,
   changesOrderAtom,
+  highlightChangeIdAtom,
 } from '../atoms/changes';
 import { undraftChangeAtom } from '../atoms/saveDeltaAtom';
 
@@ -12,6 +13,9 @@ export function Guide() {
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
   const [activeChangeId, setActiveChangeId] = useAtom(activeChangeIdAtom);
+  const [highlightChangeId, setHighlightChangeId] = useAtom(
+    highlightChangeIdAtom
+  );
   const [, setCanEdit] = useAtom(canEditAtom);
   const [, undraftChange] = useAtom(undraftChangeAtom);
 
@@ -25,14 +29,26 @@ export function Guide() {
         return (
           <div
             key={change.id}
-            onClick={() => {
-              if (change.id === activeChangeId) {
+            onClick={(e) => {
+              if (e.shiftKey === true) {
+                setHighlightChangeId(null);
                 setActiveChangeId(null);
                 setCanEdit(true);
-              } else {
-                setCanEdit(false);
-                setActiveChangeId(change.id);
+                return;
               }
+
+              if (highlightChangeId === change.id) {
+                if (change.id === activeChangeId) {
+                  setActiveChangeId(null);
+                  setCanEdit(true);
+                } else {
+                  setCanEdit(false);
+                  setActiveChangeId(change.id);
+                }
+                return;
+              }
+
+              setHighlightChangeId(change.id);
             }}
             style={{
               position: 'relative',

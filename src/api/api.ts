@@ -1,6 +1,6 @@
 import { Octokit } from 'octokit';
 
-//import { mockFiles } from '../__mocks__/mockFiles';
+import { mockFiles } from '../__mocks__/mockFiles';
 
 export type ApiFile = {
   status: 'added' | 'modified' | 'deleted';
@@ -16,11 +16,11 @@ export const getFile = async (path: string) => {
 };
 
 const octokit = new Octokit({
-  auth: '',
+  auth: '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',
 });
 
 export const getFiles = async (pr: number): Promise<ApiFile[]> => {
-  //return [mockFiles[1]];
+  return mockFiles;
   const files: ApiFile[] = [];
 
   let owner = '';
@@ -68,28 +68,29 @@ export const getFiles = async (pr: number): Promise<ApiFile[]> => {
   );
 
   for (const file of filesReq.data) {
-    const oldVal = await fetch(
-      `https://raw.githubusercontent.com/${owner}/${repo}/${baseSha}/${encodeURIComponent(
-        file.filename
-      )}`
-    ).then((r) => {
-      if (r.status === 404) {
-        return '';
-      }
-      return r.text();
-    });
+    const oldVal = await octokit
+      .request('GET /repos/{owner}/{repo}/contents/{path}?ref=' + baseSha, {
+        owner,
+        repo,
+        path: file.filename,
+      })
+      .then((res) => {
+        return atob(res.data.content);
+      });
 
-    //console.log(file);
-    const newVal = await fetch(
-      `https://raw.githubusercontent.com/${owner}/${repo}/${
-        prReq.data.merge_commit_sha
-      }/${encodeURIComponent(file.filename)}`
-    ).then((r) => {
-      if (r.status === 404) {
-        return '';
-      }
-      return r.text();
-    });
+    const newVal = await octokit
+      .request(
+        'GET /repos/{owner}/{repo}/contents/{path}?ref=' +
+          prReq.data.merge_commit_sha,
+        {
+          owner,
+          repo,
+          path: file.filename,
+        }
+      )
+      .then((res) => {
+        return atob(res.data.content);
+      });
 
     files.push({
       path: file.filename,

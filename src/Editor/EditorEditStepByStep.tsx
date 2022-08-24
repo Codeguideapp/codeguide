@@ -53,7 +53,7 @@ export function EditorEditStepByStep() {
 
     editor.current = monaco.editor.create(monacoDom.current, {
       automaticLayout: true,
-      theme: 'defaultDark',
+      theme: 'darkTheme',
       glyphMargin: false,
       smoothScrolling: true,
       tabSize: 2,

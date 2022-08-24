@@ -33,7 +33,7 @@ export function EditorReadMode() {
     if (!editor.current) {
       editor.current = monaco.editor.create(editorDiffDom.current, {
         automaticLayout: true,
-        theme: 'defaultDark',
+        theme: 'darkTheme',
         readOnly: true,
         smoothScrolling: true,
       });

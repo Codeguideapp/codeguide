@@ -35,6 +35,7 @@ export const canEditAtom = atom(true);
 export const changesAtom = atom<Changes>(produce({}, () => {}));
 export const changesOrderAtom = atom<string[]>([]);
 export const activeChangeIdAtom = atom<string | null>(null);
+export const highlightChangeIdAtom = atom<string | null>(null);
 export const selectedChangeIdsAtom = atom<string[]>([]);
 
 export const updateChangesAtom = atom(

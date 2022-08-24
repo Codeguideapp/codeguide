@@ -1,17 +1,19 @@
 import { useAtom } from 'jotai';
 import Split from 'react-split';
 
-import { canEditAtom } from '../atoms/changes';
+import { canEditAtom, highlightChangeIdAtom } from '../atoms/changes';
 import { useStepByStepDiffAtom } from '../atoms/options';
 import { Comments } from '../Comments/Comments';
 import { Guide } from '../Guide/Guide';
 import { EditorEditDiff } from './EditorEditDiff';
 import { EditorEditStepByStep } from './EditorEditStepByStep';
+import { EditorHighlightChange } from './EditorHighlightChange';
 import { EditorReadMode } from './EditorReadMode';
 import { EditorToolbar } from './EditorToolbar';
 
 export function Editor() {
   const [canEdit] = useAtom(canEditAtom);
+  const [highlightChangeId] = useAtom(highlightChangeIdAtom);
   const [useStepByStepDiff] = useAtom(useStepByStepDiffAtom);
 
   return (
@@ -28,7 +30,9 @@ export function Editor() {
             <EditorToolbar />
           </div>
           <div style={{ width: '100%', height: '100%' }}>
-            {canEdit ? (
+            {highlightChangeId ? (
+              <EditorHighlightChange changeId={highlightChangeId} />
+            ) : canEdit ? (
               useStepByStepDiff ? (
                 <EditorEditStepByStep />
               ) : (
