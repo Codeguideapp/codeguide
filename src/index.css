@@ -410,12 +410,6 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   font-weight: bold;
 }
 
-.guide {
-  overflow: auto;
-  background: var(--background-1);
-  padding: 15px;
-  padding-top: 30px;
-}
 .diff-markers-wrap {
   overflow: auto;
   background: var(--background-1);
@@ -507,17 +501,8 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   text-align: right;
 }
 
-.diff-marker .code-preview {
-  font-family: 'Inconsolata';
-  overflow: hidden;
-  white-space: nowrap;
-  color: rgb(225, 225, 225);
-  font-size: 12px;
-  line-height: 11px;
-  padding: 5px;
-}
-.diff-marker.indent .code-preview .code,
-.diff-marker.whitespace .code-preview .code {
+.diff-marker.indent .delta-preview .code,
+.diff-marker.whitespace .delta-preview .code {
   color: rgb(131 122 29);
 }
 
@@ -525,17 +510,6 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   opacity: 0.3;
   background: #181a1c;
 }
-.diff-marker.applied .code-preview {
+.diff-marker.applied .delta-preview {
   opacity: 0.5;
-}
-
-.diff-marker .code-preview .linenumber {
-  width: 25px;
-  display: inline-block;
-  color: #aeaeae;
-}
-.diff-marker .code-preview .deleted {
-  /*text-decoration: line-through;
-  margin-right: 2px;*/
-  color: #5c5a5a;
 }

@@ -1,0 +1,127 @@
+.guide {
+  overflow: auto;
+  background: var(--background-1);
+  padding-top: 30px;
+}
+.guide .step {
+  position: relative;
+  margin: 10px;
+  cursor: pointer;
+}
+
+.guide .step-circle {
+  background: #181a1c;
+  width: 22px;
+  height: 22px;
+  border-radius: 19px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #373737;
+}
+
+.guide .step-code {
+  width: calc(100% - 50px);
+  min-height: 35px;
+  border-radius: 4px;
+  background: #181a1c;
+  border: 1px solid #212326;
+  padding: 5px;
+}
+.guide .step.draft .step-code {
+  background: transparent;
+  border: 1px dotted rgb(52 52 52);
+}
+
+.guide .step:hover .step-code {
+  border-color: #3f4449;
+}
+.guide .active .step-code,
+.guide .before-active .step-code {
+  background: #212326;
+  border-color: #212326;
+}
+
+.guide .draft .step-circle {
+  background: transparent;
+  border: 1px solid #824500;
+}
+
+.guide .step.before-active:not(.draft) .step-circle {
+  background: #393d42;
+}
+.guide .step.active .step-code {
+  border: 1px solid #1a6b92;
+}
+.guide .step.active .step-circle {
+  border: 2px solid #1a6b92;
+}
+.guide .step.active .step-circle span {
+  color: #fff;
+}
+.guide .step.before-active .step-circle span {
+  color: #fff;
+}
+
+.guide .step-circle span {
+  font-size: 11px;
+  color: rgb(124, 124, 124);
+  font-weight: bold;
+  font-family: 'Inconsolata';
+}
+
+.guide .step-file {
+  font-family: 'Inconsolata';
+  margin-left: 10px;
+}
+
+.guide .step-line-h {
+  width: 10px;
+  height: 1px;
+  background: #373737;
+}
+.guide .step-line-v-top {
+  position: absolute;
+  top: -3px;
+  height: calc(50% - 8px);
+  width: 1px;
+  background: #373737;
+  left: 10px;
+}
+.guide .step-line-v-bottom {
+  position: absolute;
+  top: calc(50% + 12px);
+  height: 50%;
+  width: 1px;
+  background: #373737;
+  left: 10px;
+}
+
+.guide .step .icons {
+  position: absolute;
+  right: 22px;
+  background: #181a1c;
+  display: flex;
+  align-items: center;
+  padding: 9px;
+}
+.guide .step.active:not(.draft) .icons,
+.guide .step.before-active .iconse {
+  background: #212326;
+}
+
+.guide .step .icons svg {
+  margin-left: 10px;
+}
+.guide .step .icons svg.active {
+  color: yellow;
+}
+.guide .step .icons svg.disabled {
+  opacity: 0.2;
+}
+
+.guide .step.after-active .step-file,
+.guide .step.after-active .icons,
+.guide .step.after-active .delta-preview {
+  opacity: 0.5;
+}

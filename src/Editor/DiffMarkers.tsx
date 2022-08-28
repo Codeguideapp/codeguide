@@ -5,6 +5,7 @@ import { useCallback, useRef } from 'react';
 
 import { DiffMarker, DiffMarkers } from '../api/diffMarkers';
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
+import { DeltaPreview } from '../Shared/DeltaPreview';
 import {
   getMonacoEdits,
   removeDeletions,
@@ -304,26 +305,8 @@ function DiffMarkerButton({
       onClick={isApplied ? undefined : onClick}
       style={{ cursor: isApplied ? 'default' : 'pointer' }}
     >
-      <div className="code-preview">
-        {Object.entries(marker.preview || {}).map(([line, content]) => (
-          <div key={line}>
-            <span className="linenumber">{line}:</span>
-            {content.map((c, i) => {
-              return (
-                <span
-                  key={`${line}-${i}`}
-                  className={classNames({
-                    code: true,
-                    deleted: c.isDelete,
-                  })}
-                >
-                  {c.code}
-                </span>
-              );
-            })}
-          </div>
-        ))}
-      </div>
+      <DeltaPreview preview={marker.preview || {}} />
+
       <div className="bottom">
         <div className="line">
           <span

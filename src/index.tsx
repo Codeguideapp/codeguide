@@ -10,11 +10,8 @@ import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Split from 'react-split';
 
-import { canEditAtom } from './atoms/changes';
 import { setFileChangesAtom } from './atoms/files';
 import { windowHeightAtom, windowWidthAtom } from './atoms/layout';
-import { ContextMenu } from './ContextMenu/ContextMenu';
-import { AddComment } from './Dialog/AddComment';
 import { Editor } from './Editor/Editor';
 import {
   darkTheme,
@@ -27,7 +24,6 @@ function App() {
   const [, setWindowHeight] = useAtom(windowHeightAtom);
   const [, setWindowWidth] = useAtom(windowWidthAtom);
   const [, setFileChanges] = useAtom(setFileChangesAtom);
-  const [canEdit] = useAtom(canEditAtom);
 
   useEffect(() => {
     window.addEventListener(
@@ -45,7 +41,7 @@ function App() {
   }, [setFileChanges]);
 
   return (
-    <div className={`main ${canEdit ? 'edit-mode' : 'read-mode'}`}>
+    <div className="main">
       <Split
         className="split-horiz"
         direction="horizontal"
@@ -56,8 +52,6 @@ function App() {
         <LeftSide />
         <Editor />
       </Split>
-      <ContextMenu />
-      <AddComment />
     </div>
   );
 }

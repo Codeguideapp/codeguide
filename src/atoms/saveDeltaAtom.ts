@@ -64,12 +64,12 @@ export const saveFileNodeAtom = atom(null, (get, set, path: string) => {
       changesDraft[newChangeId] = {
         isFileNode: true,
         isDraft: false,
-        isFileDepChange: false,
         fileStatus: 'modified', // todo
         highlight: [],
         id: newChangeId,
         path,
         delta: new Delta(),
+        stat: [0, 0],
         diffMarkersNum: 0,
         deltaInverted: new Delta(),
       };
@@ -124,6 +124,7 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
       changesDraft[lastChangeId].deltaInverted = newDelta.invert(
         composeDeltas(fileChanges)
       );
+      changesDraft[lastChangeId].stat = calcStat(newDelta);
     });
 
     set(changesAtom, newChanges);
@@ -141,9 +142,17 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
       : [...changesOrder, newChangeId];
 
     const newChanges = produce(changes, (changesDraft) => {
+      if (!isFileDepChange) {
+        for (const id of changesOrder) {
+          if (changesDraft[id].isDraft) {
+            changesDraft[id].isDraft = false;
+          }
+        }
+      }
+
       changesDraft[newChangeId] = {
         isDraft: isFileDepChange || highlight ? false : true,
-        isFileDepChange: Boolean(isFileDepChange),
+        isFileDepChange: isFileDepChange || undefined,
         fileStatus: changeStatus,
         highlight: highlight
           ? highlight
@@ -155,7 +164,7 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
         delta,
         diffMarkersNum: Object.keys(diffMarkers).length,
         deltaInverted: delta.invert(composeDeltas(fileChanges)),
-        stat: highlight ? undefined : calcStat(delta),
+        stat: highlight ? [0, 0] : calcStat(delta),
       };
     });
 

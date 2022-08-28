@@ -1,142 +1,181 @@
+import './Guide.css';
+
+import { library } from '@fortawesome/fontawesome-svg-core';
+import { faFile } from '@fortawesome/free-regular-svg-icons';
+import {
+  faCheck,
+  faFloppyDisk,
+  faMagnifyingGlass,
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import classNames from 'classnames';
 import { useAtom } from 'jotai';
+import { last } from 'lodash';
 
 import {
-  activeChangeIdAtom,
-  canEditAtom,
   changesAtom,
   changesOrderAtom,
   highlightChangeIdAtom,
 } from '../atoms/changes';
+import { setFileByPathAtom } from '../atoms/files';
 import { undraftChangeAtom } from '../atoms/saveDeltaAtom';
+import { DeltaPreview } from '../Shared/DeltaPreview';
+import { getDeltaPreview } from '../utils/deltaUtils';
+import { getFileContent } from '../utils/getFileContent';
+
+library.add(faFloppyDisk, faMagnifyingGlass, faCheck, faFile);
 
 export function Guide() {
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
-  const [activeChangeId, setActiveChangeId] = useAtom(activeChangeIdAtom);
   const [highlightChangeId, setHighlightChangeId] = useAtom(
     highlightChangeIdAtom
   );
-  const [, setCanEdit] = useAtom(canEditAtom);
   const [, undraftChange] = useAtom(undraftChangeAtom);
+  const [, setFileByPath] = useAtom(setFileByPathAtom);
 
   const nonDepChanges = changesOrder
     .filter((id) => !changes[id].isFileDepChange)
     .map((id) => changes[id]);
 
+  const lastChange = last(nonDepChanges);
+
+  const highlightIndex = highlightChangeId
+    ? changesOrder.indexOf(highlightChangeId)
+    : null;
+
   return (
     <div className="guide">
       {nonDepChanges.map((change, index) => {
+        const changeIndex = changesOrder.indexOf(change.id);
+
+        const preview = getDeltaPreview(
+          change.delta,
+          getFileContent({
+            upToChangeId: change.id,
+            changes,
+            changesOrder,
+            excludeChange: true,
+          }),
+          '\n'
+        );
+
+        const isBeforeActive =
+          highlightIndex === null ? true : changeIndex < highlightIndex;
+
+        const isAfterActive =
+          highlightIndex !== null && changeIndex > highlightIndex;
+
         return (
           <div
+            className={classNames({
+              'before-active': isBeforeActive,
+              'after-active': isAfterActive,
+              file: change.isFileNode,
+              step: true,
+              active:
+                change.id === highlightChangeId ||
+                (lastChange?.id === change.id &&
+                  change.isDraft &&
+                  !highlightChangeId),
+              draft: change.isDraft,
+            })}
             key={change.id}
-            onClick={(e) => {
-              if (e.shiftKey === true) {
+            onClick={() => {
+              if (change.isDraft) {
                 setHighlightChangeId(null);
-                setActiveChangeId(null);
-                setCanEdit(true);
-                return;
+              } else {
+                setHighlightChangeId(change.id);
               }
 
-              if (highlightChangeId === change.id) {
-                if (change.id === activeChangeId) {
-                  setActiveChangeId(null);
-                  setCanEdit(true);
-                } else {
-                  setCanEdit(false);
-                  setActiveChangeId(change.id);
-                }
-                return;
-              }
-
-              setHighlightChangeId(change.id);
-            }}
-            style={{
-              position: 'relative',
-              fontWeight: activeChangeId === change.id ? 'bold' : 'normal',
-              marginBottom: 10,
+              setFileByPath(change.path);
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div
-                style={{
-                  background: '#5F5F5F',
-                  width: 19,
-                  height: 19,
-                  borderRadius: 19,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {/* <FontAwesomeIcon
-                  color="black"
-                  icon="check"
-                  style={{ fontSize: 10 }}
-                /> */}
-                <span
-                  style={{
-                    fontSize: 11,
-                    color: '#000',
-                    fontWeight: 'bold',
-                    fontFamily: 'Inconsolata',
-                  }}
-                >
-                  {index + 1}
+              <div className="step-circle">
+                <span style={{ display: change.isDraft ? 'none' : 'block' }}>
+                  {isBeforeActive && <FontAwesomeIcon icon="check" />}
                 </span>
               </div>
-              <div style={{ width: 10, height: 1, background: '#666' }}></div>
+
               {change.isFileNode ? (
-                <div>open "{change.path.split('/').pop()}"</div>
+                <div className="step-file">{change.path.split('/').pop()}</div>
               ) : (
-                <div
-                  style={{
-                    width: 'calc(100% - 50px)',
-                    height: 35,
-                    borderRadius: 2,
-                    background: change.isFileNode ? 'red' : 'rgb(52 52 52)',
-                  }}
-                >
+                <>
+                  <div className="step-line-h"></div>
+                  <div className="step-code">
+                    <DeltaPreview preview={preview} />
+                  </div>
                   {change.isDraft && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.nativeEvent.stopImmediatePropagation();
-                        undraftChange(change.id);
-                      }}
-                    >
-                      save
-                    </button>
+                    <div className="icons">
+                      <FontAwesomeIcon
+                        icon="magnifying-glass"
+                        className={classNames({
+                          active: change.id === highlightChangeId,
+                        })}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.nativeEvent.stopImmediatePropagation();
+
+                          if (change.id === highlightChangeId) {
+                            setHighlightChangeId(null);
+                          } else {
+                            setHighlightChangeId(change.id);
+                          }
+                        }}
+                      />
+                      <FontAwesomeIcon
+                        icon="floppy-disk"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.nativeEvent.stopImmediatePropagation();
+
+                          undraftChange(change.id);
+                        }}
+                      />
+                    </div>
                   )}
-                </div>
+                </>
               )}
             </div>
-            {index !== 0 && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: -1,
-                  height: 'calc(50% - 8px)',
-                  width: 1,
-                  background: '#666',
-                  left: 9,
-                }}
-              ></div>
-            )}
-            {index !== nonDepChanges.length - 1 && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: 'calc(50% + 9px)',
-                  height: '50%',
-                  width: 1,
-                  background: '#666',
-                  left: 9,
-                }}
-              ></div>
-            )}
+            {index !== 0 && <div className="step-line-v-top"></div>}
+            {lastChange?.id !== change.id || !change.isDraft ? (
+              <div className="step-line-v-bottom"></div>
+            ) : null}
           </div>
         );
       })}
+
+      {!lastChange?.isDraft && nonDepChanges.length !== 0 && (
+        <div
+          className={classNames({
+            step: true,
+            draft: true,
+            active: !highlightChangeId,
+          })}
+        >
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div className="step-circle"></div>
+            <>
+              <div className="step-line-h"></div>
+              <div
+                className="step-code"
+                onClick={() => {
+                  setHighlightChangeId(null);
+                  if (lastChange) {
+                    setFileByPath(lastChange.path);
+                  }
+                }}
+              ></div>
+              <div className="icons">
+                <FontAwesomeIcon className="disabled" icon="magnifying-glass" />
+                <FontAwesomeIcon className="disabled" icon="floppy-disk" />
+              </div>
+            </>
+          </div>
+          <div className="step-line-v-top"></div>
+        </div>
+      )}
     </div>
   );
 }

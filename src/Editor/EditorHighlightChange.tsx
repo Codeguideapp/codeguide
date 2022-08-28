@@ -1,36 +1,84 @@
 import { useAtomValue } from 'jotai';
 import * as monaco from 'monaco-editor';
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 
-import {
-  activeChangeIdAtom,
-  changesAtom,
-  changesOrderAtom,
-} from '../atoms/changes';
+import { changesAtom, changesOrderAtom } from '../atoms/changes';
+import { activeFileAtom } from '../atoms/files';
 import { getFileContent } from '../utils/getFileContent';
 
-const modelOld = monaco.editor.createModel('', 'typescript');
-const modelNew = monaco.editor.createModel('', 'typescript');
+const modelPrev = monaco.editor.createModel('', 'typescript');
+const modelCurrent = monaco.editor.createModel('', 'typescript');
 
 export function EditorHighlightChange({ changeId }: { changeId: string }) {
-  const editorDiffDom = useRef<HTMLDivElement>(null);
-  //const editor = useRef<monaco.editor.IStandaloneCodeEditor>();
+  const monacoDom = useRef<HTMLDivElement>(null);
+  const standaloneEditor = useRef<monaco.editor.IStandaloneCodeEditor>();
   const diffEditor = useRef<monaco.editor.IDiffEditor>();
-  const activeChangeId = useAtomValue(activeChangeIdAtom);
   const changes = useAtomValue(changesAtom);
   const changesOrder = useAtomValue(changesOrderAtom);
-  const path = useMemo(
-    () => (activeChangeId ? changes[activeChangeId].path : ''),
-    [activeChangeId, changes]
-  );
+  const activeFile = useAtomValue(activeFileAtom);
 
   useEffect(() => {
-    if (!editorDiffDom.current) return;
+    if (!monacoDom.current) return;
+    if (!activeFile) return;
 
-    if (!diffEditor.current) {
-      diffEditor.current = monaco.editor.createDiffEditor(
-        editorDiffDom.current,
-        {
+    const contentCurrent = getFileContent({
+      upToChangeId: changeId,
+      changes,
+      changesOrder,
+    });
+
+    const currentChange = changes[changeId];
+    const currentChangeIndex = changesOrder.findIndex((c) => c === changeId);
+    const prevChange = changes[changesOrder[currentChangeIndex - 1]];
+
+    if (activeFile.path !== currentChange.path) {
+      const changesUpToChangeId = changesOrder
+        .slice(0, currentChangeIndex)
+        .map((id) => changes[id]);
+
+      const changeForTheFile = changesUpToChangeId
+        .reverse()
+        .find((c) => c.path === activeFile.path);
+
+      if (changeForTheFile) {
+        modelCurrent.setValue(
+          getFileContent({
+            upToChangeId: changeForTheFile.id,
+            changes,
+            changesOrder,
+          })
+        );
+      } else {
+        modelCurrent.setValue('old');
+      }
+
+      standaloneEditor.current = monaco.editor.create(monacoDom.current, {
+        automaticLayout: true,
+        theme: 'darkTheme',
+        readOnly: true,
+      });
+      standaloneEditor.current.setModel(modelCurrent);
+    } else if (!prevChange || prevChange.path !== currentChange.path) {
+      modelCurrent.setValue(contentCurrent);
+
+      standaloneEditor.current = monaco.editor.create(monacoDom.current, {
+        automaticLayout: true,
+        theme: 'darkTheme',
+        readOnly: true,
+      });
+      standaloneEditor.current.setModel(modelCurrent);
+    } else {
+      const contentPrev = getFileContent({
+        upToChangeId: prevChange.id,
+        changes,
+        changesOrder,
+      });
+
+      modelCurrent.setValue(contentCurrent);
+      modelPrev.setValue(contentPrev);
+
+      if (!diffEditor.current) {
+        diffEditor.current = monaco.editor.createDiffEditor(monacoDom.current, {
           automaticLayout: true,
           theme: 'darkTheme',
           readOnly: true,
@@ -38,48 +86,29 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
           glyphMargin: true,
           ignoreTrimWhitespace: true,
           renderMarginRevertIcon: false,
-        }
-      );
+        });
+      }
+
+      diffEditor.current.setModel({
+        original: modelPrev,
+        modified: modelCurrent,
+      });
     }
 
-    const changeIdBefore = changesOrder.findIndex((c) => c === changeId);
-    const changeBefore = changes[changesOrder[changeIdBefore - 1]];
-    if (!changeBefore) return;
-
-    diffEditor.current.setModel({
-      original: modelOld,
-      modified: modelNew,
-    });
-
-    const content = getFileContent({
-      upToChangeId: changeId,
-      changes,
-      changesOrder,
-    });
-
-    const contentBefore = getFileContent({
-      upToChangeId: changeBefore.id,
-      changes,
-      changesOrder,
-    });
-
-    modelOld.setValue(contentBefore);
-    modelNew.setValue(content);
-
     return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      // model.dispose()
+      standaloneEditor.current?.dispose();
+      standaloneEditor.current = undefined;
 
       diffEditor.current?.dispose();
       diffEditor.current = undefined;
     };
-  }, [changes, changesOrder, changeId, editorDiffDom]);
+  }, [changes, changesOrder, activeFile, changeId, monacoDom]);
 
   return (
     <div style={{ height: 'calc(100% - 50px)', width: '100%' }}>
-      <div ref={editorDiffDom} className="monaco read-mode"></div>
+      <div ref={monacoDom} className="monaco read-mode"></div>
       <div className="editor-statusbar" style={{ height: 20 }}>
-        <div className="path">test {path}</div>
+        <div className="path">{activeFile?.path || ''}</div>
       </div>
     </div>
   );
