@@ -46,6 +46,7 @@ export function Guide() {
 
   return (
     <div className="guide">
+      <div className="header">Steps</div>
       {nonDepChanges.map((change, index) => {
         const changeIndex = changesOrder.indexOf(change.id);
 

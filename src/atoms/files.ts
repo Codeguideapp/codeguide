@@ -51,33 +51,36 @@ export const setFileChangesAtom = atom(null, async (get, set, pr: number) => {
   set(fileChangesAtom, files);
 });
 
-export const setFileByPathAtom = atom(null, (get, set, path: string) => {
-  const fileChanges = get(fileChangesAtom);
+export const setFileByPathAtom = atom(
+  null,
+  (get, set, path: string | undefined) => {
+    const fileChanges = get(fileChangesAtom);
 
-  const file = fileChanges.find((f) => f.path === path);
+    const file = fileChanges.find((f) => f.path === path);
 
-  set(activeFileAtom, file);
+    set(activeFileAtom, file);
 
-  if (!file) return;
+    if (!file) return;
 
-  const changesOrder = get(changesOrderAtom);
-  const changes = get(changesAtom);
+    const changesOrder = get(changesOrderAtom);
+    const changes = get(changesAtom);
 
-  if (
-    file.status !== 'added' &&
-    !changesOrder.find((id) => changes[id].path === file.path)
-  ) {
-    // this is first time change is saved for a file
-    set(saveDeltaAtom, {
-      file,
-      isFileDepChange: true,
-      delta: new Delta().insert(file.oldVal),
-    });
+    if (
+      file.status !== 'added' &&
+      !changesOrder.find((id) => changes[id].path === file.path)
+    ) {
+      // this is first time change is saved for a file
+      set(saveDeltaAtom, {
+        file,
+        isFileDepChange: true,
+        delta: new Delta().insert(file.oldVal),
+      });
+    }
+
+    const highlightChangeId = get(highlightChangeIdAtom);
+
+    if (!highlightChangeId) {
+      set(saveFileNodeAtom, file.path);
+    }
   }
-
-  const highlightChangeId = get(highlightChangeIdAtom);
-
-  if (!highlightChangeId) {
-    set(saveFileNodeAtom, file.path);
-  }
-});
+);

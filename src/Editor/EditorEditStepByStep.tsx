@@ -170,7 +170,7 @@ export function EditorEditStepByStep() {
   ]); // not watching changes as dep, because it is covered by changesOrder
 
   return (
-    <div style={{ height: 'calc(100% - 50px)' }}>
+    <div style={{ height: '100%' }}>
       <Split
         className="split-editor"
         direction="horizontal"
@@ -194,9 +194,6 @@ export function EditorEditStepByStep() {
           ></div>
         </div>
       </Split>
-      <div className="editor-statusbar" style={{ height: 20 }}>
-        <div className="path">{activeFile?.path}</div>
-      </div>
     </div>
   );
 }

@@ -195,7 +195,7 @@ code {
 
 .gutter.gutter-vertical {
   cursor: row-resize;
-  background: #191c1f;
+  background: #2f2f2f;
 }
 
 .timeline {
@@ -265,10 +265,20 @@ code {
 .editor-top {
   height: 30px;
   width: 100%;
-  background: var(--background-1);
+  background: var(--background-3);
   text-align: left;
   display: flex;
   align-items: center;
+  justify-content: space-between;
+}
+.editor-top .filename {
+  font-family: 'Roboto';
+  padding: 0 25px;
+  background: var(--background-1);
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  font-size: 13px;
 }
 
 .editor-bottom {
@@ -292,16 +302,6 @@ code {
   width: 200px;
   direction: rtl;
   text-align: left;
-}
-
-.editor-top .filename {
-  padding: 0 15px;
-  font-weight: bold;
-  background: var(--background-1);
-  height: 35px;
-  line-height: 35px;
-  min-width: 120px;
-  text-align: center;
 }
 
 .editor-toolbar {

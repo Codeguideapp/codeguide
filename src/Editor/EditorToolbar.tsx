@@ -13,7 +13,7 @@ import { useCallback } from 'react';
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
 import { selectionsAtom } from '../atoms/monaco';
-import { useStepByStepDiffAtom } from '../atoms/options';
+import { showWhitespaceAtom, useStepByStepDiffAtom } from '../atoms/options';
 import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
 import { modifiedModel } from '../utils/monaco';
 import { ReactComponent as WhitespaceIcon } from './whitespace.svg';
@@ -29,6 +29,7 @@ export function EditorToolbar() {
     useStepByStepDiffAtom
   );
   const [selections] = useAtom(selectionsAtom);
+  const [showWhitespace, setShowWhitespace] = useAtom(showWhitespaceAtom);
 
   const highligterClickHandler = useCallback(() => {
     if (!activeFile) return;
@@ -71,13 +72,25 @@ export function EditorToolbar() {
 
   return (
     <div className="editor-toolbar">
-      <Tooltip title={`Step-By-Step Diff: ${useStepByStepDiff ? 'ON' : 'OFF'}`}>
+      <Tooltip
+        title={`Step-By-Step Diff (BETA): ${useStepByStepDiff ? 'ON' : 'OFF'}`}
+      >
         <FontAwesomeIcon
           icon="code-compare"
           style={{ color: useStepByStepDiff ? 'rgb(178 97 201)' : '#666' }}
           onClick={() => setUseStepByStepDiff(!useStepByStepDiff)}
         />
       </Tooltip>
+
+      {!useStepByStepDiff && (
+        <Tooltip title="Show Leading/Trailing Whitespace Differences">
+          <WhitespaceIcon
+            width={16}
+            style={{ opacity: showWhitespace ? 1 : 0.4 }}
+            onClick={() => setShowWhitespace(!showWhitespace)}
+          />
+        </Tooltip>
+      )}
 
       {selections.length ? (
         <Tooltip title="Save selection">
@@ -93,13 +106,5 @@ export function EditorToolbar() {
         </Tooltip>
       )}
     </div>
-  );
-}
-
-export function EditorToolbarRight() {
-  return (
-    <Tooltip title="Show Leading/Trailing Whitespace Differences">
-      <WhitespaceIcon width={16} />
-    </Tooltip>
   );
 }

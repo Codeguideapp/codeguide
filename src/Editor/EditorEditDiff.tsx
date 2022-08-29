@@ -7,11 +7,11 @@ import React, { useEffect, useRef } from 'react';
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
 import { selectionsAtom } from '../atoms/monaco';
+import { showWhitespaceAtom } from '../atoms/options';
 import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
 import { composeDeltas } from '../utils/deltaUtils';
 import { getFileContent } from '../utils/getFileContent';
 import { modifiedModel, originalModel, previewModel } from '../utils/monaco';
-import { EditorToolbarRight } from './EditorToolbar';
 
 export function EditorEditDiff() {
   const modifiedContentListener = useRef<monaco.IDisposable>();
@@ -23,6 +23,7 @@ export function EditorEditDiff() {
   const [, saveDelta] = useAtom(saveDeltaAtom);
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
+  const [showWhitespace] = useAtom(showWhitespaceAtom);
 
   useEffect(() => {
     // initializing editor
@@ -36,7 +37,7 @@ export function EditorEditDiff() {
       //originalEditable: true,
       //readOnly: false,
       glyphMargin: true,
-      ignoreTrimWhitespace: true,
+      ignoreTrimWhitespace: !showWhitespace,
     });
 
     diffEditor.current.setModel({
@@ -53,6 +54,15 @@ export function EditorEditDiff() {
       originalModel.setValue('');
     };
   }, [editorDiffDom, setSelections]);
+
+  useEffect(() => {
+    // initializing editor
+    if (!diffEditor.current) return;
+
+    diffEditor.current.updateOptions({
+      ignoreTrimWhitespace: !showWhitespace,
+    });
+  }, [showWhitespace]);
 
   useEffect(() => {
     modifiedContentListener.current?.dispose();
@@ -128,14 +138,8 @@ export function EditorEditDiff() {
       <div
         ref={editorDiffDom}
         className="monaco edit-mode"
-        style={{ height: 'calc(100% - 50px)' }}
+        style={{ height: '100%' }}
       ></div>
-      <div className="editor-statusbar" style={{ height: 20 }}>
-        <div className="path">{activeFile?.path}</div>
-      </div>
-      <div style={{ position: 'absolute', top: -28, height: 28, right: 0 }}>
-        <EditorToolbarRight />
-      </div>
     </div>
   );
 }

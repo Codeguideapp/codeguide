@@ -105,11 +105,8 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
   }, [changes, changesOrder, activeFile, changeId, monacoDom]);
 
   return (
-    <div style={{ height: 'calc(100% - 50px)', width: '100%' }}>
+    <div style={{ height: '100%', width: '100%' }}>
       <div ref={monacoDom} className="monaco read-mode"></div>
-      <div className="editor-statusbar" style={{ height: 20 }}>
-        <div className="path">{activeFile?.path || ''}</div>
-      </div>
     </div>
   );
 }

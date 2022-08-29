@@ -1,8 +1,17 @@
 .guide {
   overflow: auto;
-  background: var(--background-1);
-  padding-top: 30px;
+  background: var(--background-3);
 }
+.guide .header {
+  text-transform: uppercase;
+  font-family: 'Roboto';
+  font-size: 11px;
+  font-weight: bold;
+  padding-left: 15px;
+  height: 30px;
+  line-height: 30px;
+}
+
 .guide .step {
   position: relative;
   margin: 10px;
@@ -24,7 +33,7 @@
   width: calc(100% - 50px);
   min-height: 35px;
   border-radius: 4px;
-  background: #181a1c;
+  background: #24262a;
   border: 1px solid #212326;
   padding: 5px;
 }
@@ -38,8 +47,8 @@
 }
 .guide .active .step-code,
 .guide .before-active .step-code {
-  background: #212326;
-  border-color: #212326;
+  background: #2c2f34;
+  border-color: #2c2f34;
 }
 
 .guide .draft .step-circle {
@@ -100,7 +109,7 @@
 .guide .step .icons {
   position: absolute;
   right: 22px;
-  background: #181a1c;
+  background: #1f2124;
   display: flex;
   align-items: center;
   padding: 9px;
