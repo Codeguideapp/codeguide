@@ -31,6 +31,17 @@ export type Change = {
 export const changesAtom = atom<Changes>(produce({}, () => {}));
 export const changesOrderAtom = atom<string[]>([]);
 export const highlightChangeIdAtom = atom<string | null>(null);
+export const highlightChangeIndexAtom = atom((get) => {
+  const changes = get(changesAtom);
+  const changesOrder = get(changesOrderAtom);
+  const highlightChangeId = get(highlightChangeIdAtom);
+
+  const ids = changesOrder.filter(
+    (id) => !changes[id].isFileDepChange && !changes[id].isFileNode
+  );
+
+  return highlightChangeId ? ids.indexOf(highlightChangeId) + 1 : null;
+});
 export const selectedChangeIdsAtom = atom<string[]>([]);
 
 export const updateChangesAtom = atom(

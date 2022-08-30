@@ -2,7 +2,10 @@ import classNames from 'classnames';
 import { useAtom } from 'jotai';
 import Split from 'react-split';
 
-import { highlightChangeIdAtom } from '../atoms/changes';
+import {
+  highlightChangeIdAtom,
+  highlightChangeIndexAtom,
+} from '../atoms/changes';
 import { activeFileAtom, unsavedFilePathsAtom } from '../atoms/files';
 import { useStepByStepDiffAtom } from '../atoms/options';
 import { Comments } from '../Comments/Comments';
@@ -18,6 +21,7 @@ export function Editor() {
   const [useStepByStepDiff] = useAtom(useStepByStepDiffAtom);
   const [activeFile] = useAtom(activeFileAtom);
   const [unsavedFilePaths] = useAtom(unsavedFilePathsAtom);
+  const [highlightChangeIndex] = useAtom(highlightChangeIndexAtom);
 
   return (
     <div className="main-right">
@@ -31,8 +35,14 @@ export function Editor() {
         <Split direction="vertical" sizes={[75, 25]} gutterSize={1}>
           <div>
             <div className="editor-top">
-              <div className="filename">
+              <div
+                className={classNames({
+                  filename: true,
+                  'in-past': Boolean(highlightChangeId),
+                })}
+              >
                 {activeFile ? activeFile?.path.split('/').pop() : 'Welcome'}
+                {highlightChangeId ? `  (step ${highlightChangeIndex})` : ''}
                 <div
                   className={classNames({
                     unsaved: true,

@@ -9,7 +9,11 @@ import {
   changesOrderAtom,
   highlightChangeIdAtom,
 } from './changes';
-import { saveDeltaAtom, saveFileNodeAtom } from './saveDeltaAtom';
+import {
+  saveDeltaAtom,
+  saveFileNodeAtom,
+  undraftChangeAtom,
+} from './saveDeltaAtom';
 
 export type File = {
   status: 'added' | 'modified' | 'deleted';
@@ -28,6 +32,22 @@ export const unsavedFilePathsAtom = atom((get) => {
   return Object.values(changes)
     .filter((c) => c.isDraft)
     .map((c) => c.path);
+});
+
+export const saveActiveFileAtom = atom(null, (get, set) => {
+  const activeFile = get(activeFileAtom);
+
+  if (!activeFile) return;
+
+  const changes = get(changesAtom);
+
+  const draftChange = Object.values(changes).find(
+    (c) => c.isDraft && c.path === activeFile.path
+  );
+
+  if (!draftChange) return;
+
+  set(undraftChangeAtom, draftChange.id);
 });
 
 export const setFileChangesAtom = atom(null, async (get, set, pr: number) => {

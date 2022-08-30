@@ -292,6 +292,9 @@ code {
 .editor-top .filename .unsaved.hidden {
   visibility: hidden;
 }
+.editor-top .filename.in-past {
+  color: rgb(255, 208, 121);
+}
 
 .editor-bottom {
   height: calc(100% - 30px);
