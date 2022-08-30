@@ -1,13 +1,17 @@
 import './Guide.css';
 
 import { library } from '@fortawesome/fontawesome-svg-core';
-import { faFile } from '@fortawesome/free-regular-svg-icons';
 import {
+  faBackwardStep,
   faCheck,
-  faFloppyDisk,
+  faForwardStep,
+  faImage,
   faMagnifyingGlass,
+  faPlay,
+  faUpload,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Tooltip } from 'antd';
 import classNames from 'classnames';
 import { useAtom } from 'jotai';
 import { last } from 'lodash';
@@ -22,7 +26,15 @@ import { undraftChangeAtom } from '../atoms/saveDeltaAtom';
 import { DeltaPreview } from '../Shared/DeltaPreview';
 import { getDeltaPreview, getFileContent } from '../utils/deltaUtils';
 
-library.add(faFloppyDisk, faMagnifyingGlass, faCheck, faFile);
+library.add(
+  faMagnifyingGlass,
+  faCheck,
+  faImage,
+  faBackwardStep,
+  faForwardStep,
+  faPlay,
+  faUpload
+);
 
 export function Guide() {
   const [changes] = useAtom(changesAtom);
@@ -45,7 +57,15 @@ export function Guide() {
 
   return (
     <div className="guide">
-      <div className="header">Steps</div>
+      <div className="header">
+        <div className="left"></div>
+        <div className="right">
+          <Tooltip title="Publish" placement="topRight">
+            <span style={{ fontSize: 12, opacity: 0.6 }}>Publish</span>
+            <FontAwesomeIcon icon="upload" />
+          </Tooltip>
+        </div>
+      </div>
       <div className="body">
         {nonDepChanges.map((change, index) => {
           const changeIndex = changesOrder.indexOf(change.id);
@@ -136,15 +156,6 @@ export function Guide() {
                             }
                           }}
                         />
-                        <FontAwesomeIcon
-                          icon="floppy-disk"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.nativeEvent.stopImmediatePropagation();
-
-                            undraftChange(change.id);
-                          }}
-                        />
                       </div>
                     )}
                   </>
@@ -157,6 +168,7 @@ export function Guide() {
         {!lastChange?.isDraft && nonDepChanges.length !== 0 && (
           <div
             className={classNames({
+              placeholder: true,
               step: true,
               draft: true,
               active: !highlightChangeId,
@@ -176,17 +188,23 @@ export function Guide() {
                     }
                   }}
                 ></div>
-                <div className="icons">
-                  <FontAwesomeIcon
-                    className="disabled"
-                    icon="magnifying-glass"
-                  />
-                  <FontAwesomeIcon className="disabled" icon="floppy-disk" />
-                </div>
               </>
             </div>
           </div>
         )}
+      </div>
+      <div className="footer">
+        <div className="left">
+          <FontAwesomeIcon icon="backward-step" />
+          <FontAwesomeIcon icon="play" rotation={180} />
+          <FontAwesomeIcon icon="play" />
+          <FontAwesomeIcon icon="forward-step" />
+        </div>
+        <div className="right">
+          <Tooltip title="Add image/video step" placement="topRight">
+            <FontAwesomeIcon icon="image" />
+          </Tooltip>
+        </div>
       </div>
     </div>
   );
