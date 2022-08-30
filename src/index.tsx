@@ -13,10 +13,7 @@ import Split from 'react-split';
 import { setFileChangesAtom } from './atoms/files';
 import { windowHeightAtom, windowWidthAtom } from './atoms/layout';
 import { Editor } from './Editor/Editor';
-import {
-  darkTheme,
-  darkThemeInvertedDif,
-} from './Editor/monaco-themes/defaultDark';
+import { darkTheme, darkThemeInvertedDif } from './Editor/monaco-themes/dark';
 import { LeftSide } from './LeftSide/LeftSide';
 import reportWebVitals from './reportWebVitals';
 

@@ -9,8 +9,7 @@ import { activeFileAtom } from '../atoms/files';
 import { selectionsAtom } from '../atoms/monaco';
 import { showWhitespaceAtom } from '../atoms/options';
 import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
-import { composeDeltas } from '../utils/deltaUtils';
-import { getFileContent } from '../utils/getFileContent';
+import { composeDeltas, getFileContent } from '../utils/deltaUtils';
 import { modifiedModel, originalModel, previewModel } from '../utils/monaco';
 
 export function EditorEditDiff() {

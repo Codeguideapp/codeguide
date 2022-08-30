@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from 'react';
 
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
-import { getFileContent } from '../utils/getFileContent';
+import { getFileContent } from '../utils/deltaUtils';
 
 const modelPrev = monaco.editor.createModel('', 'typescript');
 const modelCurrent = monaco.editor.createModel('', 'typescript');

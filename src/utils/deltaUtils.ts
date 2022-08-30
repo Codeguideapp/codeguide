@@ -1,5 +1,7 @@
 import Delta from 'quill-delta';
 
+import { Change } from '../atoms/changes';
+
 export function composeDeltas(deltas: Delta[]) {
   return deltas.reduce((acc, curr) => acc.compose(curr), new Delta());
 }
@@ -12,6 +14,31 @@ export function deltaToString(deltas: Delta[]) {
 
     return text + op.insert;
   }, '');
+}
+
+export function getFileContent({
+  upToChangeId,
+  changesOrder,
+  changes,
+  excludeChange,
+}: {
+  upToChangeId: string;
+  changesOrder: string[];
+  changes: Record<string, Change>;
+  excludeChange?: boolean;
+}) {
+  const change = changes[upToChangeId];
+  if (!change) throw new Error('change not found');
+
+  const pathFilteredIds = changesOrder.filter(
+    (id) => changes[id].path === change.path && changes[id].delta
+  );
+  const changesIdsToApply = pathFilteredIds.slice(
+    0,
+    pathFilteredIds.indexOf(change.id) + (excludeChange ? 0 : 1)
+  );
+
+  return deltaToString(changesIdsToApply.map((id) => changes[id].delta!));
 }
 
 export function calcStat(delta: Delta): [number, number] {
@@ -28,26 +55,6 @@ export function calcStat(delta: Delta): [number, number] {
   }
 
   return [inserts, deletes];
-}
-
-export function countLines(delta: Delta, value: string, eol: string): number {
-  let index = 0;
-  let lines = 0;
-  for (const op of delta.ops) {
-    if (op.retain !== undefined) {
-      index += op.retain;
-    }
-    if (typeof op.insert === 'string') {
-      lines += op.insert.split(eol).length;
-    }
-    if (op.delete) {
-      const deletedVal = value.slice(index, index + op.delete);
-      lines += deletedVal.split(eol).length;
-      index += op.delete;
-    }
-  }
-
-  return lines;
 }
 
 export function getDeltaPreview(delta: Delta, fileVal: string, eol: string) {

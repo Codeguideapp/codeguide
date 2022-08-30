@@ -20,8 +20,7 @@ import {
 import { setFileByPathAtom } from '../atoms/files';
 import { undraftChangeAtom } from '../atoms/saveDeltaAtom';
 import { DeltaPreview } from '../Shared/DeltaPreview';
-import { getDeltaPreview } from '../utils/deltaUtils';
-import { getFileContent } from '../utils/getFileContent';
+import { getDeltaPreview, getFileContent } from '../utils/deltaUtils';
 
 library.add(faFloppyDisk, faMagnifyingGlass, faCheck, faFile);
 
