@@ -1,3 +1,4 @@
+// eslint-disable-next-line simple-import-sort/imports
 import './index.css';
 import 'antd/dist/antd.dark.css';
 import '@fontsource/inconsolata';
@@ -6,11 +7,13 @@ import '@fontsource/roboto';
 import { useAtom } from 'jotai';
 import { debounce } from 'lodash';
 import * as monaco from 'monaco-editor';
+import * as Mousetrap from 'mousetrap';
+import 'mousetrap/plugins/global-bind/mousetrap-global-bind'; // must be imported after Mousetrap
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import Split from 'react-split';
 
-import { setFileChangesAtom } from './atoms/files';
+import { saveActiveFileAtom, setFileChangesAtom } from './atoms/files';
 import { windowHeightAtom, windowWidthAtom } from './atoms/layout';
 import { Editor } from './Editor/Editor';
 import { darkTheme, darkThemeInvertedDif } from './Editor/monaco-themes/dark';
@@ -21,6 +24,15 @@ function App() {
   const [, setWindowHeight] = useAtom(windowHeightAtom);
   const [, setWindowWidth] = useAtom(windowWidthAtom);
   const [, setFileChanges] = useAtom(setFileChangesAtom);
+  const [, saveActiveFile] = useAtom(saveActiveFileAtom);
+
+  useEffect(() => {
+    Mousetrap.bindGlobal(['command+s', 'ctrl+s'], function (e) {
+      e?.preventDefault();
+
+      saveActiveFile();
+    });
+  }, [saveActiveFile]);
 
   useEffect(() => {
     window.addEventListener(
