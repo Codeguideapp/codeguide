@@ -7,15 +7,22 @@
   font-family: 'Roboto';
   font-size: 11px;
   font-weight: bold;
-  padding-left: 15px;
+  padding-left: 17px;
   height: 30px;
   line-height: 30px;
+}
+.guide .body {
+  height: calc(100% - 60px);
+  overflow: auto;
 }
 
 .guide .step {
   position: relative;
   margin: 10px;
   cursor: pointer;
+}
+.guide .step.file {
+  cursor: default;
 }
 
 .guide .step-circle {
@@ -27,6 +34,18 @@
   align-items: center;
   justify-content: center;
   border: 1px solid #373737;
+  z-index: 1;
+}
+
+.guide .file .step-circle {
+  width: 7px;
+  height: 7px;
+  margin: 7px;
+  background-color: var(--background-1) !important;
+}
+
+.guide .file .step-circle span {
+  display: none !important;
 }
 
 .guide .step-code {
@@ -45,14 +64,16 @@
 .guide .step:hover .step-code {
   border-color: #3f4449;
 }
-.guide .active .step-code,
+.guide .active .step-code {
+  border-color: #272a2e;
+}
 .guide .before-active .step-code {
-  background: #2c2f34;
-  border-color: #2c2f34;
+  background: #2c3035;
+  border-color: #272a2e;
 }
 
 .guide .draft .step-circle {
-  background: transparent;
+  background: var(--background-3);
   border: 1px solid #824500;
 }
 
@@ -82,6 +103,10 @@
 .guide .step-file {
   font-family: 'Inconsolata';
   margin-left: 10px;
+  width: calc(100% - 50px);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .guide .step-line-h {
@@ -89,21 +114,19 @@
   height: 1px;
   background: #373737;
 }
-.guide .step-line-v-top {
+.guide .step-line-v {
   position: absolute;
-  top: -3px;
-  height: calc(50% - 8px);
   width: 1px;
   background: #373737;
+  top: 0;
+  bottom: -10px;
   left: 10px;
 }
-.guide .step-line-v-bottom {
-  position: absolute;
-  top: calc(50% + 12px);
-  height: 50%;
-  width: 1px;
-  background: #373737;
-  left: 10px;
+.guide .step-line-v.first {
+  top: 10px;
+}
+.guide .step-line-v.last {
+  bottom: 25px;
 }
 
 .guide .step .icons {
@@ -113,6 +136,7 @@
   display: flex;
   align-items: center;
   padding: 9px;
+  padding-left: 4px;
 }
 .guide .step.active:not(.draft) .icons,
 .guide .step.before-active .iconse {
@@ -122,11 +146,24 @@
 .guide .step .icons svg {
   margin-left: 10px;
 }
+.guide .step .icons svg:first-child {
+  margin-left: 0;
+}
 .guide .step .icons svg.active {
   color: yellow;
 }
 .guide .step .icons svg.disabled {
   opacity: 0.2;
+}
+
+.guide .delta-preview {
+  color: #4b856a;
+}
+.guide .delta-preview .linenumber {
+  color: #909090;
+}
+.guide .delta-preview .deleted {
+  color: #995454;
 }
 
 .guide .step.after-active .step-file,

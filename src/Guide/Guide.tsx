@@ -47,136 +47,148 @@ export function Guide() {
   return (
     <div className="guide">
       <div className="header">Steps</div>
-      {nonDepChanges.map((change, index) => {
-        const changeIndex = changesOrder.indexOf(change.id);
+      <div className="body">
+        {nonDepChanges.map((change, index) => {
+          const changeIndex = changesOrder.indexOf(change.id);
 
-        const preview = getDeltaPreview(
-          change.delta,
-          getFileContent({
-            upToChangeId: change.id,
-            changes,
-            changesOrder,
-            excludeChange: true,
-          }),
-          '\n'
-        );
+          const preview = getDeltaPreview(
+            change.delta,
+            getFileContent({
+              upToChangeId: change.id,
+              changes,
+              changesOrder,
+              excludeChange: true,
+            }),
+            '\n'
+          );
 
-        const isBeforeActive =
-          highlightIndex === null ? true : changeIndex < highlightIndex;
+          const isBeforeActive =
+            highlightIndex === null ? true : changeIndex < highlightIndex;
 
-        const isAfterActive =
-          highlightIndex !== null && changeIndex > highlightIndex;
+          const isAfterActive =
+            highlightIndex !== null && changeIndex > highlightIndex;
 
-        return (
+          return (
+            <div
+              className={classNames({
+                'before-active': isBeforeActive,
+                'after-active': isAfterActive,
+                file: change.isFileNode,
+                step: true,
+                active:
+                  change.id === highlightChangeId ||
+                  (lastChange?.id === change.id &&
+                    change.isDraft &&
+                    !highlightChangeId),
+                draft: change.isDraft,
+              })}
+              key={change.id}
+              onClick={() => {
+                if (change.isFileNode) return;
+
+                if (change.isDraft) {
+                  setHighlightChangeId(null);
+                } else {
+                  setHighlightChangeId(change.id);
+                }
+
+                setFileByPath(change.path);
+              }}
+            >
+              <div
+                className={classNames({
+                  'step-line-v': true,
+                  first: index === 0,
+                  last: lastChange?.id === change.id && change.isDraft,
+                })}
+              ></div>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div className="step-circle">
+                  <span style={{ display: change.isDraft ? 'none' : 'block' }}>
+                    {isBeforeActive && <FontAwesomeIcon icon="check" />}
+                  </span>
+                </div>
+
+                {change.isFileNode ? (
+                  <div className="step-file">
+                    {change.path.split('/').pop()}
+                  </div>
+                ) : (
+                  <>
+                    <div className="step-line-h"></div>
+                    <div className="step-code">
+                      <DeltaPreview preview={preview} />
+                    </div>
+                    {change.isDraft && (
+                      <div className="icons">
+                        <FontAwesomeIcon
+                          icon="magnifying-glass"
+                          className={classNames({
+                            active: change.id === highlightChangeId,
+                          })}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.nativeEvent.stopImmediatePropagation();
+
+                            if (change.id === highlightChangeId) {
+                              setHighlightChangeId(null);
+                            } else {
+                              setHighlightChangeId(change.id);
+                            }
+                          }}
+                        />
+                        <FontAwesomeIcon
+                          icon="floppy-disk"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.nativeEvent.stopImmediatePropagation();
+
+                            undraftChange(change.id);
+                          }}
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          );
+        })}
+
+        {!lastChange?.isDraft && nonDepChanges.length !== 0 && (
           <div
             className={classNames({
-              'before-active': isBeforeActive,
-              'after-active': isAfterActive,
-              file: change.isFileNode,
               step: true,
-              active:
-                change.id === highlightChangeId ||
-                (lastChange?.id === change.id &&
-                  change.isDraft &&
-                  !highlightChangeId),
-              draft: change.isDraft,
+              draft: true,
+              active: !highlightChangeId,
             })}
-            key={change.id}
-            onClick={() => {
-              if (change.isDraft) {
-                setHighlightChangeId(null);
-              } else {
-                setHighlightChangeId(change.id);
-              }
-
-              setFileByPath(change.path);
-            }}
           >
             <div style={{ display: 'flex', alignItems: 'center' }}>
-              <div className="step-circle">
-                <span style={{ display: change.isDraft ? 'none' : 'block' }}>
-                  {isBeforeActive && <FontAwesomeIcon icon="check" />}
-                </span>
-              </div>
-
-              {change.isFileNode ? (
-                <div className="step-file">{change.path.split('/').pop()}</div>
-              ) : (
-                <>
-                  <div className="step-line-h"></div>
-                  <div className="step-code">
-                    <DeltaPreview preview={preview} />
-                  </div>
-                  {change.isDraft && (
-                    <div className="icons">
-                      <FontAwesomeIcon
-                        icon="magnifying-glass"
-                        className={classNames({
-                          active: change.id === highlightChangeId,
-                        })}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.nativeEvent.stopImmediatePropagation();
-
-                          if (change.id === highlightChangeId) {
-                            setHighlightChangeId(null);
-                          } else {
-                            setHighlightChangeId(change.id);
-                          }
-                        }}
-                      />
-                      <FontAwesomeIcon
-                        icon="floppy-disk"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.nativeEvent.stopImmediatePropagation();
-
-                          undraftChange(change.id);
-                        }}
-                      />
-                    </div>
-                  )}
-                </>
-              )}
+              <div className="step-line-v last"></div>
+              <div className="step-circle"></div>
+              <>
+                <div className="step-line-h"></div>
+                <div
+                  className="step-code"
+                  onClick={() => {
+                    setHighlightChangeId(null);
+                    if (lastChange) {
+                      setFileByPath(lastChange.path);
+                    }
+                  }}
+                ></div>
+                <div className="icons">
+                  <FontAwesomeIcon
+                    className="disabled"
+                    icon="magnifying-glass"
+                  />
+                  <FontAwesomeIcon className="disabled" icon="floppy-disk" />
+                </div>
+              </>
             </div>
-            {index !== 0 && <div className="step-line-v-top"></div>}
-            {lastChange?.id !== change.id || !change.isDraft ? (
-              <div className="step-line-v-bottom"></div>
-            ) : null}
           </div>
-        );
-      })}
-
-      {!lastChange?.isDraft && nonDepChanges.length !== 0 && (
-        <div
-          className={classNames({
-            step: true,
-            draft: true,
-            active: !highlightChangeId,
-          })}
-        >
-          <div style={{ display: 'flex', alignItems: 'center' }}>
-            <div className="step-circle"></div>
-            <>
-              <div className="step-line-h"></div>
-              <div
-                className="step-code"
-                onClick={() => {
-                  setHighlightChangeId(null);
-                  if (lastChange) {
-                    setFileByPath(lastChange.path);
-                  }
-                }}
-              ></div>
-              <div className="icons">
-                <FontAwesomeIcon className="disabled" icon="magnifying-glass" />
-                <FontAwesomeIcon className="disabled" icon="floppy-disk" />
-              </div>
-            </>
-          </div>
-          <div className="step-line-v-top"></div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
