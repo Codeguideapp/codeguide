@@ -104,9 +104,5 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
     };
   }, [changes, changesOrder, activeFile, changeId, monacoDom]);
 
-  return (
-    <div style={{ height: '100%', width: '100%' }}>
-      <div ref={monacoDom} className="monaco read-mode"></div>
-    </div>
-  );
+  return <div ref={monacoDom} className="monaco read-mode"></div>;
 }

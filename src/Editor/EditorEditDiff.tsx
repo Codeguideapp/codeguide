@@ -52,7 +52,7 @@ export function EditorEditDiff() {
       modifiedModel.setValue('');
       originalModel.setValue('');
     };
-  }, [editorDiffDom, setSelections]);
+  }, [editorDiffDom, setSelections]); // showWhitespace is used only for initialization so it is not included in dep
 
   useEffect(() => {
     // initializing editor
@@ -132,13 +132,5 @@ export function EditorEditDiff() {
       });
   }, [activeFile, changesOrder, saveDelta, setSelections]); // not watching changes as dep, because it is covered by changesOrder
 
-  return (
-    <div style={{ position: 'relative', height: '100%' }}>
-      <div
-        ref={editorDiffDom}
-        className="monaco edit-mode"
-        style={{ height: '100%' }}
-      ></div>
-    </div>
-  );
+  return <div ref={editorDiffDom} className="monaco edit-mode"></div>;
 }

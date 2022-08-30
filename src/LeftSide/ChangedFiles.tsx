@@ -8,7 +8,6 @@ import {
   fileChangesAtom,
   setFileByPathAtom,
 } from '../atoms/files';
-import { toggleBackToEditButtonAtom } from '../atoms/layout';
 
 const { DirectoryTree } = Tree;
 
@@ -16,7 +15,6 @@ export function ChangedFiles() {
   const [activeFile] = useAtom(activeFileAtom);
   const [, setFileByPath] = useAtom(setFileByPathAtom);
   const [fileChanges] = useAtom(fileChangesAtom);
-  const [, toggleBacktoEditButton] = useAtom(toggleBackToEditButtonAtom);
 
   const treeData = useMemo(() => {
     const treeData: DataNode[] = [];
@@ -39,7 +37,7 @@ export function ChangedFiles() {
   }
 
   return (
-    <div className="file-tree" onClick={toggleBacktoEditButton}>
+    <div className="file-tree">
       <div className="header">
         <span className="title">Changed files</span>
       </div>

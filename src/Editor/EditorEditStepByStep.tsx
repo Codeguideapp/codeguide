@@ -169,30 +169,22 @@ export function EditorEditStepByStep() {
   ]); // not watching changes as dep, because it is covered by changesOrder
 
   return (
-    <div style={{ height: '100%' }}>
-      <Split
-        className="split-editor"
-        direction="horizontal"
-        sizes={[25, 75]}
-        minSize={250}
-        gutterSize={1}
-      >
-        <DiffMarkersList
-          appliedMarkerRef={appliedMarkerRef}
-          diffMarkers={diffMarkers}
-          markerIds={markerIds}
-          modifiedModel={modifiedModel}
-          previewModel={previewModel}
-          editor={editor.current}
-        />
-        <div style={{ position: 'relative' }}>
-          <div
-            ref={monacoDom}
-            className="monaco edit-mode"
-            style={{ height: '100%' }}
-          ></div>
-        </div>
-      </Split>
-    </div>
+    <Split
+      className="split-editor"
+      direction="horizontal"
+      sizes={[25, 75]}
+      minSize={250}
+      gutterSize={1}
+    >
+      <DiffMarkersList
+        appliedMarkerRef={appliedMarkerRef}
+        diffMarkers={diffMarkers}
+        markerIds={markerIds}
+        modifiedModel={modifiedModel}
+        previewModel={previewModel}
+        editor={editor.current}
+      />
+      <div ref={monacoDom} className="monaco edit-mode"></div>
+    </Split>
   );
 }
