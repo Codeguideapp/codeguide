@@ -23,6 +23,12 @@ export type File = {
 
 export const activeFileAtom = atom<File | undefined>(undefined);
 export const fileChangesAtom = atom<File[]>([]);
+export const unsavedFilePathsAtom = atom((get) => {
+  const changes = get(changesAtom);
+  return Object.values(changes)
+    .filter((c) => c.isDraft)
+    .map((c) => c.path);
+});
 
 export const setFileChangesAtom = atom(null, async (get, set, pr: number) => {
   const apiFiles = await getFiles(pr);

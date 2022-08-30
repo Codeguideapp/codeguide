@@ -1,8 +1,9 @@
+import classNames from 'classnames';
 import { useAtom } from 'jotai';
 import Split from 'react-split';
 
 import { highlightChangeIdAtom } from '../atoms/changes';
-import { activeFileAtom } from '../atoms/files';
+import { activeFileAtom, unsavedFilePathsAtom } from '../atoms/files';
 import { useStepByStepDiffAtom } from '../atoms/options';
 import { Comments } from '../Comments/Comments';
 import { Guide } from '../Guide/Guide';
@@ -16,6 +17,7 @@ export function Editor() {
   const [highlightChangeId] = useAtom(highlightChangeIdAtom);
   const [useStepByStepDiff] = useAtom(useStepByStepDiffAtom);
   const [activeFile] = useAtom(activeFileAtom);
+  const [unsavedFilePaths] = useAtom(unsavedFilePathsAtom);
 
   return (
     <div className="main-right">
@@ -31,6 +33,14 @@ export function Editor() {
             <div className="editor-top">
               <div className="filename">
                 {activeFile ? activeFile?.path.split('/').pop() : 'Welcome'}
+                <div
+                  className={classNames({
+                    unsaved: true,
+                    hidden: activeFile?.path
+                      ? !unsavedFilePaths.includes(activeFile.path)
+                      : true,
+                  })}
+                ></div>
               </div>
               <EditorToolbar />
             </div>

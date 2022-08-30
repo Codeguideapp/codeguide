@@ -273,12 +273,24 @@ code {
 }
 .editor-top .filename {
   font-family: 'Roboto';
-  padding: 0 25px;
+  padding: 0 15px 0 25px;
   background: var(--background-1);
   height: 30px;
   line-height: 30px;
   text-align: center;
   font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+.editor-top .filename .unsaved {
+  background: #ccc;
+  width: 8px;
+  height: 8px;
+  border-radius: 8px;
+  margin-left: 8px;
+}
+.editor-top .filename .unsaved.hidden {
+  visibility: hidden;
 }
 
 .editor-bottom {
