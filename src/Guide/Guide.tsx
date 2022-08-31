@@ -2,12 +2,10 @@ import './Guide.css';
 
 import { library } from '@fortawesome/fontawesome-svg-core';
 import {
-  faBackwardStep,
   faCheck,
-  faForwardStep,
+  faFloppyDisk,
   faImage,
   faMagnifyingGlass,
-  faPlay,
   faUpload,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -25,16 +23,9 @@ import { setFileByPathAtom } from '../atoms/files';
 import { undraftChangeAtom } from '../atoms/saveDeltaAtom';
 import { DeltaPreview } from '../Shared/DeltaPreview';
 import { getDeltaPreview, getFileContent } from '../utils/deltaUtils';
+import { PrevNextControls } from './PrevNextControls';
 
-library.add(
-  faMagnifyingGlass,
-  faCheck,
-  faImage,
-  faBackwardStep,
-  faForwardStep,
-  faPlay,
-  faUpload
-);
+library.add(faFloppyDisk, faMagnifyingGlass, faCheck, faImage, faUpload);
 
 export function Guide() {
   const [changes] = useAtom(changesAtom);
@@ -60,10 +51,10 @@ export function Guide() {
       <div className="header">
         <div className="left"></div>
         <div className="right">
-          <Tooltip title="Publish" placement="topRight">
-            <span style={{ fontSize: 12, opacity: 0.6 }}>Publish</span>
+          <div className="label-icon">
+            <span>Publish</span>
             <FontAwesomeIcon icon="upload" />
-          </Tooltip>
+          </div>
         </div>
       </div>
       <div className="body">
@@ -137,27 +128,36 @@ export function Guide() {
                     <div className="step-line-h"></div>
                     <div className="step-code">
                       <DeltaPreview preview={preview} />
-                    </div>
-                    {change.isDraft && (
-                      <div className="icons">
-                        <FontAwesomeIcon
-                          icon="magnifying-glass"
-                          className={classNames({
-                            active: change.id === highlightChangeId,
-                          })}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.nativeEvent.stopImmediatePropagation();
+                      {change.isDraft && (
+                        <div className="icons">
+                          <FontAwesomeIcon
+                            icon="magnifying-glass"
+                            className={classNames({
+                              active: change.id === highlightChangeId,
+                            })}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.nativeEvent.stopImmediatePropagation();
 
-                            if (change.id === highlightChangeId) {
-                              setHighlightChangeId(null);
-                            } else {
-                              setHighlightChangeId(change.id);
-                            }
-                          }}
-                        />
-                      </div>
-                    )}
+                              if (change.id === highlightChangeId) {
+                                setHighlightChangeId(null);
+                              } else {
+                                setHighlightChangeId(change.id);
+                              }
+                            }}
+                          />
+                          <FontAwesomeIcon
+                            icon="floppy-disk"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.nativeEvent.stopImmediatePropagation();
+
+                              undraftChange(change.id);
+                            }}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
               </div>
@@ -194,12 +194,7 @@ export function Guide() {
         )}
       </div>
       <div className="footer">
-        <div className="left">
-          <FontAwesomeIcon icon="backward-step" />
-          <FontAwesomeIcon icon="play" rotation={180} />
-          <FontAwesomeIcon icon="play" />
-          <FontAwesomeIcon icon="forward-step" />
-        </div>
+        <PrevNextControls />
         <div className="right">
           <Tooltip title="Add image/video step" placement="topRight">
             <FontAwesomeIcon icon="image" />

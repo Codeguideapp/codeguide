@@ -12,17 +12,28 @@
   padding-right: 20px;
   height: 30px;
 }
-.guide .header svg,
 .guide .footer svg {
   opacity: 0.4;
   cursor: pointer;
 }
-.guide .footer svg:hover,
-.guide .header svg:hover {
+.guide .footer svg:hover {
+  opacity: 1;
+}
+.guide .header .label-icon {
+  cursor: pointer;
+  font-size: 12px;
+  opacity: 0.6;
+}
+.guide .header .label-icon:hover {
   opacity: 1;
 }
 
-.guide .footer .left svg,
+.guide .footer svg.disabled {
+  opacity: 0.1;
+  cursor: not-allowed;
+}
+
+.guide .footer .prev-next-controls svg,
 .guide .header .left svg {
   margin-right: 7px;
 }
@@ -151,12 +162,13 @@
 
 .guide .step .icons {
   position: absolute;
-  right: 9px;
+  right: 15px;
   background: #1f2124;
   display: flex;
   align-items: center;
-  padding: 9px;
   padding-left: 5px;
+  top: 2px;
+  height: calc(100% - 3px);
 }
 .guide .step.active:not(.draft) .icons,
 .guide .step.before-active .iconse {
