@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from 'react';
 
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
+import { showWhitespaceAtom } from '../atoms/options';
 import { getFileContent } from '../utils/deltaUtils';
 
 const modelPrev = monaco.editor.createModel('', 'typescript');
@@ -16,6 +17,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
   const changes = useAtomValue(changesAtom);
   const changesOrder = useAtomValue(changesOrderAtom);
   const activeFile = useAtomValue(activeFileAtom);
+  const showWhitespace = useAtomValue(showWhitespaceAtom);
 
   useEffect(() => {
     if (!monacoDom.current) return;
@@ -84,7 +86,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
           readOnly: true,
           renderSideBySide: false,
           glyphMargin: true,
-          ignoreTrimWhitespace: true,
+          ignoreTrimWhitespace: !showWhitespace,
           renderMarginRevertIcon: false,
         });
       }
@@ -102,7 +104,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
       diffEditor.current?.dispose();
       diffEditor.current = undefined;
     };
-  }, [changes, changesOrder, activeFile, changeId, monacoDom]);
+  }, [changes, changesOrder, activeFile, changeId, monacoDom, showWhitespace]);
 
   return <div ref={monacoDom} className="monaco read-mode"></div>;
 }
