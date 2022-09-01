@@ -1,5 +1,6 @@
 import produce, { Draft } from 'immer';
 import { atom } from 'jotai';
+import { last } from 'lodash';
 import type * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 
@@ -40,7 +41,14 @@ export const highlightChangeIndexAtom = atom((get) => {
     (id) => !changes[id].isFileDepChange && !changes[id].isFileNode
   );
 
-  return highlightChangeId ? ids.indexOf(highlightChangeId) + 1 : null;
+  const lastChangeId = last(ids);
+  const lastChange = lastChangeId ? changes[lastChangeId] : null;
+
+  return highlightChangeId
+    ? ids.indexOf(highlightChangeId) + 1
+    : lastChange?.isDraft
+    ? ids.length
+    : ids.length + 1;
 });
 export const selectedChangeIdsAtom = atom<string[]>([]);
 

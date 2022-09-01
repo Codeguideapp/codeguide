@@ -8,8 +8,8 @@ import {
 } from '../atoms/changes';
 import { activeFileAtom, unsavedFilePathsAtom } from '../atoms/files';
 import { useStepByStepDiffAtom } from '../atoms/options';
-import { Comments } from '../Comments/Comments';
 import { Guide } from '../Guide/Guide';
+import { Notes } from '../Notes/Notes';
 import { EditorEditDiff } from './EditorEditDiff';
 import { EditorEditStepByStep } from './EditorEditStepByStep';
 import { EditorHighlightChange } from './EditorHighlightChange';
@@ -66,7 +66,7 @@ export function Editor() {
               )}
             </div>
           </div>
-          <Comments />
+          <Notes />
         </Split>
 
         <Guide />

@@ -85,29 +85,31 @@ export function PrevNextControls() {
     return () => {
       Mousetrap.unbind('shift+left');
       Mousetrap.unbind('left');
+      Mousetrap.unbind('right');
+      Mousetrap.unbind('shift+right');
     };
   }, [goToFirstChange, goToPrevChange, goToNextChange, goToLastChange]);
 
   return (
     <div className="prev-next-controls">
-      {highlightChangeIndex === 1 || changesIdsNoFile.length === 0 ? (
+      {highlightChangeIndex === 1 ? (
         <FontAwesomeIcon icon="backward-step" className="disabled" />
       ) : (
         <FontAwesomeIcon icon="backward-step" onClick={goToFirstChange} />
       )}
-      {highlightChangeIndex === 1 || changesIdsNoFile.length === 0 ? (
+      {highlightChangeIndex === 1 ? (
         <FontAwesomeIcon icon="play" className="disabled" rotation={180} />
       ) : (
         <FontAwesomeIcon icon="play" onClick={goToPrevChange} rotation={180} />
       )}
 
-      {highlightChangeIndex === null ? (
+      {!highlightChangeId ? (
         <FontAwesomeIcon icon="play" className="disabled" />
       ) : (
         <FontAwesomeIcon icon="play" onClick={goToNextChange} />
       )}
 
-      {highlightChangeIndex === null ? (
+      {!highlightChangeId ? (
         <FontAwesomeIcon icon="forward-step" className="disabled" />
       ) : (
         <FontAwesomeIcon icon="forward-step" onClick={goToLastChange} />

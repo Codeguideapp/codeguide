@@ -162,13 +162,13 @@
 
 .guide .step .icons {
   position: absolute;
-  right: 15px;
+  top: 2px;
+  right: 10px;
+  padding: 0 5px;
+  height: calc(100% - 3px);
   background: #1f2124;
   display: flex;
   align-items: center;
-  padding-left: 5px;
-  top: 2px;
-  height: calc(100% - 3px);
 }
 .guide .step.active:not(.draft) .icons,
 .guide .step.before-active .iconse {
