@@ -19,6 +19,12 @@
   height: calc(100% - 30px);
   padding: 5px;
 }
+.notes .message {
+  opacity: 0.5;
+  font-family: 'Roboto';
+  font-size: 13px;
+  padding: 5px 15px;
+}
 .notes .header .title {
   font-weight: bold;
 }
@@ -33,7 +39,7 @@
   pointer-events: none;
   opacity: 0.5;
   font-family: 'Roboto';
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .notes .body-preview {

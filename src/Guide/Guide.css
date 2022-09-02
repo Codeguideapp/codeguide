@@ -16,6 +16,10 @@
   opacity: 0.4;
   cursor: pointer;
 }
+.guide .footer .right svg {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 .guide .footer svg:hover {
   opacity: 1;
 }

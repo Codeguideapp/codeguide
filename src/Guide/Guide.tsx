@@ -12,9 +12,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Tooltip } from 'antd';
 import classNames from 'classnames';
 import { useAtom } from 'jotai';
-import { last } from 'lodash';
 
 import {
+  activeChangeIdAtom,
   changesAtom,
   changesOrderAtom,
   highlightChangeIdAtom,
@@ -30,6 +30,7 @@ library.add(faFloppyDisk, faMagnifyingGlass, faCheck, faImage, faUpload);
 export function Guide() {
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
+  const [activeChangeId] = useAtom(activeChangeIdAtom);
   const [highlightChangeId, setHighlightChangeId] = useAtom(
     highlightChangeIdAtom
   );
@@ -40,11 +41,15 @@ export function Guide() {
     .filter((id) => !changes[id].isFileDepChange)
     .map((id) => changes[id]);
 
-  const lastChange = last(nonDepChanges);
-
-  const highlightIndex = highlightChangeId
-    ? changesOrder.indexOf(highlightChangeId)
+  const activeChangeIndex = activeChangeId
+    ? changesOrder.indexOf(activeChangeId)
     : null;
+
+  if (nonDepChanges.length === 0) {
+    return <div className="guide"></div>;
+  }
+
+  const lastChange = nonDepChanges[nonDepChanges.length - 1];
 
   return (
     <div className="guide">
@@ -73,10 +78,10 @@ export function Guide() {
           );
 
           const isBeforeActive =
-            highlightIndex === null ? true : changeIndex < highlightIndex;
+            activeChangeIndex === null ? true : changeIndex < activeChangeIndex;
 
           const isAfterActive =
-            highlightIndex !== null && changeIndex > highlightIndex;
+            activeChangeIndex !== null && changeIndex > activeChangeIndex;
 
           return (
             <div
@@ -85,11 +90,7 @@ export function Guide() {
                 'after-active': isAfterActive,
                 file: change.isFileNode,
                 step: true,
-                active:
-                  change.id === highlightChangeId ||
-                  (lastChange?.id === change.id &&
-                    change.isDraft &&
-                    !highlightChangeId),
+                active: change.id === activeChangeId,
                 draft: change.isDraft,
               })}
               key={change.id}
@@ -109,7 +110,7 @@ export function Guide() {
                 className={classNames({
                   'step-line-v': true,
                   first: index === 0,
-                  last: lastChange?.id === change.id && change.isDraft,
+                  last: lastChange.id === change.id && change.isDraft,
                 })}
               ></div>
               <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -165,13 +166,13 @@ export function Guide() {
           );
         })}
 
-        {!lastChange?.isDraft && nonDepChanges.length !== 0 && (
+        {!lastChange.isDraft && (
           <div
             className={classNames({
               placeholder: true,
               step: true,
               draft: true,
-              active: !highlightChangeId,
+              active: !activeChangeId,
             })}
           >
             <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -183,9 +184,7 @@ export function Guide() {
                   className="step-code"
                   onClick={() => {
                     setHighlightChangeId(null);
-                    if (lastChange) {
-                      setFileByPath(lastChange.path);
-                    }
+                    setFileByPath(lastChange.path);
                   }}
                 ></div>
               </>
@@ -196,7 +195,10 @@ export function Guide() {
       <div className="footer">
         <PrevNextControls />
         <div className="right">
-          <Tooltip title="Add image/video step" placement="topRight">
+          <Tooltip
+            title="(in progress) Add image/video step"
+            placement="topRight"
+          >
             <FontAwesomeIcon icon="image" />
           </Tooltip>
         </div>

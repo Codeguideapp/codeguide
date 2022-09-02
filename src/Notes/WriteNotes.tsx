@@ -2,7 +2,8 @@ import { useAtom } from 'jotai';
 import * as monaco from 'monaco-editor';
 import { useEffect, useRef, useState } from 'react';
 
-import { highlightChangeIndexAtom } from '../atoms/changes';
+import { activeChangeIdAtom, highlightChangeIndexAtom } from '../atoms/changes';
+import { notesAtom, saveActiveNoteValAtom } from '../atoms/notes';
 
 export const notesModel = monaco.editor.createModel('', 'markdown');
 
@@ -13,6 +14,24 @@ export function WriteNotes() {
   const [showPlaceholder, setShowPlaceholder] = useState(
     Boolean(!notesModel.getValue())
   );
+  const [activeChangeId] = useAtom(activeChangeIdAtom);
+  const [, saveActiveNoteVal] = useAtom(saveActiveNoteValAtom);
+  const [notes] = useAtom(notesAtom);
+
+  useEffect(() => {
+    const newValue = !activeChangeId ? '' : notes[activeChangeId] || '';
+    const currValue = notesModel.getValue();
+
+    if (newValue !== currValue) {
+      notesModel.setValue(newValue);
+    }
+
+    if (newValue) {
+      setShowPlaceholder(false);
+    } else {
+      setShowPlaceholder(true);
+    }
+  }, [activeChangeId, notes, setShowPlaceholder]);
 
   useEffect(() => {
     if (!monacoDom.current) return;
@@ -40,7 +59,15 @@ export function WriteNotes() {
     standaloneEditor.current.onDidFocusEditorWidget(() => {
       setShowPlaceholder(false);
     });
-  }, [monacoDom]);
+
+    const onChangeListener = notesModel.onDidChangeContent((e) => {
+      saveActiveNoteVal(notesModel.getValue());
+    });
+
+    return () => {
+      onChangeListener.dispose();
+    };
+  }, [monacoDom, saveActiveNoteVal]);
 
   return (
     <div className="body">
