@@ -16,6 +16,7 @@ import {
   highlightChangeIdAtom,
   highlightChangeIndexAtom,
 } from '../atoms/changes';
+import { setFileByPathAtom } from '../atoms/files';
 
 library.add(faBackwardStep, faForwardStep, faPlay);
 
@@ -26,6 +27,7 @@ export function PrevNextControls() {
   const [highlightChangeId, setHighlightChangeId] = useAtom(
     highlightChangeIdAtom
   );
+  const [, setFileByPath] = useAtom(setFileByPathAtom);
 
   const changesIdsNoFile = useMemo(
     () =>
@@ -41,13 +43,15 @@ export function PrevNextControls() {
     if (!firstChange) return;
 
     setHighlightChangeId(firstChange);
-  }, [changesIdsNoFile, setHighlightChangeId]);
+    setFileByPath(changes[firstChange].path);
+  }, [changesIdsNoFile, changes, setHighlightChangeId, setFileByPath]);
 
   const goToPrevChange = useCallback(() => {
     if (!highlightChangeId) {
       const lastChangeId = last(changesIdsNoFile);
       if (lastChangeId) {
         setHighlightChangeId(lastChangeId);
+        setFileByPath(changes[lastChangeId].path);
       }
       return;
     }
@@ -58,7 +62,14 @@ export function PrevNextControls() {
     if (!prevChangeId) return;
 
     setHighlightChangeId(prevChangeId);
-  }, [highlightChangeId, changesIdsNoFile, setHighlightChangeId]);
+    setFileByPath(changes[prevChangeId].path);
+  }, [
+    highlightChangeId,
+    changes,
+    changesIdsNoFile,
+    setHighlightChangeId,
+    setFileByPath,
+  ]);
 
   const goToNextChange = useCallback(() => {
     if (!highlightChangeId) {
@@ -69,12 +80,22 @@ export function PrevNextControls() {
 
     const nextChangeId = changesIdsNoFile[currentIndex + 1];
     setHighlightChangeId(nextChangeId);
-  }, [highlightChangeId, changesIdsNoFile, setHighlightChangeId]);
+    setFileByPath(changes[nextChangeId].path);
+  }, [
+    highlightChangeId,
+    changes,
+    changesIdsNoFile,
+    setFileByPath,
+    setHighlightChangeId,
+  ]);
 
-  const goToLastChange = useCallback(
-    () => setHighlightChangeId(null),
-    [setHighlightChangeId]
-  );
+  const goToLastChange = useCallback(() => {
+    setHighlightChangeId(null);
+    const lastChange = last(changesOrder);
+    if (lastChange) {
+      setFileByPath(changes[lastChange].path);
+    }
+  }, [changes, changesOrder, setHighlightChangeId, setFileByPath]);
 
   useEffect(() => {
     Mousetrap.bindGlobal(['shift+left'], goToFirstChange);
