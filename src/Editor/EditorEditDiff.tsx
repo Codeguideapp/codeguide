@@ -6,6 +6,7 @@ import React, { useEffect, useRef } from 'react';
 
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
+import { monacoThemeRef } from '../atoms/layout';
 import { selectionsAtom } from '../atoms/monaco';
 import { showWhitespaceAtom } from '../atoms/options';
 import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
@@ -30,9 +31,10 @@ export function EditorEditDiff() {
 
     diffEditor.current?.dispose();
 
+    monacoThemeRef.current = 'darkInvertedDiff';
     diffEditor.current = monaco.editor.createDiffEditor(editorDiffDom.current, {
       automaticLayout: true,
-      theme: 'darkInvertedDiff',
+      theme: monacoThemeRef.current,
       //originalEditable: true,
       //readOnly: false,
       glyphMargin: true,

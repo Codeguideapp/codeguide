@@ -3,6 +3,7 @@ import * as monaco from 'monaco-editor';
 import { useEffect, useRef, useState } from 'react';
 
 import { activeChangeIdAtom, highlightChangeIndexAtom } from '../atoms/changes';
+import { monacoThemeRef } from '../atoms/layout';
 import { notesAtom, saveActiveNoteValAtom } from '../atoms/notes';
 
 export const notesModel = monaco.editor.createModel('', 'markdown');
@@ -38,7 +39,7 @@ export function WriteNotes() {
 
     standaloneEditor.current = monaco.editor.create(monacoDom.current, {
       automaticLayout: true,
-      theme: 'darkTheme',
+      theme: monacoThemeRef.current,
       minimap: {
         enabled: false,
       },

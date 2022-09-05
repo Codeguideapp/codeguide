@@ -8,6 +8,7 @@ import Split from 'react-split';
 import { DiffMarker, DiffMarkers } from '../api/diffMarkers';
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
+import { monacoThemeRef } from '../atoms/layout';
 import { selectionsAtom } from '../atoms/monaco';
 import { appliedMarkersAtom, saveDeltaAtom } from '../atoms/saveDeltaAtom';
 import { composeDeltas, getFileContent } from '../utils/deltaUtils';
@@ -50,9 +51,10 @@ export function EditorEditStepByStep() {
     diffListener.current?.dispose();
     diffMouseDownListener.current?.dispose();
 
+    monacoThemeRef.current = 'darkTheme';
     editor.current = monaco.editor.create(monacoDom.current, {
       automaticLayout: true,
-      theme: 'darkTheme',
+      theme: monacoThemeRef.current,
       glyphMargin: false,
       smoothScrolling: true,
       tabSize: 2,
