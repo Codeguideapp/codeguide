@@ -127,6 +127,7 @@ export const mergeChangesAtom = atom(null, (get, set, mergeNum: number) => {
     set(saveDeltaAtom, {
       delta: newDelta,
       file,
+      highlight: [],
     });
   }, 0); // todo: fix race condition. see why it doesnt work without timeout
 });

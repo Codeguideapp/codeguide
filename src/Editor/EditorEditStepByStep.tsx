@@ -145,6 +145,7 @@ export function EditorEditStepByStep() {
         )
           ? appliedMarkerRef.current?.marker
           : undefined,
+        highlight: [],
       });
     });
 

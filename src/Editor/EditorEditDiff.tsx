@@ -116,6 +116,7 @@ export function EditorEditDiff() {
         delta: composeDeltas(deltas),
         file: activeFile,
         eolChar: modifiedModel.getEOL(),
+        highlight: [],
       });
     });
 

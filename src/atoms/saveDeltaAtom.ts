@@ -6,13 +6,12 @@ import Delta from 'quill-delta';
 
 import { DiffMarker, getDiffMarkers } from '../api/diffMarkers';
 import { calcStat, composeDeltas, deltaToString } from '../utils/deltaUtils';
-import { getHighlightsAfter } from '../utils/monaco';
 import { changesAtom, changesOrderAtom } from './changes';
 import { Change } from './changes';
 import { File, fileChangesAtom } from './files';
 interface SaveDeltaParams {
   delta: Delta;
-  highlight?: Change['highlight'];
+  highlight: Change['highlight'];
   file: File;
   isFileDepChange?: boolean;
   eolChar?: string;
@@ -90,6 +89,7 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
     .filter((id) => changes[id].path === file.path && changes[id].delta)
     .map((id) => changes[id].delta!);
 
+  const before = deltaToString(fileChanges);
   const after = deltaToString([...fileChanges, delta]);
   const diffMarkers = getDiffMarkers({
     modifiedValue: after,
@@ -112,7 +112,6 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
   const lastChangeId = last(changesOrder);
 
   if (
-    !highlight &&
     lastChangeId &&
     changes[lastChangeId].isDraft &&
     changes[lastChangeId].path === file.path
@@ -120,13 +119,28 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
     const newChanges = produce(changes, (changesDraft) => {
       const newDelta = changesDraft[lastChangeId].delta!.compose(delta);
 
-      changesDraft[lastChangeId].delta = newDelta;
-      changesDraft[lastChangeId].deltaInverted = newDelta.invert(
-        composeDeltas(fileChanges)
-      );
-      changesDraft[lastChangeId].stat = calcStat(newDelta);
+      const fileChanges = changesOrder
+        .slice(0, changesOrder.length - 1)
+        .filter((id) => changes[id].path === file.path && changes[id].delta)
+        .map((id) => changes[id].delta!);
+
+      const before = deltaToString(fileChanges);
+      const after = deltaToString([...fileChanges, newDelta]);
+
+      if (before === after) {
+        delete changesDraft[lastChangeId];
+      } else {
+        changesDraft[lastChangeId].delta = newDelta;
+        changesDraft[lastChangeId].deltaInverted = newDelta.invert(
+          composeDeltas(fileChanges)
+        );
+        changesDraft[lastChangeId].stat = calcStat(newDelta);
+      }
     });
 
+    if (!newChanges[lastChangeId]) {
+      set(changesOrderAtom, changesOrder.slice(0, changesOrder.length - 1));
+    }
     set(changesAtom, newChanges);
 
     if (diffMarker) {
@@ -136,6 +150,10 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
       ]);
     }
   } else {
+    if (before === after && highlight.length === 0) {
+      return;
+    }
+
     const newChangeId = nanoid();
     const newChangesOrder = isFileDepChange
       ? [newChangeId, ...changesOrder]
@@ -151,20 +169,16 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
       }
 
       changesDraft[newChangeId] = {
-        isDraft: isFileDepChange || highlight ? false : true,
+        isDraft: !isFileDepChange,
         isFileDepChange: isFileDepChange || undefined,
         fileStatus: changeStatus,
-        highlight: highlight
-          ? highlight
-          : isFileDepChange
-          ? []
-          : getHighlightsAfter(delta, eolChar),
+        highlight: highlight,
         id: newChangeId,
         path: file.path,
         delta,
         diffMarkersNum: Object.keys(diffMarkers).length,
         deltaInverted: delta.invert(composeDeltas(fileChanges)),
-        stat: highlight ? [0, 0] : calcStat(delta),
+        stat: calcStat(delta),
       };
     });
 

@@ -100,6 +100,7 @@ export const setFileByPathAtom = atom(
         file,
         isFileDepChange: true,
         delta: new Delta().insert(file.oldVal),
+        highlight: [],
       });
     }
 

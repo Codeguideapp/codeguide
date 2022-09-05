@@ -47,6 +47,7 @@ export function EditorToolbar() {
             file: activeFile,
             isFileDepChange: true,
             delta: new Delta().insert(activeFile.oldVal),
+            highlight: [],
             eolChar: modifiedModel.getEOL(),
           });
         }
