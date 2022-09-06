@@ -2,15 +2,9 @@ import './DeltaPreview.css';
 
 import classNames from 'classnames';
 
-type IDeltaPreview = Record<
-  number,
-  {
-    isDelete: boolean;
-    code: string;
-  }[]
->;
+import { StepPreview } from '../Guide/getStepPreview';
 
-export function DeltaPreview({ preview }: { preview: IDeltaPreview }) {
+export function DeltaPreview({ preview }: { preview: StepPreview }) {
   return (
     <div className="delta-preview">
       {Object.entries(preview).map(([line, content]) => (
@@ -22,6 +16,7 @@ export function DeltaPreview({ preview }: { preview: IDeltaPreview }) {
                 key={`${line}-${i}`}
                 className={classNames({
                   code: true,
+                  highlight: c.isHighlight,
                   deleted: c.isDelete,
                 })}
               >

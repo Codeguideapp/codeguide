@@ -22,7 +22,8 @@ import {
 import { setFileByPathAtom } from '../atoms/files';
 import { undraftChangeAtom } from '../atoms/saveDeltaAtom';
 import { DeltaPreview } from '../Shared/DeltaPreview';
-import { getDeltaPreview, getFileContent } from '../utils/deltaUtils';
+import { getFileContent } from '../utils/deltaUtils';
+import { getStepPreview } from './getStepPreview';
 import { PrevNextControls } from './PrevNextControls';
 
 library.add(faFloppyDisk, faMagnifyingGlass, faCheck, faImage, faUpload);
@@ -66,16 +67,22 @@ export function Guide() {
         {nonDepChanges.map((change, index) => {
           const changeIndex = changesOrder.indexOf(change.id);
 
-          const preview = getDeltaPreview(
-            change.delta,
-            getFileContent({
+          const preview = getStepPreview({
+            delta: change.delta,
+            before: getFileContent({
               upToChangeId: change.id,
               changes,
               changesOrder,
               excludeChange: true,
             }),
-            '\n'
-          );
+            after: getFileContent({
+              upToChangeId: change.id,
+              changes,
+              changesOrder,
+              excludeChange: false,
+            }),
+            selections: change.highlight,
+          });
 
           const isBeforeActive =
             activeChangeIndex === null ? true : changeIndex < activeChangeIndex;

@@ -204,6 +204,11 @@
 .guide .delta-preview .deleted {
   color: #995454;
 }
+.guide .delta-preview .highlight {
+  color: #bebebe;
+  background: #143d51;
+  border-radius: 2px;
+}
 
 .guide .step.after-active .step-file,
 .guide .step.after-active .icons,

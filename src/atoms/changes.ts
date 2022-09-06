@@ -1,7 +1,6 @@
 import produce, { Draft } from 'immer';
 import { atom } from 'jotai';
 import { last } from 'lodash';
-import type * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 
 import { composeDeltas } from '../utils/deltaUtils';
@@ -20,8 +19,6 @@ export type Change = {
   highlight: {
     offset: number;
     length: number;
-    type: 'delete' | 'insert' | 'replace' | 'selection';
-    options: monaco.editor.IModelDecorationOptions;
   }[];
   delta: Delta;
   deltaInverted?: Delta;

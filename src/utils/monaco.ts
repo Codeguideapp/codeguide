@@ -1,8 +1,6 @@
 import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 
-import { Change } from '../atoms/changes';
-
 export const blankModel = monaco.editor.createModel('', 'typescript');
 export const modifiedModel = monaco.editor.createModel('', 'typescript');
 export const previewModel = monaco.editor.createModel('', 'typescript');
@@ -93,75 +91,6 @@ export function removeInserts(delta: Delta) {
   }
 
   return resDelta;
-}
-
-export function getHighlightsAfter(delta: Delta, eolChar: string) {
-  const highlights: Change['highlight'] = [];
-
-  let index = 0;
-  for (let i = 0; i < delta.ops.length; i++) {
-    const op = delta.ops[i];
-    if (op.retain !== undefined) {
-      index += op.retain;
-    } else if (typeof op.insert === 'string') {
-      const nextOp = delta.ops[i + 1];
-      if (nextOp?.delete) {
-        highlights.push({
-          offset: index,
-          length: op.insert.length,
-          type: 'replace',
-          options: {
-            className: 'replace-highlight',
-          },
-        });
-
-        const newLineOffset = op.insert.endsWith(eolChar) ? -eolChar.length : 0;
-        highlights.push({
-          offset: index + op.insert.length + newLineOffset,
-          length: 0,
-          type: 'replace',
-          options: {
-            className: 'highlight-cursor cursor-color-replace',
-          },
-        });
-
-        index += op.insert.length;
-        i++; // skip next delta since it's covered here
-      } else {
-        highlights.push({
-          offset: index,
-          length: op.insert.length,
-          type: 'insert',
-          options: {
-            className: 'insert-highlight',
-          },
-        });
-
-        const newLineOffset = op.insert.endsWith(eolChar) ? -eolChar.length : 0;
-        highlights.push({
-          offset: index + op.insert.length + newLineOffset,
-          length: 0,
-          type: 'insert',
-          options: {
-            className: 'highlight-cursor',
-          },
-        });
-
-        index += op.insert.length;
-      }
-    } else if (op.delete !== undefined) {
-      highlights.push({
-        offset: index,
-        length: 0,
-        type: 'delete',
-        options: {
-          className: 'highlight-cursor cursor-color-delete',
-        },
-      });
-    }
-  }
-
-  return highlights;
 }
 
 export function getRange(

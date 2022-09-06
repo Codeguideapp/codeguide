@@ -31,10 +31,6 @@ export function useHighlight() {
           return {
             length: end - start,
             offset: start,
-            type: 'selection',
-            options: {
-              className: 'select-highlight',
-            },
           };
         }),
       });
