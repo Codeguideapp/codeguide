@@ -20,8 +20,6 @@ export type File = {
   path: string;
   oldVal: string;
   newVal: string;
-  prevVal: string;
-  totalDiffMarkers: number;
   diffMarkers: DiffMarkers;
 };
 
@@ -68,7 +66,8 @@ export const setFileChangesAtom = atom(null, async (get, set, pr: number) => {
       ...f,
       prevVal: f.oldVal,
       diffMarkers,
-      totalDiffMarkers: Object.keys(diffMarkers).length,
+      diffMarkersNumStart: Object.keys(diffMarkers).length,
+      diffMarkersNumCurrent: Object.keys(diffMarkers).length,
     };
   });
 

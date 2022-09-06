@@ -5,22 +5,25 @@ import Delta from 'quill-delta';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Split from 'react-split';
 
-import { DiffMarker, DiffMarkers } from '../api/diffMarkers';
+import { DiffMarker, DiffMarkers, getDiffMarkers } from '../api/diffMarkers';
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
 import { monacoThemeRef } from '../atoms/layout';
-import { selectionsAtom } from '../atoms/monaco';
 import { appliedMarkersAtom, saveDeltaAtom } from '../atoms/saveDeltaAtom';
-import { composeDeltas, getFileContent } from '../utils/deltaUtils';
+import {
+  composeDeltas,
+  deltaToString,
+  getFileContent,
+} from '../utils/deltaUtils';
 import { modifiedModel, originalModel, previewModel } from '../utils/monaco';
 import { DiffMarkersList } from './DiffMarkers';
+import { useHighlight } from './useHighlight';
 
 export function EditorEditStepByStep() {
   const modifiedContentListener = useRef<monaco.IDisposable>();
   const diffListener = useRef<monaco.IDisposable>();
   const diffMouseDownListener = useRef<monaco.IDisposable>();
   const selectionListener = useRef<monaco.IDisposable>();
-  const [, setSelections] = useAtom(selectionsAtom);
   const monacoDom = useRef<HTMLDivElement>(null);
   const editor = useRef<monaco.editor.IStandaloneCodeEditor>();
   const [activeFile] = useAtom(activeFileAtom);
@@ -28,6 +31,7 @@ export function EditorEditStepByStep() {
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
   const [appliedMarkers] = useAtom(appliedMarkersAtom);
+  const saveHighlight = useHighlight();
   const appliedMarkerRef = useRef<{
     edits: monaco.editor.IIdentifiedSingleEditOperation[];
     marker: DiffMarker;
@@ -68,16 +72,14 @@ export function EditorEditStepByStep() {
       editor.current?.dispose();
       modifiedContentListener.current?.dispose();
       selectionListener.current?.dispose();
-      setSelections([]);
       modifiedModel.setValue('');
       originalModel.setValue('');
     };
-  }, [monacoDom, setSelections]);
+  }, [monacoDom]);
 
   useEffect(() => {
     modifiedContentListener.current?.dispose();
     selectionListener.current?.dispose();
-    setSelections([]);
 
     if (!activeFile) {
       originalModel.setValue('');
@@ -137,10 +139,18 @@ export function EditorEditStepByStep() {
           deltas.push(delta);
         });
 
+      const delta = composeDeltas(deltas);
+      const fileChanges = changesOrder
+        .filter(
+          (id) => changes[id].path === activeFile.path && changes[id].delta
+        )
+        .map((id) => changes[id].delta);
+
+      const after = deltaToString([...fileChanges, delta]);
+
       saveDelta({
-        delta: composeDeltas(deltas),
+        delta,
         file: activeFile,
-        eolChar: modifiedModel.getEOL(),
         diffMarker: isEqual(
           appliedMarkerRef.current?.edits,
           e.changes.map((c) => ({ range: c.range, text: c.text }))
@@ -148,12 +158,17 @@ export function EditorEditStepByStep() {
           ? appliedMarkerRef.current?.marker
           : undefined,
         highlight: [],
+        newDiffMarkers: getDiffMarkers({
+          modifiedValue: after,
+          originalValue: activeFile.newVal,
+          eol: modifiedModel.getEOL(),
+        }),
       });
     });
 
     selectionListener.current = editor.current?.onDidChangeCursorSelection(
       (e) => {
-        setSelections(
+        saveHighlight(
           [e.selection, ...e.secondarySelections].filter(
             (sel) =>
               sel.startLineNumber !== sel.endLineNumber ||
@@ -168,7 +183,7 @@ export function EditorEditStepByStep() {
     appliedMarkers,
     saveDelta,
     setDiffMarkers,
-    setSelections,
+    saveHighlight,
   ]); // not watching changes as dep, because it is covered by changesOrder
 
   return (

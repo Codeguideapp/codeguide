@@ -23,7 +23,6 @@ export type Change = {
     type: 'delete' | 'insert' | 'replace' | 'selection';
     options: monaco.editor.IModelDecorationOptions;
   }[];
-  diffMarkersNum: number;
   delta: Delta;
   deltaInverted?: Delta;
   stat: [number, number];

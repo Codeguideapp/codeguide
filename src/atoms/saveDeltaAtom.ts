@@ -4,7 +4,7 @@ import { last } from 'lodash';
 import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 
-import { DiffMarker, getDiffMarkers } from '../api/diffMarkers';
+import { DiffMarker, DiffMarkers } from '../api/diffMarkers';
 import { calcStat, composeDeltas, deltaToString } from '../utils/deltaUtils';
 import { changesAtom, changesOrderAtom } from './changes';
 import { Change } from './changes';
@@ -14,9 +14,8 @@ interface SaveDeltaParams {
   highlight: Change['highlight'];
   file: File;
   isFileDepChange?: boolean;
-  eolChar?: string;
-  tabChar?: string;
   diffMarker?: DiffMarker;
+  newDiffMarkers?: DiffMarkers;
 }
 
 export const appliedMarkersAtom = atom<(DiffMarker & { path: string })[]>([]);
@@ -69,7 +68,6 @@ export const saveFileNodeAtom = atom(null, (get, set, path: string) => {
         path,
         delta: new Delta(),
         stat: [0, 0],
-        diffMarkersNum: 0,
         deltaInverted: new Delta(),
       };
     });
@@ -81,7 +79,6 @@ export const saveFileNodeAtom = atom(null, (get, set, path: string) => {
 
 export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
   const { delta, file, diffMarker, highlight, isFileDepChange } = params;
-  const eolChar = params.eolChar || '\n';
   const changes = get(changesAtom);
   const changesOrder = get(changesOrderAtom);
 
@@ -91,11 +88,6 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
 
   const before = deltaToString(fileChanges);
   const after = deltaToString([...fileChanges, delta]);
-  const diffMarkers = getDiffMarkers({
-    modifiedValue: after,
-    originalValue: file.newVal,
-    eol: eolChar,
-  });
 
   let changeStatus: Change['fileStatus'];
   switch (file.status) {
@@ -127,7 +119,7 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
       const before = deltaToString(fileChanges);
       const after = deltaToString([...fileChanges, newDelta]);
 
-      if (before === after) {
+      if (before === after && highlight.length === 0) {
         delete changesDraft[lastChangeId];
       } else {
         changesDraft[lastChangeId].delta = newDelta;
@@ -135,6 +127,7 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
           composeDeltas(fileChanges)
         );
         changesDraft[lastChangeId].stat = calcStat(newDelta);
+        changesDraft[lastChangeId].highlight = highlight;
       }
     });
 
@@ -176,7 +169,6 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
         id: newChangeId,
         path: file.path,
         delta,
-        diffMarkersNum: Object.keys(diffMarkers).length,
         deltaInverted: delta.invert(composeDeltas(fileChanges)),
         stat: calcStat(delta),
       };
@@ -193,16 +185,13 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
     }
   }
 
-  const savedFileChanges = get(fileChangesAtom);
-  for (const savedFile of savedFileChanges) {
-    if (savedFile.path === file.path) {
-      file.prevVal = after;
-      file.diffMarkers = diffMarkers;
-      file.totalDiffMarkers = Math.max(
-        Object.keys(diffMarkers).length,
-        file.totalDiffMarkers
-      );
+  if (params.newDiffMarkers) {
+    const savedFileChanges = get(fileChangesAtom);
+    for (const savedFile of savedFileChanges) {
+      if (savedFile.path === file.path) {
+        file.diffMarkers = params.newDiffMarkers;
+      }
     }
+    set(fileChangesAtom, [...savedFileChanges]);
   }
-  set(fileChangesAtom, [...savedFileChanges]);
 });
