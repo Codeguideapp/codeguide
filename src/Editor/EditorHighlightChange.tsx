@@ -7,6 +7,7 @@ import { activeFileAtom } from '../atoms/files';
 import { monacoThemeRef } from '../atoms/layout';
 import { showWhitespaceAtom } from '../atoms/options';
 import { getFileContent } from '../utils/deltaUtils';
+import { getRange } from '../utils/monaco';
 
 const modelPrev = monaco.editor.createModel('', 'typescript');
 const modelCurrent = monaco.editor.createModel('', 'typescript');
@@ -14,7 +15,8 @@ const modelCurrent = monaco.editor.createModel('', 'typescript');
 export function EditorHighlightChange({ changeId }: { changeId: string }) {
   const monacoDom = useRef<HTMLDivElement>(null);
   const standaloneEditor = useRef<monaco.editor.IStandaloneCodeEditor>();
-  const diffEditor = useRef<monaco.editor.IDiffEditor>();
+  const diffEditor = useRef<monaco.editor.IStandaloneDiffEditor>();
+  const diffNavigatorRef = useRef<monaco.IDisposable>();
   const changes = useAtomValue(changesAtom);
   const changesOrder = useAtomValue(changesOrderAtom);
   const activeFile = useAtomValue(activeFileAtom);
@@ -54,7 +56,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
           })
         );
       } else {
-        modelCurrent.setValue('old');
+        modelCurrent.setValue(''); // todo
       }
 
       standaloneEditor.current = monaco.editor.create(monacoDom.current, {
@@ -98,9 +100,48 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
         original: modelPrev,
         modified: modelCurrent,
       });
+
+      diffNavigatorRef.current = monaco.editor.createDiffNavigator(
+        diffEditor.current,
+        {
+          alwaysRevealFirst: true,
+        }
+      );
+
+      diffEditor.current.getModifiedEditor().createDecorationsCollection(
+        currentChange.highlight.map((h) => {
+          return {
+            range: getRange(modelCurrent, h.offset, h.length),
+            options: {
+              className: 'select-highlight',
+              overviewRuler: {
+                color: '#3c5177',
+                position: monaco.editor.OverviewRulerLane.Right,
+              },
+            },
+          };
+        })
+      );
+
+      if (
+        currentChange.stat[0] === 0 &&
+        currentChange.stat[1] === 0 &&
+        currentChange.highlight.length
+      ) {
+        diffEditor.current
+          .getModifiedEditor()
+          .revealRangeInCenterIfOutsideViewport(
+            getRange(
+              modelCurrent,
+              currentChange.highlight[0].offset,
+              currentChange.highlight[0].length
+            )
+          );
+      }
     }
 
     return () => {
+      diffNavigatorRef.current?.dispose();
       standaloneEditor.current?.dispose();
       standaloneEditor.current = undefined;
 

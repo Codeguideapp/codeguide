@@ -365,7 +365,7 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   background: rgba(213, 255, 116, 0.3);
 }
 .select-highlight {
-  background: rgba(116, 162, 255, 0.3);
+  background: rgba(116, 160, 255, 0.4);
 }
 .replace-highlight {
   background: rgba(116, 162, 255, 0.3);
