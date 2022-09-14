@@ -4,17 +4,13 @@ import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
 
-import { notesModel } from './WriteNotes';
-
-export function PreviewNotes() {
-  const markdown = notesModel.getValue();
-
+export function PreviewNotes({ value }: { value: string }) {
   return (
     <div className="body-preview">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeHighlight]}
-        children={markdown}
+        children={value}
       />
     </div>
   );

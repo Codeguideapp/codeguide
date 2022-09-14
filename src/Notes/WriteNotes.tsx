@@ -2,37 +2,34 @@ import { useAtom } from 'jotai';
 import * as monaco from 'monaco-editor';
 import { useEffect, useRef, useState } from 'react';
 
-import { activeChangeIdAtom, highlightChangeIndexAtom } from '../atoms/changes';
+import { highlightChangeIndexAtom } from '../atoms/changes';
 import { monacoThemeRef } from '../atoms/layout';
-import { notesAtom, saveActiveNoteValAtom } from '../atoms/notes';
+import { saveActiveNoteValAtom } from '../atoms/notes';
 
 export const notesModel = monaco.editor.createModel('', 'markdown');
 
-export function WriteNotes() {
+export function WriteNotes({ value }: { value: string }) {
   const standaloneEditor = useRef<monaco.editor.IStandaloneCodeEditor>();
   const monacoDom = useRef<HTMLDivElement>(null);
   const [highlightChangeIndex] = useAtom(highlightChangeIndexAtom);
   const [showPlaceholder, setShowPlaceholder] = useState(
     Boolean(!notesModel.getValue())
   );
-  const [activeChangeId] = useAtom(activeChangeIdAtom);
   const [, saveActiveNoteVal] = useAtom(saveActiveNoteValAtom);
-  const [notes] = useAtom(notesAtom);
 
   useEffect(() => {
-    const newValue = !activeChangeId ? '' : notes[activeChangeId] || '';
     const currValue = notesModel.getValue();
 
-    if (newValue !== currValue) {
-      notesModel.setValue(newValue);
+    if (value !== currValue) {
+      notesModel.setValue(value);
     }
 
-    if (newValue) {
+    if (value) {
       setShowPlaceholder(false);
     } else {
       setShowPlaceholder(true);
     }
-  }, [activeChangeId, notes, setShowPlaceholder]);
+  }, [value, setShowPlaceholder]);
 
   useEffect(() => {
     if (!monacoDom.current) return;
