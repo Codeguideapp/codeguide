@@ -156,7 +156,7 @@
   bottom: -10px;
   left: 10px;
 }
-.guide .step:first-child .step-line-v.first {
+.guide .step:first-child .step-line-v {
   top: 10px;
 }
 .guide .step:last-child .step-line-v {
