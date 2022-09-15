@@ -87,12 +87,11 @@
   width: calc(100% - 40px);
   min-height: 35px;
   border-radius: 4px;
-  background: #24262a;
+  background-color: #24262a;
   border: 1px solid #212326;
   padding: 5px;
 }
 .guide .step.draft .step-code {
-  background: transparent;
   border: 1px dotted rgb(52 52 52);
 }
 
@@ -157,10 +156,10 @@
   bottom: -10px;
   left: 10px;
 }
-.guide .step-line-v.first {
+.guide .step:first-child .step-line-v.first {
   top: 10px;
 }
-.guide .step-line-v.last {
+.guide .step:last-child .step-line-v {
   bottom: 25px;
 }
 
@@ -170,13 +169,9 @@
   right: 10px;
   padding: 0 5px;
   height: calc(100% - 3px);
-  background: #1f2124;
+  background: inherit;
   display: flex;
   align-items: center;
-}
-.guide .step.active:not(.draft) .icons,
-.guide .step.before-active .iconse {
-  background: #212326;
 }
 
 .guide .step .icons svg {
@@ -211,7 +206,16 @@
 }
 
 .guide .step.after-active .step-file,
-.guide .step.after-active .icons,
+.guide .step.after-active .icons svg,
 .guide .step.after-active .delta-preview {
-  opacity: 0.5;
+  opacity: 0.4;
+}
+.guide .step.draft .icons svg {
+  opacity: 0.6;
+}
+.guide .step:not(.draft) .icons svg {
+  opacity: 0.2;
+}
+.guide .step .icons svg:hover {
+  opacity: 1;
 }

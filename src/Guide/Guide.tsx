@@ -6,6 +6,7 @@ import {
   faFloppyDisk,
   faImage,
   faMagnifyingGlass,
+  faTrash,
   faUpload,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -20,13 +21,20 @@ import {
   highlightChangeIdAtom,
 } from '../atoms/changes';
 import { setFileByPathAtom } from '../atoms/files';
-import { undraftChangeAtom } from '../atoms/saveDeltaAtom';
+import { deleteChangeAtom, undraftChangeAtom } from '../atoms/saveDeltaAtom';
 import { DeltaPreview } from '../Shared/DeltaPreview';
 import { getFileContent } from '../utils/deltaUtils';
 import { getStepPreview } from './getStepPreview';
 import { PrevNextControls } from './PrevNextControls';
 
-library.add(faFloppyDisk, faMagnifyingGlass, faCheck, faImage, faUpload);
+library.add(
+  faFloppyDisk,
+  faMagnifyingGlass,
+  faCheck,
+  faImage,
+  faUpload,
+  faTrash
+);
 
 export function Guide() {
   const [changes] = useAtom(changesAtom);
@@ -37,6 +45,7 @@ export function Guide() {
   );
   const [, undraftChange] = useAtom(undraftChangeAtom);
   const [, setFileByPath] = useAtom(setFileByPathAtom);
+  const [, deleteChange] = useAtom(deleteChangeAtom);
 
   const nonDepChanges = changesOrder
     .filter((id) => !changes[id].isFileDepChange)
@@ -113,13 +122,7 @@ export function Guide() {
                 setFileByPath(change.path);
               }}
             >
-              <div
-                className={classNames({
-                  'step-line-v': true,
-                  first: index === 0,
-                  last: lastChange.id === change.id && change.isDraft,
-                })}
-              ></div>
+              <div className="step-line-v"></div>
               <div style={{ display: 'flex', alignItems: 'center' }}>
                 <div className="step-circle">
                   <span style={{ display: change.isDraft ? 'none' : 'block' }}>
@@ -136,7 +139,7 @@ export function Guide() {
                     <div className="step-line-h"></div>
                     <div className="step-code">
                       <DeltaPreview preview={preview} />
-                      {change.isDraft && (
+                      {change.isDraft ? (
                         <div className="icons">
                           <FontAwesomeIcon
                             icon="magnifying-glass"
@@ -163,6 +166,27 @@ export function Guide() {
                               undraftChange(change.id);
                             }}
                           />
+                          <FontAwesomeIcon
+                            icon="trash"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.nativeEvent.stopImmediatePropagation();
+                              deleteChange(change.id);
+                            }}
+                          />
+                        </div>
+                      ) : (
+                        <div className="icons">
+                          {lastChange.id === change.id && (
+                            <FontAwesomeIcon
+                              icon="trash"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.nativeEvent.stopImmediatePropagation();
+                                deleteChange(change.id);
+                              }}
+                            />
+                          )}
                         </div>
                       )}
                     </div>
