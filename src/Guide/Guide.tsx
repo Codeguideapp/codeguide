@@ -22,10 +22,10 @@ import {
 } from '../atoms/changes';
 import { setFileByPathAtom } from '../atoms/files';
 import { deleteChangeAtom, undraftChangeAtom } from '../atoms/saveDeltaAtom';
+import { PrevNextControls } from '../PrevNextControls/PrevNextControls';
 import { DeltaPreview } from '../Shared/DeltaPreview';
 import { getFileContent } from '../utils/deltaUtils';
 import { getStepPreview } from './getStepPreview';
-import { PrevNextControls } from './PrevNextControls';
 
 library.add(
   faFloppyDisk,

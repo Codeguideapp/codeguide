@@ -3,7 +3,8 @@ import { atom } from 'jotai';
 
 import { activeChangeIdAtom } from './changes';
 
-export const notesAtom = atom<Record<string, string>>({});
+export const savedCommentsAtom = atom<Record<string, { value: string }[]>>({});
+export const draftCommentsAtom = atom<Record<string, string>>({});
 
 export const saveActiveNoteValAtom = atom(null, (get, set, val: string) => {
   const activeChangeId = get(activeChangeIdAtom);
@@ -12,10 +13,36 @@ export const saveActiveNoteValAtom = atom(null, (get, set, val: string) => {
     throw new Error('cant save note, invalid activeChangeId');
   }
 
-  const notes = get(notesAtom);
+  const notes = get(draftCommentsAtom);
   const newNotes = produce(notes, (notesDraft) => {
     notesDraft[activeChangeId] = val;
   });
 
-  set(notesAtom, newNotes);
+  set(draftCommentsAtom, newNotes);
+});
+
+export const createNewCommentAtom = atom(null, (get, set) => {
+  const activeChangeId = get(activeChangeIdAtom);
+
+  if (!activeChangeId) {
+    throw new Error('cant save note, invalid activeChangeId');
+  }
+
+  const savedComments = get(savedCommentsAtom);
+  const draftComments = get(draftCommentsAtom);
+
+  const newSavedComments = produce(savedComments, (draftObj) => {
+    draftObj[activeChangeId] = [
+      ...(draftObj[activeChangeId] || []),
+      {
+        value: draftComments[activeChangeId],
+      },
+    ];
+  });
+  const newDraftComments = produce(draftComments, (draftObj) => {
+    draftObj[activeChangeId] = '';
+  });
+
+  set(draftCommentsAtom, newDraftComments);
+  set(savedCommentsAtom, newSavedComments);
 });

@@ -528,3 +528,7 @@ body .monaco-diff-editor.side-by-side .editor.modified {
 .diff-marker.applied .delta-preview {
   opacity: 0.5;
 }
+
+svg.disabled {
+  opacity: 0.2;
+}

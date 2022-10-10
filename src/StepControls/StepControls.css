@@ -1,0 +1,77 @@
+.step-controls {
+  background: var(--background-1);
+  position: relative;
+  overflow: auto;
+  max-height: 50%;
+}
+.step-controls .header {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  height: 30px;
+  position: relative;
+  text-transform: uppercase;
+  font-family: 'Roboto';
+  font-size: 11px;
+  justify-content: space-between;
+}
+.step-controls .body {
+  margin-left: 20px;
+  width: calc(100% - 60px);
+  height: 100px;
+  padding: 5px;
+  border: 2px solid #999;
+  position: relative;
+}
+.step-controls .message {
+  opacity: 0.5;
+  font-family: 'Roboto';
+  font-size: 13px;
+  padding: 5px 15px;
+}
+.step-controls .header .title {
+  font-weight: bold;
+}
+.step-controls .header .right span {
+  margin-left: 10px;
+}
+
+.step-controls .placeholder {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  pointer-events: none;
+  opacity: 0.5;
+  font-family: 'Roboto';
+  font-size: 13px;
+}
+
+.step-controls .body-preview {
+  overflow: auto;
+  padding: 10px;
+  padding-left: 15px;
+  background: rgb(68, 68, 68);
+  margin: 10px;
+  border-radius: 5px;
+}
+
+.step-controls .ant-comment {
+  position: relative;
+  background-color: #1f2124;
+  margin: 10px;
+  border-radius: 5px;
+}
+
+.step-controls .ant-comment-inner {
+  margin: 0 10px;
+}
+
+.step-controls .ant-input[disabled] {
+  background-color: inherit;
+}
+.step-controls .ant-comment-content-detail .ant-form-item {
+  margin-bottom: 15px;
+}
+.step-controls .ant-comment-content-detail .ant-form-item:last-child {
+  margin-bottom: 0;
+}

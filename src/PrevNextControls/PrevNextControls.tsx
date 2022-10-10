@@ -17,6 +17,7 @@ import {
   highlightChangeIndexAtom,
 } from '../atoms/changes';
 import { setFileByPathAtom } from '../atoms/files';
+import styles from './PrevNextControls.module.css';
 
 library.add(faBackwardStep, faForwardStep, faPlay);
 
@@ -112,7 +113,7 @@ export function PrevNextControls() {
   }, [goToFirstChange, goToPrevChange, goToNextChange, goToLastChange]);
 
   return (
-    <div className="prev-next-controls">
+    <div className={styles['prev-next-controls']}>
       {highlightChangeIndex === 1 ? (
         <FontAwesomeIcon icon="backward-step" className="disabled" />
       ) : (
