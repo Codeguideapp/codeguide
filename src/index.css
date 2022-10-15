@@ -190,7 +190,7 @@ code {
 
 .gutter.gutter-horizontal {
   cursor: col-resize;
-  background: #202020;
+  background: #000;
 }
 
 .gutter.gutter-vertical {

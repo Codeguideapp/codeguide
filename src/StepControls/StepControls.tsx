@@ -6,7 +6,7 @@ import { useAtom } from 'jotai';
 import { useMemo } from 'react';
 
 import { activeChangeIdAtom, highlightChangeIdAtom } from '../atoms/changes';
-import { savedCommentsAtom } from '../atoms/notes';
+import { savedCommentsAtom } from '../atoms/comments';
 import { PreviewComment } from './PreviewComment';
 import { WriteComment } from './WriteComment';
 

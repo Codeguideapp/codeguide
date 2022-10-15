@@ -23,13 +23,15 @@ export const saveActiveNoteValAtom = atom(null, (get, set, val: string) => {
 
 export const createNewCommentAtom = atom(null, (get, set) => {
   const activeChangeId = get(activeChangeIdAtom);
+  const savedComments = get(savedCommentsAtom);
+  const draftComments = get(draftCommentsAtom);
 
   if (!activeChangeId) {
     throw new Error('cant save note, invalid activeChangeId');
   }
-
-  const savedComments = get(savedCommentsAtom);
-  const draftComments = get(draftCommentsAtom);
+  if (!draftComments[activeChangeId]) {
+    throw new Error('comment is empty');
+  }
 
   const newSavedComments = produce(savedComments, (draftObj) => {
     draftObj[activeChangeId] = [

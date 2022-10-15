@@ -8,7 +8,7 @@ import {
   highlightChangeIdAtom,
   highlightChangeIndexAtom,
 } from '../atoms/changes';
-import { draftCommentsAtom, saveActiveNoteValAtom } from '../atoms/notes';
+import { draftCommentsAtom, saveActiveNoteValAtom } from '../atoms/comments';
 import { StepActions } from './StepActions';
 
 export function WriteComment() {
@@ -31,19 +31,18 @@ export function WriteComment() {
     <Comment
       content={
         <>
-          {!highlightChangeId && (
-            <Form.Item>
-              <TextArea
-                disabled={!activeChangeId}
-                rows={3}
-                onChange={handleChange}
-                value={value}
-                placeholder={`Write a note/explanation for step ${
-                  highlightChangeIndex || 0 + 1
-                } (optional)`}
-              />
-            </Form.Item>
-          )}
+          <Form.Item>
+            <TextArea
+              disabled={!activeChangeId}
+              rows={3}
+              onChange={handleChange}
+              value={value}
+              placeholder={`Write a note/explanation for step ${
+                highlightChangeIndex || 0 + 1
+              } (optional)`}
+            />
+          </Form.Item>
+
           <Form.Item>
             <StepActions />
           </Form.Item>
