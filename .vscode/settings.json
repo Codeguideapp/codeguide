@@ -40,5 +40,17 @@
     "typescriptreact"
   ],
   "typescript.tsdk": "node_modules/typescript/lib",
-  "editor.tabSize": 2
+  "editor.tabSize": 2,
+  "serverlessConsole.services": [
+    {
+      "type": "serverlessFramework",
+      "title": null,
+      "awsProfile": "default",
+      "cwd": "./backend",
+      "command": "serverless print",
+      "timeOffsetInMs": 0,
+      "envVars": [],
+      "stages": ["dev"]
+    }
+  ]
 }

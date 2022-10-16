@@ -1,0 +1,29 @@
+{
+  "name": "codeguide",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "tsc -w",
+    "lint": "tslint '*.ts'"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/aws-sdk": "0.0.42",
+    "@types/node": "^7.0.5",
+    "tslint": "^5.5.0",
+    "tslint-config-standard": "^6.0.1",
+    "typescript": "^2.4.2"
+  },
+  "dependencies": {
+    "@octokit/oauth-app": "^4.1.0",
+    "@serverless/typescript": "^3.21.0",
+    "aws-sdk": "^2.1227.0",
+    "serverless-plugin-typescript": "^2.1.2",
+    "ts-node": "^10.9.1",
+    "uuid": "^3.1.0"
+  }
+}
