@@ -20,30 +20,6 @@ interface SaveDeltaParams {
 
 export const appliedMarkersAtom = atom<(DiffMarker & { path: string })[]>([]);
 
-export const undraftChangeAtom = atom(null, (get, set, id: string) => {
-  const changes = get(changesAtom);
-  const newChanges = produce(changes, (changesDraft) => {
-    changesDraft[id].isDraft = false;
-  });
-  set(changesAtom, newChanges);
-});
-
-export const deleteChangeAtom = atom(null, (get, set, id: string) => {
-  const changes = get(changesAtom);
-  const changesOrder = get(changesOrderAtom);
-
-  if (last(changesOrder) !== id) {
-    throw new Error('only last step can be deleted');
-  }
-
-  const newChanges = produce(changes, (changesDraft) => {
-    delete changesDraft[id];
-  });
-
-  set(changesAtom, newChanges);
-  set(changesOrderAtom, changesOrder.slice(0, changesOrder.length - 1));
-});
-
 export const saveFileNodeAtom = atom(null, (get, set, path: string) => {
   const changes = get(changesAtom);
   const changesOrder = get(changesOrderAtom);

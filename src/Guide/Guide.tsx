@@ -1,14 +1,7 @@
 import './Guide.css';
 
 import { library } from '@fortawesome/fontawesome-svg-core';
-import {
-  faCheck,
-  faFloppyDisk,
-  faImage,
-  faMagnifyingGlass,
-  faTrash,
-  faUpload,
-} from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faImage, faUpload } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Tooltip } from 'antd';
 import classNames from 'classnames';
@@ -21,31 +14,19 @@ import {
   highlightChangeIdAtom,
 } from '../atoms/changes';
 import { setFileByPathAtom } from '../atoms/files';
-import { deleteChangeAtom, undraftChangeAtom } from '../atoms/saveDeltaAtom';
+import { PrevNextControls } from '../PrevNextControls/PrevNextControls';
 import { DeltaPreview } from '../Shared/DeltaPreview';
 import { getFileContent } from '../utils/deltaUtils';
 import { getStepPreview } from './getStepPreview';
-import { PrevNextControls } from './PrevNextControls';
 
-library.add(
-  faFloppyDisk,
-  faMagnifyingGlass,
-  faCheck,
-  faImage,
-  faUpload,
-  faTrash
-);
+library.add(faCheck, faImage, faUpload);
 
 export function Guide() {
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
   const [activeChangeId] = useAtom(activeChangeIdAtom);
-  const [highlightChangeId, setHighlightChangeId] = useAtom(
-    highlightChangeIdAtom
-  );
-  const [, undraftChange] = useAtom(undraftChangeAtom);
+  const [, setHighlightChangeId] = useAtom(highlightChangeIdAtom);
   const [, setFileByPath] = useAtom(setFileByPathAtom);
-  const [, deleteChange] = useAtom(deleteChangeAtom);
 
   const nonDepChanges = changesOrder
     .filter((id) => !changes[id].isFileDepChange)
@@ -139,56 +120,6 @@ export function Guide() {
                     <div className="step-line-h"></div>
                     <div className="step-code">
                       <DeltaPreview preview={preview} />
-                      {change.isDraft ? (
-                        <div className="icons">
-                          <FontAwesomeIcon
-                            icon="magnifying-glass"
-                            className={classNames({
-                              active: change.id === highlightChangeId,
-                            })}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.nativeEvent.stopImmediatePropagation();
-
-                              if (change.id === highlightChangeId) {
-                                setHighlightChangeId(null);
-                              } else {
-                                setHighlightChangeId(change.id);
-                              }
-                            }}
-                          />
-                          <FontAwesomeIcon
-                            icon="floppy-disk"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.nativeEvent.stopImmediatePropagation();
-
-                              undraftChange(change.id);
-                            }}
-                          />
-                          <FontAwesomeIcon
-                            icon="trash"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              e.nativeEvent.stopImmediatePropagation();
-                              deleteChange(change.id);
-                            }}
-                          />
-                        </div>
-                      ) : (
-                        <div className="icons">
-                          {lastChange.id === change.id && (
-                            <FontAwesomeIcon
-                              icon="trash"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.nativeEvent.stopImmediatePropagation();
-                                deleteChange(change.id);
-                              }}
-                            />
-                          )}
-                        </div>
-                      )}
                     </div>
                   </>
                 )}
