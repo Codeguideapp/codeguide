@@ -1,11 +1,7 @@
-import produce, { Draft } from 'immer';
+import produce from 'immer';
 import { atom } from 'jotai';
 import { last } from 'lodash';
 import Delta from 'quill-delta';
-
-import { composeDeltas } from '../utils/deltaUtils';
-import { fileChangesAtom } from './files';
-import { saveDeltaAtom } from './saveDeltaAtom';
 
 export type Changes = Record<string, Readonly<Change>>; // changes is updated using immer so the result object can be read only
 
@@ -71,4 +67,32 @@ export const highlightChangeIndexAtom = atom((get) => {
     : lastChange?.isDraft
     ? ids.length
     : ids.length + 1;
+});
+
+export const undraftChangeAtom = atom(null, (get, set, id: string) => {
+  const changes = get(changesAtom);
+  const newChanges = produce(changes, (changesDraft) => {
+    changesDraft[id].isDraft = false;
+  });
+  set(changesAtom, newChanges);
+});
+
+export const deleteChangeAtom = atom(null, (get, set, id: string) => {
+  const changes = get(changesAtom);
+  const changesOrder = get(changesOrderAtom);
+
+  if (last(changesOrder) !== id) {
+    throw new Error('only last step can be deleted');
+  }
+
+  const newChanges = produce(changes, (changesDraft) => {
+    delete changesDraft[id];
+  });
+
+  set(changesAtom, newChanges);
+  set(changesOrderAtom, changesOrder.slice(0, changesOrder.length - 1));
+
+  if (get(highlightChangeIdAtom) === id) {
+    set(highlightChangeIdAtom, null);
+  }
 });

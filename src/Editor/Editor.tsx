@@ -9,7 +9,7 @@ import {
 import { activeFileAtom, unsavedFilePathsAtom } from '../atoms/files';
 import { useStepByStepDiffAtom } from '../atoms/options';
 import { Guide } from '../Guide/Guide';
-import { Notes } from '../Notes/Notes';
+import { StepControls } from '../StepControls/StepControls';
 import { EditorEditDiff } from './EditorEditDiff';
 import { EditorEditStepByStep } from './EditorEditStepByStep';
 import { EditorHighlightChange } from './EditorHighlightChange';
@@ -32,8 +32,10 @@ export function Editor() {
         minSize={250}
         gutterSize={1}
       >
-        <Split direction="vertical" sizes={[75, 25]} gutterSize={1}>
-          <div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <div
+            style={{ display: 'flex', flexGrow: 1, flexDirection: 'column' }}
+          >
             <div className="editor-top">
               <div
                 className={classNames({
@@ -54,7 +56,7 @@ export function Editor() {
               </div>
               <EditorToolbar />
             </div>
-            <div style={{ width: '100%', height: 'calc(100% - 30px)' }}>
+            <div style={{ width: '100%', flexGrow: 1 }}>
               {!activeFile ? (
                 <Welcome />
               ) : highlightChangeId ? (
@@ -66,8 +68,8 @@ export function Editor() {
               )}
             </div>
           </div>
-          <Notes />
-        </Split>
+          <StepControls />
+        </div>
 
         <Guide />
       </Split>

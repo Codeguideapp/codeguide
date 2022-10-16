@@ -37,7 +37,6 @@
   cursor: not-allowed;
 }
 
-.guide .footer .prev-next-controls svg,
 .guide .header .left svg {
   margin-right: 7px;
 }
@@ -182,9 +181,6 @@
 }
 .guide .step .icons svg.active {
   color: yellow;
-}
-.guide .step .icons svg.disabled {
-  opacity: 0.2;
 }
 .guide .body .step:last-child {
   margin-bottom: 0;

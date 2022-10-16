@@ -8,12 +8,9 @@ import {
   changesAtom,
   changesOrderAtom,
   highlightChangeIdAtom,
-} from './changes';
-import {
-  saveDeltaAtom,
-  saveFileNodeAtom,
   undraftChangeAtom,
-} from './saveDeltaAtom';
+} from './changes';
+import { saveDeltaAtom, saveFileNodeAtom } from './saveDeltaAtom';
 
 export type File = {
   status: 'added' | 'modified' | 'deleted';
