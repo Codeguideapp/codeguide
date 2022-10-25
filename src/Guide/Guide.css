@@ -23,14 +23,6 @@
 .guide .footer svg:hover {
   opacity: 1;
 }
-.guide .header .label-icon {
-  cursor: pointer;
-  font-size: 12px;
-  opacity: 0.6;
-}
-.guide .header .label-icon:hover {
-  opacity: 1;
-}
 
 .guide .footer svg.disabled {
   opacity: 0.1;

@@ -21,12 +21,36 @@ body {
 }
 
 .main {
-  height: 100%;
+  position: fixed;
+  top: 40px;
+  bottom: 0;
+  left: 0;
+  right: 0;
 }
-.main .top {
-  height: 45px;
-  background: var(--background-1);
-  margin-bottom: 1px;
+.top-bar {
+  height: 40px;
+  border-bottom: 1px solid var(--background-1);
+  background: var(--background-2);
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  gap: 10px;
+  justify-content: space-between;
+}
+.top-bar .action {
+  cursor: pointer;
+  font-size: 12px;
+  opacity: 0.8;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+.top-bar .action:hover {
+  opacity: 1;
+}
+.top-bar .logo {
+  font-weight: bold;
+  font-family: 'Roboto';
 }
 .main-left {
   display: flex;

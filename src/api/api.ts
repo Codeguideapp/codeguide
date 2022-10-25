@@ -19,6 +19,17 @@ const octokit = new Octokit({
   auth: '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',
 });
 
+export const getGuide = async (id: string): Promise<any> => {
+  return fetch(
+    `https://hacfl33zzl.execute-api.us-east-1.amazonaws.com/dev/guide/${id}`
+  )
+    .then((response) => {
+      if (!response.ok) throw Error(response.statusText);
+      return response;
+    })
+    .then((response) => response.json());
+};
+
 export const getFiles = async (pr: number): Promise<ApiFile[]> => {
   return mockFiles;
   const files: ApiFile[] = [];

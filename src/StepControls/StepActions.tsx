@@ -77,7 +77,7 @@ export function StepActions() {
                 danger
                 type="primary"
               >
-                {highlightChangeId ? 'Delete' : 'Discard'}
+                {highlightChangeId ? 'Delete Step' : 'Discard'}
               </Button>
             </Popconfirm>
           </Tooltip>

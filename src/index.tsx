@@ -4,6 +4,7 @@ import 'antd/dist/antd.dark.css';
 import '@fontsource/inconsolata';
 import '@fontsource/roboto';
 
+import useSWR from 'swr';
 import { useAtom } from 'jotai';
 import { debounce } from 'lodash';
 import * as monaco from 'monaco-editor';
@@ -11,19 +12,27 @@ import * as Mousetrap from 'mousetrap';
 import 'mousetrap/plugins/global-bind/mousetrap-global-bind'; // must be imported after Mousetrap
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import Split from 'react-split';
 
-import { saveActiveFileAtom, setFileChangesAtom } from './atoms/files';
+import { saveActiveFileAtom } from './atoms/files';
 import { windowHeightAtom, windowWidthAtom } from './atoms/layout';
-import { Editor } from './Editor/Editor';
 import { darkTheme, darkThemeInvertedDif } from './Editor/monaco-themes/dark';
-import { LeftSide } from './LeftSide/LeftSide';
-import reportWebVitals from './reportWebVitals';
+import { guideAtom } from './atoms/guide';
+import { App } from './App';
 
-function App() {
+// initial
+// set loading indicator
+// parse url for id
+// request na backend
+// ako je private:true, ide login with github ko šta je sad na index.js
+// ako je private:false, samo se prikaže
+
+const backendApi = 'https://hacfl33zzl.execute-api.us-east-1.amazonaws.com/dev';
+const guideId = document.location.pathname.split('/')[1];
+
+function Loader() {
+  const [, setGuide] = useAtom(guideAtom);
   const [, setWindowHeight] = useAtom(windowHeightAtom);
   const [, setWindowWidth] = useAtom(windowWidthAtom);
-  const [, setFileChanges] = useAtom(setFileChangesAtom);
   const [, saveActiveFile] = useAtom(saveActiveFileAtom);
 
   useEffect(() => {
@@ -44,25 +53,27 @@ function App() {
     );
   }, [setWindowHeight, setWindowWidth]);
 
-  useEffect(() => {
-    // initial
-    setFileChanges(0);
-  }, [setFileChanges]);
-
-  return (
-    <div className="main">
-      <Split
-        className="split-horiz"
-        direction="horizontal"
-        sizes={[20, 80]}
-        minSize={[300, 300]}
-        gutterSize={1}
-      >
-        <LeftSide />
-        <Editor />
-      </Split>
-    </div>
+  const res = useSWR(`${backendApi}/guide/${guideId}`, (url) =>
+    fetch(url)
+      .then((response) => {
+        if (!response.ok) {
+          throw Error(response.statusText);
+        }
+        return response;
+      })
+      .then((res) => res.json())
   );
+
+  useEffect(() => {
+    if (res.data) {
+      setGuide(res.data);
+    }
+  }, [setGuide, res.data]);
+
+  if (res.error) return <div>failed to load</div>;
+  if (!res.data) return <div>loading...</div>;
+
+  return <App />;
 }
 
 const renderApp = () => {
@@ -71,7 +82,7 @@ const renderApp = () => {
 
   ReactDOM.render(
     <React.StrictMode>
-      <App />
+      <Loader />
     </React.StrictMode>,
     document.getElementById('root')
   );
@@ -82,4 +93,4 @@ renderApp();
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+//reportWebVitals();

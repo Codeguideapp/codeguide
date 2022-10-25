@@ -2,7 +2,7 @@ import { atom } from 'jotai';
 import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 
-import { getFiles } from '../api/api';
+import { getFiles, getGuide } from '../api/api';
 import { DiffMarkers, getDiffMarkers } from '../api/diffMarkers';
 import {
   changesAtom,
@@ -45,32 +45,36 @@ export const saveActiveFileAtom = atom(null, (get, set) => {
   set(undraftChangeAtom, draftChange.id);
 });
 
-export const setFileChangesAtom = atom(null, async (get, set, pr: number) => {
-  const apiFiles = await getFiles(pr);
+export const setFileChangesAtom = atom(null, async (get, set, id: string) => {
+  try {
+    const apiFiles = await getFiles(0);
 
-  const monacoModel = monaco.editor.createModel('', '');
+    const monacoModel = monaco.editor.createModel('', '');
 
-  const files: File[] = apiFiles.map((f) => {
-    monacoModel.setValue(f.oldVal);
+    const files: File[] = apiFiles.map((f) => {
+      monacoModel.setValue(f.oldVal);
 
-    const diffMarkers = getDiffMarkers({
-      modifiedValue: f.oldVal,
-      originalValue: f.newVal,
-      eol: monacoModel.getEOL(),
+      const diffMarkers = getDiffMarkers({
+        modifiedValue: f.oldVal,
+        originalValue: f.newVal,
+        eol: monacoModel.getEOL(),
+      });
+
+      return {
+        ...f,
+        prevVal: f.oldVal,
+        diffMarkers,
+        diffMarkersNumStart: Object.keys(diffMarkers).length,
+        diffMarkersNumCurrent: Object.keys(diffMarkers).length,
+      };
     });
 
-    return {
-      ...f,
-      prevVal: f.oldVal,
-      diffMarkers,
-      diffMarkersNumStart: Object.keys(diffMarkers).length,
-      diffMarkersNumCurrent: Object.keys(diffMarkers).length,
-    };
-  });
+    monacoModel.dispose();
 
-  monacoModel.dispose();
-
-  set(fileChangesAtom, files);
+    set(fileChangesAtom, files);
+  } catch (err) {
+    console.log(err);
+  }
 });
 
 export const setFileByPathAtom = atom(
