@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "serverless offline",
     "watch": "tsc -w",
     "lint": "tslint '*.ts'"
   },
@@ -22,6 +23,7 @@
     "@octokit/oauth-app": "^4.1.0",
     "@serverless/typescript": "^3.21.0",
     "aws-sdk": "^2.1227.0",
+    "serverless-offline": "^11.1.3",
     "serverless-plugin-typescript": "^2.1.2",
     "ts-node": "^10.9.1",
     "uuid": "^3.1.0"

@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-globals */
 // eslint-disable-next-line simple-import-sort/imports
 import './index.css';
 import 'antd/dist/antd.dark.css';
@@ -10,7 +11,7 @@ import { debounce } from 'lodash';
 import * as monaco from 'monaco-editor';
 import * as Mousetrap from 'mousetrap';
 import 'mousetrap/plugins/global-bind/mousetrap-global-bind'; // must be imported after Mousetrap
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 
 import { saveActiveFileAtom } from './atoms/files';
@@ -18,15 +19,9 @@ import { windowHeightAtom, windowWidthAtom } from './atoms/layout';
 import { darkTheme, darkThemeInvertedDif } from './Editor/monaco-themes/dark';
 import { guideAtom } from './atoms/guide';
 import { App } from './App';
+import { checkToken, exchangeCodeForToken } from './login';
+import { backendApi } from './config';
 
-// initial
-// set loading indicator
-// parse url for id
-// request na backend
-// ako je private:true, ide login with github ko šta je sad na index.js
-// ako je private:false, samo se prikaže
-
-const backendApi = 'https://hacfl33zzl.execute-api.us-east-1.amazonaws.com/dev';
 const guideId = document.location.pathname.split('/')[1];
 
 function Loader() {
@@ -34,6 +29,23 @@ function Loader() {
   const [, setWindowHeight] = useAtom(windowHeightAtom);
   const [, setWindowWidth] = useAtom(windowWidthAtom);
   const [, saveActiveFile] = useAtom(saveActiveFileAtom);
+  const [isFetchingToken, setIsFetchingToken] = useState<boolean>(false);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(document.location.search);
+
+    const params: any = {};
+    for (const [key, value] of searchParams.entries()) {
+      params[key] = value;
+    }
+
+    if (params.code) {
+      setIsFetchingToken(true);
+      exchangeCodeForToken(params.code).then(() => setIsFetchingToken(false));
+    } else {
+      checkToken();
+    }
+  }, []);
 
   useEffect(() => {
     Mousetrap.bindGlobal(['command+s', 'ctrl+s'], function (e) {
@@ -71,7 +83,7 @@ function Loader() {
   }, [setGuide, res.data]);
 
   if (res.error) return <div>failed to load</div>;
-  if (!res.data) return <div>loading...</div>;
+  if (!res.data || isFetchingToken) return <div>loading...</div>;
 
   return <App />;
 }

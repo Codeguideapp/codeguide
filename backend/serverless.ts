@@ -34,17 +34,6 @@ const serverlessConfiguration: AWS = {
     },
   },
   functions: {
-    index: {
-      handler: 'index/index.index',
-      events: [
-        {
-          http: {
-            method: 'get',
-            path: '/',
-          },
-        },
-      ],
-    },
     ghOauthLogin: {
       handler: 'github-oauth/login.login',
       events: [
@@ -135,7 +124,10 @@ const serverlessConfiguration: AWS = {
       ],
     },
   },
-  plugins: ['serverless-plugin-typescript'],
+  plugins: ['serverless-plugin-typescript', 'serverless-offline'],
+  custom: {
+    'serverless-offline': { httpPort: 4000 },
+  },
 };
 
 module.exports = serverlessConfiguration;

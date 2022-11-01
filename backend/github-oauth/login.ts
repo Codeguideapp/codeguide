@@ -11,8 +11,8 @@ export const login = async (
       typeof event.queryStringParameters.scopes === 'string'
         ? event.queryStringParameters.scopes.split(',')
         : [],
-    allowSignup:
-      event.queryStringParameters.allowSignup === 'true' ? true : false,
+    allowSignup: true,
+    //event.queryStringParameters.allowSignup === 'true' ? true : false,
     redirectUrl: event.queryStringParameters.redirectUrl,
   });
 
