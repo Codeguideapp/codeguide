@@ -4,21 +4,16 @@ import { last } from 'lodash';
 import { nanoid } from 'nanoid';
 import Delta from 'quill-delta';
 
-import { DiffMarker, DiffMarkers } from '../api/diffMarkers';
 import { calcStat, composeDeltas, deltaToString } from '../utils/deltaUtils';
 import { changesAtom, changesOrderAtom } from './changes';
 import { Change } from './changes';
-import { File, fileChangesAtom } from './files';
+import { File } from './files';
 interface SaveDeltaParams {
   delta: Delta;
   highlight: Change['highlight'];
   file: File;
   isFileDepChange?: boolean;
-  diffMarker?: DiffMarker;
-  newDiffMarkers?: DiffMarkers;
 }
-
-export const appliedMarkersAtom = atom<(DiffMarker & { path: string })[]>([]);
 
 export const saveFileNodeAtom = atom(null, (get, set, path: string) => {
   const changes = get(changesAtom);
@@ -70,7 +65,7 @@ export const saveFileNodeAtom = atom(null, (get, set, path: string) => {
 });
 
 export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
-  const { delta, file, diffMarker, highlight, isFileDepChange } = params;
+  const { delta, file, highlight, isFileDepChange } = params;
   const changes = get(changesAtom);
   const changesOrder = get(changesOrderAtom);
 
@@ -127,13 +122,6 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
       set(changesOrderAtom, changesOrder.slice(0, changesOrder.length - 1));
     }
     set(changesAtom, newChanges);
-
-    if (diffMarker) {
-      set(appliedMarkersAtom, [
-        ...get(appliedMarkersAtom),
-        { ...diffMarker, path: file.path, changeId: lastChangeId },
-      ]);
-    }
   } else {
     if (before === after && highlight.length === 0) {
       return;
@@ -168,22 +156,5 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
 
     set(changesAtom, newChanges);
     set(changesOrderAtom, newChangesOrder);
-
-    if (diffMarker) {
-      set(appliedMarkersAtom, [
-        ...get(appliedMarkersAtom),
-        { ...diffMarker, path: file.path, changeId: newChangeId },
-      ]);
-    }
-  }
-
-  if (params.newDiffMarkers) {
-    const savedFileChanges = get(fileChangesAtom);
-    for (const savedFile of savedFileChanges) {
-      if (savedFile.path === file.path) {
-        file.diffMarkers = params.newDiffMarkers;
-      }
-    }
-    set(fileChangesAtom, [...savedFileChanges]);
   }
 });

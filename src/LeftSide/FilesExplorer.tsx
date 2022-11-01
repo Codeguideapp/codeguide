@@ -1,6 +1,13 @@
+import { useAtom } from 'jotai';
 import React from 'react';
 
+import { repoFilesAtom } from '../atoms/files';
+
 export function FilesExplorer() {
+  const [repoFiles] = useAtom(repoFilesAtom);
+
+  console.log(repoFiles);
+
   return (
     <div className="file-tree">
       <div className="header">Explorer</div>

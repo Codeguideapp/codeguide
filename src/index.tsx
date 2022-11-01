@@ -5,47 +5,27 @@ import 'antd/dist/antd.dark.css';
 import '@fontsource/inconsolata';
 import '@fontsource/roboto';
 
-import useSWR from 'swr';
 import { useAtom } from 'jotai';
 import { debounce } from 'lodash';
 import * as monaco from 'monaco-editor';
 import * as Mousetrap from 'mousetrap';
 import 'mousetrap/plugins/global-bind/mousetrap-global-bind'; // must be imported after Mousetrap
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 
 import { saveActiveFileAtom } from './atoms/files';
 import { windowHeightAtom, windowWidthAtom } from './atoms/layout';
 import { darkTheme, darkThemeInvertedDif } from './Editor/monaco-themes/dark';
-import { guideAtom } from './atoms/guide';
 import { App } from './App';
-import { checkToken, exchangeCodeForToken } from './login';
-import { backendApi } from './config';
-
-const guideId = document.location.pathname.split('/')[1];
+import { initAtom, repoApiStatusAtom } from './atoms/init';
+import { login } from './login';
 
 function Loader() {
-  const [, setGuide] = useAtom(guideAtom);
   const [, setWindowHeight] = useAtom(windowHeightAtom);
   const [, setWindowWidth] = useAtom(windowWidthAtom);
   const [, saveActiveFile] = useAtom(saveActiveFileAtom);
-  const [isFetchingToken, setIsFetchingToken] = useState<boolean>(false);
-
-  useEffect(() => {
-    const searchParams = new URLSearchParams(document.location.search);
-
-    const params: any = {};
-    for (const [key, value] of searchParams.entries()) {
-      params[key] = value;
-    }
-
-    if (params.code) {
-      setIsFetchingToken(true);
-      exchangeCodeForToken(params.code).then(() => setIsFetchingToken(false));
-    } else {
-      checkToken();
-    }
-  }, []);
+  const [, init] = useAtom(initAtom);
+  const [repoApiStatus] = useAtom(repoApiStatusAtom);
 
   useEffect(() => {
     Mousetrap.bindGlobal(['command+s', 'ctrl+s'], function (e) {
@@ -65,25 +45,27 @@ function Loader() {
     );
   }, [setWindowHeight, setWindowWidth]);
 
-  const res = useSWR(`${backendApi}/guide/${guideId}`, (url) =>
-    fetch(url)
-      .then((response) => {
-        if (!response.ok) {
-          throw Error(response.statusText);
-        }
-        return response;
-      })
-      .then((res) => res.json())
-  );
-
   useEffect(() => {
-    if (res.data) {
-      setGuide(res.data);
-    }
-  }, [setGuide, res.data]);
+    init();
+  }, [init]);
 
-  if (res.error) return <div>failed to load</div>;
-  if (!res.data || isFetchingToken) return <div>loading...</div>;
+  if (repoApiStatus.shouldTryLogin) {
+    return (
+      <div>
+        <div>GitHub fetch repository data failed</div>
+        <div>
+          Is it a private repo? Try{' '}
+          <span style={{ fontWeight: 'bold' }} onClick={login}>
+            log in with github
+          </span>
+        </div>
+      </div>
+    );
+  }
+  if (repoApiStatus.isError)
+    return <div>GitHub fetch repository data failed</div>;
+
+  if (repoApiStatus.isLoading) return <div>loading...</div>;
 
   return <App />;
 }

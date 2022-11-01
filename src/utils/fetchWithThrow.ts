@@ -1,7 +1,7 @@
 export function fetchWithThrow(
   input: RequestInfo,
   init?: RequestInit & { json?: boolean }
-): Promise<Response> {
+): Promise<any> {
   return fetch(input, init)
     .then(function (response) {
       if (!response.ok) {

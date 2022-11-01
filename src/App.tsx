@@ -2,52 +2,15 @@ import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import { faCloudArrowUp } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useAtom } from 'jotai';
-import { useEffect } from 'react';
 import Split from 'react-split';
-import useSWR from 'swr';
 
-import { setFileChangesAtom } from './atoms/files';
 import { guideAtom } from './atoms/guide';
 import { Editor } from './Editor/Editor';
 import { LeftSide } from './LeftSide/LeftSide';
-import { login, logout } from './login';
-import { fetchWithThrow } from './utils/fetchWithThrow';
+import { logout } from './login';
 
 export function App() {
-  const [, setFileChanges] = useAtom(setFileChangesAtom);
   const [guide] = useAtom(guideAtom);
-
-  useEffect(() => {
-    setFileChanges('');
-  }, [setFileChanges]);
-
-  const res = useSWR(
-    `https://api.github.com/repos/${guide.owner}/${guide.repository}/git/trees/HEAD?recursive=1`,
-    (url) =>
-      fetchWithThrow(url, {
-        headers: localStorage.getItem('token')
-          ? {
-              Authorization: 'Bearer ' + localStorage.getItem('token'),
-            }
-          : {},
-      })
-  );
-
-  if (res.error && !localStorage.getItem('token')) {
-    return (
-      <div>
-        <div>GitHub fetch repository data failed</div>
-        <div>
-          Is it a private repo? Try{' '}
-          <span style={{ fontWeight: 'bold' }} onClick={login}>
-            log in with github
-          </span>
-        </div>
-      </div>
-    );
-  }
-  if (res.error) return <div>GitHub fetch repository data failed</div>;
-  if (!res.data) return <div>loading...</div>;
 
   return (
     <div>

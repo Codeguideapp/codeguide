@@ -7,13 +7,14 @@ export async function checkToken() {
 
   // we asume the token is valid
   // ... but we check just to be sure
-  fetchWithThrow(`${backendApi}/github/oauth/token`, {
+  return fetchWithThrow(`${backendApi}/github/oauth/token`, {
     json: false,
     headers: {
       authorization: `token ${token}`,
     },
   }).catch(logout);
 }
+
 export async function exchangeCodeForToken(code: string) {
   const response: any = await fetchWithThrow(
     `${backendApi}/github/oauth/token`,
@@ -40,6 +41,7 @@ export async function exchangeCodeForToken(code: string) {
 
   window.history.pushState({}, '', path);
 }
+
 export async function logout(options: any = {}) {
   const token = localStorage.getItem('token');
 
@@ -55,6 +57,7 @@ export async function logout(options: any = {}) {
   localStorage.clear();
   document.location.reload();
 }
+
 export function login() {
   document.location = `${backendApi}/github/oauth/login?scopes=repo&redirectUrl=${document.location.href}`;
 }

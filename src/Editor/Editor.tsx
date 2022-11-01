@@ -7,18 +7,15 @@ import {
   highlightChangeIndexAtom,
 } from '../atoms/changes';
 import { activeFileAtom, unsavedFilePathsAtom } from '../atoms/files';
-import { useStepByStepDiffAtom } from '../atoms/options';
 import { Guide } from '../Guide/Guide';
 import { StepControls } from '../StepControls/StepControls';
 import { EditorEditDiff } from './EditorEditDiff';
-import { EditorEditStepByStep } from './EditorEditStepByStep';
 import { EditorHighlightChange } from './EditorHighlightChange';
 import { EditorToolbar } from './EditorToolbar';
 import { Welcome } from './Welcome';
 
 export function Editor() {
   const [highlightChangeId] = useAtom(highlightChangeIdAtom);
-  const [useStepByStepDiff] = useAtom(useStepByStepDiffAtom);
   const [activeFile] = useAtom(activeFileAtom);
   const [unsavedFilePaths] = useAtom(unsavedFilePathsAtom);
   const [highlightChangeIndex] = useAtom(highlightChangeIndexAtom);
@@ -61,8 +58,6 @@ export function Editor() {
                 <Welcome />
               ) : highlightChangeId ? (
                 <EditorHighlightChange changeId={highlightChangeId} />
-              ) : useStepByStepDiff ? (
-                <EditorEditStepByStep />
               ) : (
                 <EditorEditDiff />
               )}
