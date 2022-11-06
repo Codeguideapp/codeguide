@@ -6,7 +6,11 @@ import {
   highlightChangeIdAtom,
   highlightChangeIndexAtom,
 } from '../atoms/changes';
-import { activeFileAtom, unsavedFilePathsAtom } from '../atoms/files';
+import {
+  activeFileAtom,
+  isFileDiff,
+  unsavedFilePathsAtom,
+} from '../atoms/files';
 import { Guide } from '../Guide/Guide';
 import { StepControls } from '../StepControls/StepControls';
 import { EditorEditDiff } from './EditorEditDiff';
@@ -58,8 +62,10 @@ export function Editor() {
                 <Welcome />
               ) : highlightChangeId ? (
                 <EditorHighlightChange changeId={highlightChangeId} />
+              ) : isFileDiff(activeFile) ? (
+                <EditorEditDiff activeFile={activeFile} />
               ) : (
-                <EditorEditDiff />
+                <div>hello</div>
               )}
             </div>
           </div>

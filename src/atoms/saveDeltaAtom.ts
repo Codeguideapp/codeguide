@@ -7,11 +7,11 @@ import Delta from 'quill-delta';
 import { calcStat, composeDeltas, deltaToString } from '../utils/deltaUtils';
 import { changesAtom, changesOrderAtom } from './changes';
 import { Change } from './changes';
-import { File } from './files';
+import { FileDiff } from './files';
 interface SaveDeltaParams {
   delta: Delta;
   highlight: Change['highlight'];
-  file: File;
+  file: FileDiff;
   isFileDepChange?: boolean;
 }
 

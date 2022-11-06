@@ -2,10 +2,10 @@ import { useAtom } from 'jotai';
 import { findLast } from 'lodash';
 import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
-import { activeFileAtom } from '../atoms/files';
+import { FileDiff } from '../atoms/files';
 import { monacoThemeRef } from '../atoms/layout';
 import { showWhitespaceAtom } from '../atoms/options';
 import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
@@ -13,12 +13,11 @@ import { composeDeltas, getFileContent } from '../utils/deltaUtils';
 import { modifiedModel, originalModel, previewModel } from '../utils/monaco';
 import { useHighlight } from './useHighlight';
 
-export function EditorEditDiff() {
+export function EditorEditDiff({ activeFile }: { activeFile: FileDiff }) {
   const modifiedContentListener = useRef<monaco.IDisposable>();
   const selectionListener = useRef<monaco.IDisposable>();
   const editorDiffDom = useRef<HTMLDivElement>(null);
   const diffEditor = useRef<monaco.editor.IDiffEditor>();
-  const [activeFile] = useAtom(activeFileAtom);
   const [, saveDelta] = useAtom(saveDeltaAtom);
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
@@ -65,12 +64,6 @@ export function EditorEditDiff() {
   useEffect(() => {
     modifiedContentListener.current?.dispose();
     selectionListener.current?.dispose();
-
-    if (!activeFile) {
-      originalModel.setValue('');
-      modifiedModel.setValue('');
-      return;
-    }
 
     const previousChangeId = findLast(
       changesOrder,

@@ -57,13 +57,7 @@ export const initAtom = atom(null, async (get, set) => {
           : {},
       }
     );
-    set(
-      repoFilesAtom,
-      repoFiles.tree.map((file: any) => ({
-        path: file.path,
-        url: file.url,
-      }))
-    );
+    set(repoFilesAtom, repoFiles.tree);
 
     const apiFiles = await getFiles(0);
     set(fileChangesAtom, apiFiles);

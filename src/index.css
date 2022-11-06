@@ -99,7 +99,7 @@ body {
 
 .file-tree .directory-tree {
   overflow: auto;
-  height: 100%;
+  height: calc(100% - 40px);
 }
 .file-tree .tree-file-node {
   width: calc(100% - 24px);
@@ -119,11 +119,9 @@ body {
 .file-tree
   .ant-tree.ant-tree-directory
   .ant-tree-treenode-selected:hover::before,
-.edit-mode
-  .file-tree
-  .ant-tree.ant-tree-directory
-  .ant-tree-treenode-selected::before {
-  background: #2c3137;
+.file-tree .ant-tree.ant-tree-directory .ant-tree-treenode-selected::before {
+  background: #177ddc4a;
+  border: 1px solid #145fb0;
 }
 .file-tree
   .ant-tree.ant-tree-block-node

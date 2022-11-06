@@ -9,7 +9,7 @@ import {
 } from './changes';
 import { saveDeltaAtom, saveFileNodeAtom } from './saveDeltaAtom';
 
-export type File = {
+export type FileDiff = {
   status: 'added' | 'modified' | 'deleted';
   path: string;
   oldVal: string;
@@ -17,14 +17,25 @@ export type File = {
 };
 
 export type FileBrowse = {
+  type: 'tree' | 'blob';
   path: string;
   url: string;
+  sha: string;
 };
 
-export const repoFilesAtom = atom<FileBrowse[]>([]);
-export const fileChangesAtom = atom<File[]>([]);
+export function isFileDiff(val: FileDiff | FileBrowse): val is FileDiff {
+  return typeof (val as FileDiff).oldVal === 'string';
+}
+export function isFileBrowse(val: FileDiff | FileBrowse): val is FileBrowse {
+  return typeof (val as FileBrowse).url === 'string';
+}
 
-export const activeFileAtom = atom<File | undefined>(undefined);
+export const repoFilesAtom = atom<FileBrowse[]>([]);
+export const fileChangesAtom = atom<FileDiff[]>([]);
+
+export const activeFileAtom = atom<FileDiff | FileBrowse | undefined>(
+  undefined
+);
 
 export const unsavedFilePathsAtom = atom((get) => {
   const changes = get(changesAtom);

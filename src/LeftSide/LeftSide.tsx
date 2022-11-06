@@ -14,15 +14,6 @@ export function LeftSide() {
     <div className="main-left">
       <div className="left-menu">
         <div
-          onClick={() => setActiveSection('changedFiles')}
-          className={classNames({
-            icon: true,
-            active: activeSection === 'changedFiles',
-          })}
-        >
-          <FilesDiffIcon width={28} />
-        </div>
-        <div
           onClick={() => setActiveSection('filesExplorer')}
           className={classNames({
             icon: true,
@@ -30,6 +21,15 @@ export function LeftSide() {
           })}
         >
           <FilesIcon width={28} />
+        </div>
+        <div
+          onClick={() => setActiveSection('changedFiles')}
+          className={classNames({
+            icon: true,
+            active: activeSection === 'changedFiles',
+          })}
+        >
+          <FilesDiffIcon width={28} />
         </div>
       </div>
       {activeSection === 'changedFiles' ? (
