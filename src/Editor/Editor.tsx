@@ -1,5 +1,6 @@
 import classNames from 'classnames';
 import { useAtom } from 'jotai';
+import { useState } from 'react';
 import Split from 'react-split';
 
 import {
@@ -23,15 +24,18 @@ export function Editor() {
   const [activeFile] = useAtom(activeFileAtom);
   const [unsavedFilePaths] = useAtom(unsavedFilePathsAtom);
   const [highlightChangeIndex] = useAtom(highlightChangeIndexAtom);
+  const [isDragging, setDragging] = useState(false);
 
   return (
     <div className="main-right">
       <Split
-        className="split-editor"
+        className={classNames({ 'split-editor': true, dragging: isDragging })}
         direction="horizontal"
         sizes={[75, 25]}
         minSize={250}
-        gutterSize={1}
+        gutterSize={5}
+        onDragStart={() => setDragging(true)}
+        onDragEnd={() => setDragging(false)}
       >
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div

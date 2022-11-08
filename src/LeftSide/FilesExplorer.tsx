@@ -9,12 +9,20 @@ import ForwardDirectoryTree from 'antd/lib/tree/DirectoryTree';
 import { useAtom } from 'jotai';
 import React, { useMemo } from 'react';
 
-import { activeFileAtom, FileBrowse, repoFilesAtom } from '../atoms/files';
+import {
+  activeFileAtom,
+  FileBrowse,
+  fileChangesAtom,
+  repoFilesAtom,
+  setFileByPathAtom,
+} from '../atoms/files';
 import { pathsToTreeStructure } from '../utils/pathsToTree';
 
 export function FilesExplorer() {
   const [repoFiles] = useAtom(repoFilesAtom);
   const [, setActiveFile] = useAtom(activeFileAtom);
+  const [fileChanges] = useAtom(fileChangesAtom);
+  const [, setFileByPath] = useAtom(setFileByPathAtom);
 
   const treeData = useMemo(() => pathsToTreeStructure(repoFiles), [repoFiles]);
 
@@ -39,7 +47,11 @@ export function FilesExplorer() {
           };
 
           if (file.type === 'blob') {
-            setActiveFile(file);
+            if (fileChanges.find((f) => f.path === node.key)) {
+              setFileByPath(node.key);
+            } else {
+              setActiveFile(file);
+            }
           }
         }}
       />

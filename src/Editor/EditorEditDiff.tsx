@@ -11,18 +11,21 @@ import { showWhitespaceAtom } from '../atoms/options';
 import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
 import { composeDeltas, getFileContent } from '../utils/deltaUtils';
 import { modifiedModel, originalModel, previewModel } from '../utils/monaco';
+import { usePrevious } from '../utils/usePrevious';
 import { useHighlight } from './useHighlight';
 
 export function EditorEditDiff({ activeFile }: { activeFile: FileDiff }) {
   const modifiedContentListener = useRef<monaco.IDisposable>();
   const selectionListener = useRef<monaco.IDisposable>();
   const editorDiffDom = useRef<HTMLDivElement>(null);
-  const diffEditor = useRef<monaco.editor.IDiffEditor>();
+  const diffEditor = useRef<monaco.editor.IStandaloneDiffEditor>();
   const [, saveDelta] = useAtom(saveDeltaAtom);
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
   const [showWhitespace] = useAtom(showWhitespaceAtom);
   const saveHighlight = useHighlight();
+  const prevFile = usePrevious(activeFile);
+  const diffNavigatorRef = useRef<monaco.IDisposable>();
 
   useEffect(() => {
     // initializing editor
@@ -47,6 +50,7 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileDiff }) {
       diffEditor.current?.dispose();
       selectionListener.current?.dispose();
       modifiedContentListener.current?.dispose();
+      diffNavigatorRef.current?.dispose();
       modifiedModel.setValue('');
       originalModel.setValue('');
     };
@@ -88,6 +92,15 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileDiff }) {
     }
     if (originalModel.getValue() !== goal) {
       originalModel.setValue(goal);
+    }
+
+    if (prevFile?.path !== activeFile.path) {
+      diffNavigatorRef.current = monaco.editor.createDiffNavigator(
+        diffEditor.current!,
+        {
+          alwaysRevealFirst: true,
+        }
+      );
     }
 
     modifiedContentListener.current = modifiedModel.onDidChangeContent((e) => {

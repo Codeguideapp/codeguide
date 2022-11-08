@@ -116,6 +116,10 @@ body {
   color: #35b05f;
 } */
 
+.file-tree .ant-tree .ant-tree-treenode {
+  padding-bottom: 2px;
+}
+
 .file-tree
   .ant-tree.ant-tree-directory
   .ant-tree-treenode-selected:hover::before,
@@ -213,7 +217,15 @@ code {
 
 .gutter.gutter-horizontal {
   cursor: col-resize;
-  background: #24272a;
+  background: #1f2124;
+  transition: 0s background-color;
+}
+.dragging > .gutter.gutter-horizontal {
+  background: #25569f;
+}
+.gutter.gutter-horizontal:hover {
+  background: #25569f;
+  transition-delay: 0.3s;
 }
 
 .gutter.gutter-vertical {

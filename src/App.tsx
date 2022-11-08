@@ -1,7 +1,9 @@
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import { faCloudArrowUp } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import classNames from 'classnames';
 import { useAtom } from 'jotai';
+import { useState } from 'react';
 import Split from 'react-split';
 
 import { guideAtom } from './atoms/guide';
@@ -12,6 +14,7 @@ import { PrevNextControls } from './PrevNextControls/PrevNextControls';
 
 export function App() {
   const [guide] = useAtom(guideAtom);
+  const [isDragging, setDragging] = useState(false);
 
   return (
     <div>
@@ -34,11 +37,13 @@ export function App() {
       </div>
       <div className="main">
         <Split
-          className="split-horiz"
+          className={classNames({ 'split-horiz': true, dragging: isDragging })}
           direction="horizontal"
           sizes={[20, 80]}
           minSize={[300, 300]}
-          gutterSize={1}
+          gutterSize={5}
+          onDragStart={() => setDragging(true)}
+          onDragEnd={() => setDragging(false)}
         >
           <LeftSide />
           <Editor />

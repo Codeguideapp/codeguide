@@ -2,7 +2,7 @@ import { ApiFile } from '../api/api';
 
 export const mockFiles: ApiFile[] = [
   {
-    path: 'saveDeltaAtom.ts',
+    path: 'src/atoms/saveDeltaAtom.ts',
     status: 'modified',
     oldVal: `import produce from 'immer';
 import { atom } from 'jotai';
