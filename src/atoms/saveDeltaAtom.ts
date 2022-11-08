@@ -7,6 +7,7 @@ import Delta from 'quill-delta';
 import { calcStat, composeDeltas, deltaToString } from '../utils/deltaUtils';
 import { changesAtom, changesOrderAtom } from './changes';
 import { Change } from './changes';
+import { draftCommentsAtom, savedCommentsAtom } from './comments';
 import { FileDiff } from './files';
 interface SaveDeltaParams {
   delta: Delta;
@@ -106,7 +107,14 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
       const before = deltaToString(fileChanges);
       const after = deltaToString([...fileChanges, newDelta]);
 
-      if (before === after && highlight.length === 0) {
+      const draftComments = get(draftCommentsAtom);
+      const savedComments = get(savedCommentsAtom);
+      if (
+        before === after &&
+        highlight.length === 0 &&
+        !draftComments[lastChangeId] &&
+        !savedComments[lastChangeId]
+      ) {
         delete changesDraft[lastChangeId];
       } else {
         changesDraft[lastChangeId].delta = newDelta;

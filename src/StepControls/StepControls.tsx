@@ -8,6 +8,7 @@ import { useMemo } from 'react';
 import { activeChangeIdAtom, highlightChangeIdAtom } from '../atoms/changes';
 import { savedCommentsAtom } from '../atoms/comments';
 import { PreviewComment } from './PreviewComment';
+import { StepActions } from './StepActions';
 import { WriteComment } from './WriteComment';
 
 library.add(faComment);
@@ -29,7 +30,19 @@ export function StepControls() {
           <PreviewComment key={i} value={comment.value} />
         ))}
 
-      <WriteComment />
+      <div
+        style={{
+          padding: 10,
+          justifyContent: 'right',
+          display: 'flex',
+          gap: 10,
+        }}
+      >
+        <div style={{ marginRight: 'auto', flexGrow: 1 }}>
+          <WriteComment />
+        </div>
+        <StepActions />
+      </div>
     </div>
   );
 }

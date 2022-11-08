@@ -38,7 +38,7 @@
 }
 
 .guide .body {
-  height: calc(100% - 60px);
+  padding-bottom: 20px;
   overflow: auto;
 }
 

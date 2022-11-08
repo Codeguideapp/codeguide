@@ -8,6 +8,7 @@ import { guideAtom } from './atoms/guide';
 import { Editor } from './Editor/Editor';
 import { LeftSide } from './LeftSide/LeftSide';
 import { logout } from './login';
+import { PrevNextControls } from './PrevNextControls/PrevNextControls';
 
 export function App() {
   const [guide] = useAtom(guideAtom);
@@ -43,6 +44,7 @@ export function App() {
           <Editor />
         </Split>
       </div>
+      <PrevNextControls />
     </div>
   );
 }

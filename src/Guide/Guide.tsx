@@ -3,7 +3,6 @@ import './Guide.css';
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faCheck, faImage, faUpload } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Tooltip } from 'antd';
 import classNames from 'classnames';
 import { useAtom } from 'jotai';
 
@@ -14,7 +13,6 @@ import {
   highlightChangeIdAtom,
 } from '../atoms/changes';
 import { setFileByPathAtom } from '../atoms/files';
-import { PrevNextControls } from '../PrevNextControls/PrevNextControls';
 import { DeltaPreview } from '../Shared/DeltaPreview';
 import { getFileContent } from '../utils/deltaUtils';
 import { getStepPreview } from './getStepPreview';
@@ -144,17 +142,6 @@ export function Guide() {
             </div>
           </div>
         )}
-      </div>
-      <div className="footer">
-        <PrevNextControls />
-        <div className="right">
-          <Tooltip
-            title="(in progress) Add image/video step"
-            placement="topRight"
-          >
-            <FontAwesomeIcon icon="image" />
-          </Tooltip>
-        </div>
       </div>
     </div>
   );

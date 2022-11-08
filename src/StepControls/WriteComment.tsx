@@ -1,4 +1,3 @@
-import { Comment, Form } from 'antd';
 import TextArea from 'antd/lib/input/TextArea';
 import { useAtom } from 'jotai';
 import { useMemo } from 'react';
@@ -9,7 +8,6 @@ import {
   highlightChangeIndexAtom,
 } from '../atoms/changes';
 import { draftCommentsAtom, saveActiveNoteValAtom } from '../atoms/comments';
-import { StepActions } from './StepActions';
 
 export function WriteComment() {
   const [highlightChangeId] = useAtom(highlightChangeIdAtom);
@@ -28,26 +26,18 @@ export function WriteComment() {
   };
 
   return (
-    <Comment
-      content={
-        <>
-          <Form.Item>
-            <TextArea
-              disabled={!activeChangeId}
-              rows={3}
-              onChange={handleChange}
-              value={value}
-              placeholder={`Write a note/explanation for step ${
-                highlightChangeIndex || 0 + 1
-              } (optional)`}
-            />
-          </Form.Item>
-
-          <Form.Item>
-            <StepActions />
-          </Form.Item>
-        </>
-      }
+    <TextArea
+      autoSize={{
+        maxRows: 5,
+      }}
+      style={{ borderRadius: 4, borderColor: '#303338' }}
+      disabled={!activeChangeId}
+      rows={1}
+      onChange={handleChange}
+      value={value}
+      placeholder={`Write a note/explanation for step ${
+        highlightChangeIndex || 0 + 1
+      } (optional)`}
     />
   );
 }
