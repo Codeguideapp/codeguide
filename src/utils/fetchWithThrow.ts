@@ -1,6 +1,6 @@
 export function fetchWithThrow(
   input: RequestInfo,
-  init?: RequestInit & { json?: boolean }
+  init?: RequestInit & { jsonRes?: boolean }
 ): Promise<any> {
   return fetch(input, init)
     .then(function (response) {
@@ -10,7 +10,7 @@ export function fetchWithThrow(
       return response;
     })
     .then((res) => {
-      if (init?.json !== false) {
+      if (init?.jsonRes !== false) {
         return res.json();
       } else {
         return res;

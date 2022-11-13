@@ -11,20 +11,26 @@ import React, { useMemo } from 'react';
 
 import {
   activeFileAtom,
-  FileBrowse,
-  fileChangesAtom,
-  repoFilesAtom,
-  setFileByPathAtom,
+  allRepoFileRefsAtom,
+  FileNode,
+  fileNodesAtom,
+  setActiveFileByPathAtom,
 } from '../atoms/files';
+import { fetchWithThrow } from '../utils/fetchWithThrow';
 import { pathsToTreeStructure } from '../utils/pathsToTree';
 
-export function FilesExplorer() {
-  const [repoFiles] = useAtom(repoFilesAtom);
-  const [, setActiveFile] = useAtom(activeFileAtom);
-  const [fileChanges] = useAtom(fileChangesAtom);
-  const [, setFileByPath] = useAtom(setFileByPathAtom);
+let lastFetchController: AbortController | null;
 
-  const treeData = useMemo(() => pathsToTreeStructure(repoFiles), [repoFiles]);
+export function FilesExplorer() {
+  const [allRepoFileRefs] = useAtom(allRepoFileRefsAtom);
+  const [, setActiveFile] = useAtom(activeFileAtom);
+  const [fileNodes, setFileNodes] = useAtom(fileNodesAtom);
+  const [, setActiveFileByPath] = useAtom(setActiveFileByPathAtom);
+
+  const treeData = useMemo(
+    () => pathsToTreeStructure(allRepoFileRefs),
+    [allRepoFileRefs]
+  );
 
   return (
     <div className="file-tree">
@@ -39,18 +45,62 @@ export function FilesExplorer() {
         onSelect={(_selected, info) => {
           const node = info.node as any;
 
-          const file: FileBrowse = {
-            path: node.key,
-            sha: node.sha,
-            type: node.type,
-            url: node.url,
-          };
-
-          if (file.type === 'blob') {
-            if (fileChanges.find((f) => f.path === node.key)) {
-              setFileByPath(node.key);
+          if (node.type === 'blob') {
+            if (fileNodes.find((f) => f.path === node.key)) {
+              setActiveFileByPath(node.key);
             } else {
-              setActiveFile(file);
+              // make "loading file"
+              setActiveFile({
+                isFileDiff: false,
+                oldVal: '',
+                newVal: '',
+                path: node.file.path,
+                status: 'modified',
+                isFetching: true,
+              });
+
+              if (lastFetchController) {
+                lastFetchController.abort();
+              }
+
+              lastFetchController = new AbortController();
+              fetchWithThrow(node.file.url, {
+                signal: lastFetchController.signal,
+                headers: localStorage.getItem('token')
+                  ? {
+                      Authorization: 'Bearer ' + localStorage.getItem('token'),
+                    }
+                  : {},
+              })
+                .then((res) => {
+                  const content = atob(res.content);
+                  const newFile: FileNode = {
+                    isFileDiff: false,
+                    oldVal: content,
+                    newVal: content,
+                    path: node.file.path,
+                    status: 'modified',
+                    isFetching: false,
+                  };
+                  setFileNodes([...fileNodes, newFile]);
+                  setActiveFileByPath(node.file.path);
+                })
+                .catch((err) => {
+                  if (err.name === 'AbortError') {
+                    return;
+                  }
+
+                  // make "error file"
+                  setActiveFile({
+                    isFileDiff: false,
+                    oldVal: '',
+                    newVal: '',
+                    path: node.file.path,
+                    status: 'modified',
+                    isFetching: false,
+                    fetchError: 'error fetching file',
+                  });
+                });
             }
           }
         }}

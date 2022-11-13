@@ -7,15 +7,13 @@ import {
   highlightChangeIdAtom,
   highlightChangeIndexAtom,
 } from '../atoms/changes';
-import {
-  activeFileAtom,
-  isFileDiff,
-  unsavedFilePathsAtom,
-} from '../atoms/files';
+import { activeFileAtom, unsavedFilePathsAtom } from '../atoms/files';
+import { stepControlHeightAtom } from '../atoms/layout';
 import { Guide } from '../Guide/Guide';
 import { StepControls } from '../StepControls/StepControls';
 import { EditorEditDiff } from './EditorEditDiff';
 import { EditorHighlightChange } from './EditorHighlightChange';
+import { EditorPreviewFile } from './EditorPreviewFile';
 import { EditorToolbar } from './EditorToolbar';
 import { Welcome } from './Welcome';
 
@@ -24,6 +22,7 @@ export function Editor() {
   const [activeFile] = useAtom(activeFileAtom);
   const [unsavedFilePaths] = useAtom(unsavedFilePathsAtom);
   const [highlightChangeIndex] = useAtom(highlightChangeIndexAtom);
+  const [stepControlHeight] = useAtom(stepControlHeightAtom);
   const [isDragging, setDragging] = useState(false);
 
   return (
@@ -37,9 +36,19 @@ export function Editor() {
         onDragStart={() => setDragging(true)}
         onDragEnd={() => setDragging(false)}
       >
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            position: 'relative',
+          }}
+        >
           <div
-            style={{ display: 'flex', flexGrow: 1, flexDirection: 'column' }}
+            style={{
+              height: `calc(100% - ${stepControlHeight}px)`,
+              display: 'flex',
+              flexDirection: 'column',
+            }}
           >
             <div className="editor-top">
               <div
@@ -66,10 +75,10 @@ export function Editor() {
                 <Welcome />
               ) : highlightChangeId ? (
                 <EditorHighlightChange changeId={highlightChangeId} />
-              ) : isFileDiff(activeFile) ? (
+              ) : activeFile.isFileDiff ? (
                 <EditorEditDiff activeFile={activeFile} />
               ) : (
-                <div>hello</div>
+                <EditorPreviewFile activeFile={activeFile} />
               )}
             </div>
           </div>

@@ -4,7 +4,7 @@ import { getFiles } from '../api/api';
 import { backendApi } from '../config';
 import { checkToken, exchangeCodeForToken } from '../login';
 import { fetchWithThrow } from '../utils/fetchWithThrow';
-import { fileChangesAtom, repoFilesAtom } from './files';
+import { allRepoFileRefsAtom, fileNodesAtom } from './files';
 import { guideAtom } from './guide';
 
 export const repoApiStatusAtom = atom<{
@@ -57,10 +57,13 @@ export const initAtom = atom(null, async (get, set) => {
           : {},
       }
     );
-    set(repoFilesAtom, repoFiles.tree);
+    set(allRepoFileRefsAtom, repoFiles.tree);
 
     const apiFiles = await getFiles(0);
-    set(fileChangesAtom, apiFiles);
+    set(
+      fileNodesAtom,
+      apiFiles.map((file) => ({ ...file, isFileDiff: true, isFetching: false }))
+    );
 
     set(repoApiStatusAtom, {
       isError: false,

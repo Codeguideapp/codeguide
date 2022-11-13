@@ -36,9 +36,7 @@ export const activeChangeIdAtom = atom((get) => {
 
   const changes = get(changesAtom);
   const changesOrder = get(changesOrderAtom);
-  const ids = changesOrder.filter(
-    (id) => !changes[id].isFileDepChange && !changes[id].isFileNode
-  );
+  const ids = changesOrder.filter((id) => !changes[id].isFileDepChange);
 
   const lastChangeId = last(ids);
   const lastChange = lastChangeId ? changes[lastChangeId] : null;

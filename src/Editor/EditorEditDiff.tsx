@@ -5,7 +5,7 @@ import Delta from 'quill-delta';
 import { useEffect, useRef } from 'react';
 
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
-import { FileDiff } from '../atoms/files';
+import { FileNode } from '../atoms/files';
 import { monacoThemeRef } from '../atoms/layout';
 import { showWhitespaceAtom } from '../atoms/options';
 import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
@@ -14,7 +14,7 @@ import { modifiedModel, originalModel, previewModel } from '../utils/monaco';
 import { usePrevious } from '../utils/usePrevious';
 import { useHighlight } from './useHighlight';
 
-export function EditorEditDiff({ activeFile }: { activeFile: FileDiff }) {
+export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
   const modifiedContentListener = useRef<monaco.IDisposable>();
   const selectionListener = useRef<monaco.IDisposable>();
   const editorDiffDom = useRef<HTMLDivElement>(null);

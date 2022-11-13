@@ -13,7 +13,7 @@ import 'mousetrap/plugins/global-bind/mousetrap-global-bind'; // must be importe
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 
-import { saveActiveFileAtom } from './atoms/files';
+import { undraftActiveFileAtom } from './atoms/files';
 import { windowHeightAtom, windowWidthAtom } from './atoms/layout';
 import { darkTheme, darkThemeInvertedDif } from './Editor/monaco-themes/dark';
 import { App } from './App';
@@ -23,7 +23,7 @@ import { login } from './login';
 function Loader() {
   const [, setWindowHeight] = useAtom(windowHeightAtom);
   const [, setWindowWidth] = useAtom(windowWidthAtom);
-  const [, saveActiveFile] = useAtom(saveActiveFileAtom);
+  const [, undraftActiveFile] = useAtom(undraftActiveFileAtom);
   const [, init] = useAtom(initAtom);
   const [repoApiStatus] = useAtom(repoApiStatusAtom);
 
@@ -31,9 +31,9 @@ function Loader() {
     Mousetrap.bindGlobal(['command+s', 'ctrl+s'], function (e) {
       e?.preventDefault();
 
-      saveActiveFile();
+      undraftActiveFile();
     });
-  }, [saveActiveFile]);
+  }, [undraftActiveFile]);
 
   useEffect(() => {
     window.addEventListener(

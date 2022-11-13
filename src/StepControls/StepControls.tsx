@@ -4,9 +4,11 @@ import { library } from '@fortawesome/fontawesome-svg-core';
 import { faComment } from '@fortawesome/free-solid-svg-icons';
 import { useAtom } from 'jotai';
 import { useMemo } from 'react';
+import { useResizeDetector } from 'react-resize-detector';
 
 import { activeChangeIdAtom, highlightChangeIdAtom } from '../atoms/changes';
 import { savedCommentsAtom } from '../atoms/comments';
+import { stepControlHeightAtom } from '../atoms/layout';
 import { PreviewComment } from './PreviewComment';
 import { StepActions } from './StepActions';
 import { WriteComment } from './WriteComment';
@@ -21,9 +23,17 @@ export function StepControls() {
     [highlightChangeId, activeChangeId]
   );
   const [savedComments] = useAtom(savedCommentsAtom);
+  const [, setStepControlHeight] = useAtom(stepControlHeightAtom);
+  const { ref } = useResizeDetector({
+    onResize(_, height) {
+      if (typeof height === 'number') {
+        setStepControlHeight(height);
+      }
+    },
+  });
 
   return (
-    <div className="step-controls">
+    <div className="step-controls" ref={ref}>
       {changeId &&
         savedComments[changeId] &&
         savedComments[changeId].map((comment, i) => (

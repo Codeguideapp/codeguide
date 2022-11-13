@@ -1,5 +1,7 @@
 import { ReactElement } from 'react-markdown/lib/react-markdown';
 
+import { RepoFileRef } from '../atoms/files';
+
 type TreeItem = {
   key: string;
   title: string;
@@ -8,18 +10,12 @@ type TreeItem = {
   icon?: ReactElement | null;
   url: string;
   children?: TreeItem[];
+  file?: RepoFileRef;
 };
 
 const ROOT = Symbol('root');
 
-export function pathsToTreeStructure(
-  data: {
-    type: 'tree' | 'blob';
-    path: string;
-    url: string;
-    sha: string;
-  }[]
-): TreeItem[] {
+export function pathsToTreeStructure(data: RepoFileRef[]): TreeItem[] {
   let references: Record<string | symbol, TreeItem> = {};
 
   references[ROOT] = {
@@ -31,16 +27,17 @@ export function pathsToTreeStructure(
     children: [],
   };
 
-  for (const { path, type, url } of data) {
-    const splittedPath = path.split('/');
+  for (const file of data) {
+    const splittedPath = file.path.split('/');
 
-    references[path] = {
-      isLeaf: type !== 'tree',
-      type,
+    references[file.path] = {
+      isLeaf: file.type !== 'tree',
+      type: file.type,
       icon: null,
-      key: path,
-      url,
+      key: file.path,
+      url: file.url,
       title: splittedPath[splittedPath.length - 1],
+      file,
     };
 
     // add item to parent cildren
@@ -51,7 +48,7 @@ export function pathsToTreeStructure(
       if (!references[parentPath].children) {
         references[parentPath].children = [];
       }
-      references[parentPath].children!.push(references[path]);
+      references[parentPath].children!.push(references[file.path]);
       references[parentPath].children!.sort((a, b) =>
         a.isLeaf && !b.isLeaf ? 1 : !a.isLeaf && b.isLeaf ? -1 : 0
       );

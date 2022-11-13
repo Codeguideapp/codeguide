@@ -12,7 +12,7 @@ import {
   changesOrderAtom,
   highlightChangeIdAtom,
 } from '../atoms/changes';
-import { setFileByPathAtom } from '../atoms/files';
+import { setActiveFileByPathAtom } from '../atoms/files';
 import { DeltaPreview } from '../Shared/DeltaPreview';
 import { getFileContent } from '../utils/deltaUtils';
 import { getStepPreview } from './getStepPreview';
@@ -24,7 +24,7 @@ export function Guide() {
   const [changesOrder] = useAtom(changesOrderAtom);
   const [activeChangeId] = useAtom(activeChangeIdAtom);
   const [, setHighlightChangeId] = useAtom(highlightChangeIdAtom);
-  const [, setFileByPath] = useAtom(setFileByPathAtom);
+  const [, setFileByPath] = useAtom(setActiveFileByPathAtom);
 
   const nonDepChanges = changesOrder
     .filter((id) => !changes[id].isFileDepChange)

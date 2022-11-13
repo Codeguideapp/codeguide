@@ -1,41 +1,33 @@
 import { atom } from 'jotai';
-import Delta from 'quill-delta';
 
 import {
   changesAtom,
-  changesOrderAtom,
   highlightChangeIdAtom,
   undraftChangeAtom,
 } from './changes';
-import { saveDeltaAtom, saveFileNodeAtom } from './saveDeltaAtom';
+import { saveFileNodeAtom } from './saveDeltaAtom';
 
-export type FileDiff = {
+export type FileNode = {
+  isFileDiff: boolean;
+  isFetching: boolean;
+  fetchError?: string;
   status: 'added' | 'modified' | 'deleted';
   path: string;
   oldVal: string;
   newVal: string;
 };
 
-export type FileBrowse = {
+export type RepoFileRef = {
   type: 'tree' | 'blob';
   path: string;
   url: string;
   sha: string;
 };
 
-export function isFileDiff(val: FileDiff | FileBrowse): val is FileDiff {
-  return typeof (val as FileDiff).oldVal === 'string';
-}
-export function isFileBrowse(val: FileDiff | FileBrowse): val is FileBrowse {
-  return typeof (val as FileBrowse).url === 'string';
-}
+export const allRepoFileRefsAtom = atom<RepoFileRef[]>([]);
+export const fileNodesAtom = atom<FileNode[]>([]);
 
-export const repoFilesAtom = atom<FileBrowse[]>([]);
-export const fileChangesAtom = atom<FileDiff[]>([]);
-
-export const activeFileAtom = atom<FileDiff | FileBrowse | undefined>(
-  undefined
-);
+export const activeFileAtom = atom<FileNode | undefined>(undefined);
 
 export const unsavedFilePathsAtom = atom((get) => {
   const changes = get(changesAtom);
@@ -44,7 +36,7 @@ export const unsavedFilePathsAtom = atom((get) => {
     .map((c) => c.path);
 });
 
-export const saveActiveFileAtom = atom(null, (get, set) => {
+export const undraftActiveFileAtom = atom(null, (get, set) => {
   const activeFile = get(activeFileAtom);
 
   if (!activeFile) return;
@@ -60,35 +52,19 @@ export const saveActiveFileAtom = atom(null, (get, set) => {
   set(undraftChangeAtom, draftChange.id);
 });
 
-export const setFileByPathAtom = atom(
+export const setActiveFileByPathAtom = atom(
   null,
   (get, set, path: string | undefined) => {
-    const fileChanges = get(fileChangesAtom);
+    const fileNodes = get(fileNodesAtom);
 
-    const file = fileChanges.find((f) => f.path === path);
+    const file = fileNodes.find((f) => f.path === path);
 
     set(activeFileAtom, file);
 
     if (!file) return;
 
-    const changesOrder = get(changesOrderAtom);
-    const changes = get(changesAtom);
-
-    if (
-      file.status !== 'added' &&
-      !changesOrder.find((id) => changes[id].path === file.path)
-    ) {
-      // this is first time change is saved for a file
-      set(saveDeltaAtom, {
-        file,
-        isFileDepChange: true,
-        delta: new Delta().insert(file.oldVal),
-        highlight: [],
-      });
-    }
-
+    // save new change filenode
     const highlightChangeId = get(highlightChangeIdAtom);
-
     if (!highlightChangeId) {
       set(saveFileNodeAtom, file.path);
     }

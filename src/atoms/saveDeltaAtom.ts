@@ -8,17 +8,38 @@ import { calcStat, composeDeltas, deltaToString } from '../utils/deltaUtils';
 import { changesAtom, changesOrderAtom } from './changes';
 import { Change } from './changes';
 import { draftCommentsAtom, savedCommentsAtom } from './comments';
-import { FileDiff } from './files';
+import { FileNode, fileNodesAtom } from './files';
 interface SaveDeltaParams {
   delta: Delta;
   highlight: Change['highlight'];
-  file: FileDiff;
+  file: FileNode;
   isFileDepChange?: boolean;
 }
 
 export const saveFileNodeAtom = atom(null, (get, set, path: string) => {
-  const changes = get(changesAtom);
-  const changesOrder = get(changesOrderAtom);
+  let changes = get(changesAtom);
+  let changesOrder = get(changesOrderAtom);
+  const file = get(fileNodesAtom).find((f) => f.path === path);
+
+  if (!file) {
+    throw new Error('file not found');
+  }
+
+  if (
+    file.status !== 'added' &&
+    !changesOrder.find((id) => changes[id].path === file.path)
+  ) {
+    // this is first time change is saved for a file
+    set(saveDeltaAtom, {
+      file,
+      isFileDepChange: true,
+      delta: new Delta().insert(file.oldVal),
+      highlight: [],
+    });
+
+    changes = get(changesAtom);
+    changesOrder = get(changesOrderAtom);
+  }
 
   const nonDepChanges = changesOrder
     .filter((id) => !changes[id].isFileDepChange)
@@ -77,7 +98,7 @@ export const saveDeltaAtom = atom(null, (get, set, params: SaveDeltaParams) => {
   const before = deltaToString(fileChanges);
   const after = deltaToString([...fileChanges, delta]);
 
-  let changeStatus: Change['fileStatus'];
+  let changeStatus: Change['fileStatus'] = 'modified';
   switch (file.status) {
     case 'added':
       changeStatus = fileChanges.length === 0 ? 'added' : 'modified';

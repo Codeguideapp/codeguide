@@ -8,7 +8,7 @@ export async function checkToken() {
   // we asume the token is valid
   // ... but we check just to be sure
   return fetchWithThrow(`${backendApi}/github/oauth/token`, {
-    json: false,
+    jsonRes: false,
     headers: {
       authorization: `token ${token}`,
     },

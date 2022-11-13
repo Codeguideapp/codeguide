@@ -3,7 +3,7 @@ import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 import { useCallback } from 'react';
 
-import { activeFileAtom, isFileDiff } from '../atoms/files';
+import { activeFileAtom } from '../atoms/files';
 import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
 import { modifiedModel } from '../utils/monaco';
 
@@ -13,7 +13,7 @@ export function useHighlight() {
 
   return useCallback(
     (selections: monaco.Selection[]) => {
-      if (!activeFile || !isFileDiff(activeFile)) {
+      if (!activeFile) {
         return;
       }
 

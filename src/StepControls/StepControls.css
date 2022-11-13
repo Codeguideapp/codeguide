@@ -1,6 +1,9 @@
 .step-controls {
   background: var(--background-1);
-  position: relative;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  left: 0;
   overflow: auto;
   max-height: 50%;
 }

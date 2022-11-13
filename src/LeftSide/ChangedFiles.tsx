@@ -5,21 +5,23 @@ import React, { useMemo } from 'react';
 
 import {
   activeFileAtom,
-  fileChangesAtom,
-  setFileByPathAtom,
+  fileNodesAtom,
+  setActiveFileByPathAtom,
 } from '../atoms/files';
 
 const { DirectoryTree } = Tree;
 
 export function ChangedFiles() {
   const [activeFile] = useAtom(activeFileAtom);
-  const [, setFileByPath] = useAtom(setFileByPathAtom);
-  const [fileChanges] = useAtom(fileChangesAtom);
+  const [, setFileByPath] = useAtom(setActiveFileByPathAtom);
+  const [fileChanges] = useAtom(fileNodesAtom);
 
   const treeData = useMemo(() => {
     const treeData: DataNode[] = [];
 
     for (const file of fileChanges || []) {
+      if (!file.isFileDiff) continue;
+
       const filename = file.path.split('/').pop();
 
       treeData.push({

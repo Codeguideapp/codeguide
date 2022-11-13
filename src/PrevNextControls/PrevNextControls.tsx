@@ -14,7 +14,7 @@ import {
   changesOrderAtom,
   highlightChangeIdAtom,
 } from '../atoms/changes';
-import { setFileByPathAtom } from '../atoms/files';
+import { setActiveFileByPathAtom } from '../atoms/files';
 
 library.add(faBackwardStep, faForwardStep, faPlay);
 
@@ -24,7 +24,7 @@ export function PrevNextControls() {
   const [highlightChangeId, setHighlightChangeId] = useAtom(
     highlightChangeIdAtom
   );
-  const [, setFileByPath] = useAtom(setFileByPathAtom);
+  const [, setFileByPath] = useAtom(setActiveFileByPathAtom);
 
   const changesIdsNoFile = useMemo(
     () =>
