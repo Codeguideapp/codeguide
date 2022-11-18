@@ -23,13 +23,6 @@ body {
   --zinc-900: #18181b;
 }
 
-.main {
-  position: fixed;
-  top: 40px;
-  bottom: 0;
-  left: 0;
-  right: 0;
-}
 .top-bar {
   height: 40px;
   border-bottom: 1px solid var(--zinc-900);

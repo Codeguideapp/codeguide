@@ -33,12 +33,17 @@ export function StepControls() {
   });
 
   return (
-    <div className="step-controls" ref={ref}>
-      {changeId &&
-        savedComments[changeId] &&
-        savedComments[changeId].map((comment, i) => (
-          <PreviewComment key={i} value={comment.value} />
-        ))}
+    <div
+      className="bg-zinc-900 absolute bottom-0 right-0 left-0  step-controls"
+      ref={ref}
+    >
+      <div className="overflow-auto max-h-[40vh]">
+        {changeId &&
+          savedComments[changeId] &&
+          savedComments[changeId].map((comment, i) => (
+            <PreviewComment key={i} value={comment.value} />
+          ))}
+      </div>
 
       <div
         style={{

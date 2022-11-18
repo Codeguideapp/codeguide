@@ -35,7 +35,7 @@ export function App() {
           <span onClick={logout}>logout</span>
         </div>
       </div>
-      <div className="main">
+      <div className="fixed top-[40px] bottom-0 left-0 right-0">
         <Split
           className={classNames({ 'split-horiz': true, dragging: isDragging })}
           direction="horizontal"

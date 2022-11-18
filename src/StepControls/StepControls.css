@@ -1,12 +1,3 @@
-.step-controls {
-  background: var(--zinc-900);
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  left: 0;
-  overflow: auto;
-  max-height: 50%;
-}
 .step-controls .header {
   display: flex;
   align-items: center;
