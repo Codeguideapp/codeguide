@@ -18,7 +18,9 @@ import { windowHeightAtom, windowWidthAtom } from './atoms/layout';
 import { darkTheme, darkThemeInvertedDif } from './Editor/monaco-themes/dark';
 import { App } from './App';
 import { initAtom, repoApiStatusAtom } from './atoms/init';
-import { login } from './login';
+import { AccessDenied } from './indexAccessDenied';
+import { GuideNotFound } from './indexGuideNotFound';
+import { Loading } from './indexLoading';
 
 function Loader() {
   const [, setWindowHeight] = useAtom(windowHeightAtom);
@@ -49,23 +51,9 @@ function Loader() {
     init();
   }, [init]);
 
-  if (repoApiStatus.shouldTryLogin) {
-    return (
-      <div>
-        <div>GitHub fetch repository data failed</div>
-        <div>
-          Is it a private repo? Try{' '}
-          <span style={{ fontWeight: 'bold' }} onClick={login}>
-            log in with github
-          </span>
-        </div>
-      </div>
-    );
-  }
-  if (repoApiStatus.isError)
-    return <div>GitHub fetch repository data failed</div>;
-
-  if (repoApiStatus.isLoading) return <div>loading...</div>;
+  if (repoApiStatus.shouldTryLogin) return <AccessDenied />;
+  if (repoApiStatus.isError) return <GuideNotFound />;
+  if (repoApiStatus.isLoading) return <Loading />;
 
   return <App />;
 }
@@ -83,8 +71,3 @@ const renderApp = () => {
 };
 
 renderApp();
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-//reportWebVitals();

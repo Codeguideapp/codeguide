@@ -5,12 +5,12 @@ export const darkThemeInvertedDif: monaco.editor.IStandaloneThemeData = {
   inherit: true,
   rules: [
     {
-      background: '181A1C',
+      background: '18181b',
       token: '',
     },
   ],
   colors: {
-    'editor.background': `#181A1C`,
+    'editor.background': `#18181b`,
     'diffEditor.insertedTextBackground': '#ff000060',
     'diffEditor.removedTextBackground': '#9ccc2c33',
     'diffEditor.insertedLineBackground': '#ff000030',
@@ -23,11 +23,11 @@ export const darkTheme: monaco.editor.IStandaloneThemeData = {
   inherit: true,
   rules: [
     {
-      background: '181A1C',
+      background: '18181b',
       token: '',
     },
   ],
   colors: {
-    'editor.background': `#181A1C`,
+    'editor.background': `#18181b`,
   },
 };

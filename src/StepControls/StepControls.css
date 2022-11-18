@@ -1,5 +1,5 @@
 .step-controls {
-  background: var(--background-1);
+  background: var(--zinc-900);
   position: absolute;
   bottom: 0;
   right: 0;
@@ -60,7 +60,7 @@
 
 .step-controls .ant-comment {
   position: relative;
-  background-color: #1f2124;
+  background-color: var(--zinc-custom-850);
   margin: 10px;
   border-radius: 5px;
 }

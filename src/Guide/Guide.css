@@ -1,6 +1,6 @@
 .guide {
   overflow: auto;
-  background: var(--background-3);
+  background: var(--zinc-custom-850);
 }
 
 .guide .header,
@@ -52,7 +52,7 @@
 }
 
 .guide .step-circle {
-  background: #181a1c;
+  background: var(--zinc-custom-850);
   width: 22px;
   height: 22px;
   border-radius: 19px;
@@ -67,7 +67,7 @@
   width: 7px;
   height: 7px;
   margin: 7px;
-  background-color: var(--background-1);
+  background-color: var(--zinc-900);
 }
 
 .guide .file .step-circle span {
@@ -98,7 +98,7 @@
 }
 
 .guide .draft .step-circle {
-  background: var(--background-3);
+  background: var(--zinc-custom-850);
   border: 1px solid #824500;
 }
 

@@ -21,6 +21,7 @@
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
     "antd": "^4.19.5",
+    "autoprefixer": "^10.4.13",
     "classnames": "^2.3.1",
     "diff": "^5.1.0",
     "diff-match-patch": "^1.0.5",
@@ -35,6 +36,7 @@
     "mousetrap": "^1.6.5",
     "nanoid": "^3.3.2",
     "octokit": "^1.7.1",
+    "postcss": "^8.4.19",
     "quill-delta": "^4.2.2",
     "react": "^17.0.2",
     "react-app-rewired": "^2.2.1",
@@ -48,6 +50,7 @@
     "rehype-highlight": "^5.0.2",
     "remark-gfm": "^3.0.1",
     "swr": "^1.2.2",
+    "tailwindcss": "^3.2.4",
     "typescript": "^4.6.2",
     "web-vitals": "^1.0.1"
   },

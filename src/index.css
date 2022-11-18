@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 #root {
   position: fixed;
   top: 0;
@@ -14,10 +18,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background: #0000;
   color: #cccccc;
-  --background-1: #181a1c;
-  --background-2: #202428;
-  --background-3: #1f2124;
-  --background-4: #272a2e;
+  --zinc-custom-850: #202023;
+  --zinc-800: #27272a;
+  --zinc-900: #18181b;
 }
 
 .main {
@@ -29,8 +32,8 @@ body {
 }
 .top-bar {
   height: 40px;
-  border-bottom: 1px solid var(--background-1);
-  background: var(--background-2);
+  border-bottom: 1px solid var(--zinc-900);
+  background: var(--zinc-800);
   display: flex;
   align-items: center;
   padding: 10px;
@@ -60,7 +63,7 @@ body {
   width: 45px;
   min-width: 45px;
   border-right: 1px solid #202020;
-  background: var(--background-2);
+  background: var(--zinc-800);
   display: flex;
   padding-top: 20px;
   flex-direction: column;
@@ -77,7 +80,7 @@ body {
   opacity: 1;
 }
 .file-tree {
-  background: var(--background-3);
+  background: var(--zinc-custom-850);
   width: 100%;
   min-width: 200px;
 }
@@ -206,7 +209,7 @@ code {
   flex-direction: row;
   width: 100%;
   height: 100%;
-  background: var(--background-3);
+  background: var(--zinc-custom-850);
 }
 
 .gutter {
@@ -217,7 +220,7 @@ code {
 
 .gutter.gutter-horizontal {
   cursor: col-resize;
-  background: #1f2124;
+  background: var(--zinc-900);
   transition: 0s background-color;
 }
 .dragging > .gutter.gutter-horizontal {
@@ -238,11 +241,11 @@ code {
 }
 
 .timeline {
-  background: var(--background-2);
+  background: var(--zinc-800);
 }
 
 .timeline-top {
-  background: var(--background-2);
+  background: var(--zinc-800);
   border-bottom: 1px solid #191c1f;
   text-align: center;
   display: flex;
@@ -290,7 +293,7 @@ code {
 }
 .timeline-top .ant-slider .ant-slider-rail,
 .timeline-top .ant-slider:hover .ant-slider-rail {
-  background-color: #181a1c;
+  background-color: var(--zinc-900);
 }
 .timeline-top .ant-slider .ant-slider-handle,
 .timeline-top .ant-slider:hover .ant-slider-handle {
@@ -304,7 +307,7 @@ code {
 .editor-top {
   height: 30px;
   width: 100%;
-  background: var(--background-3);
+  background: var(--zinc-custom-850);
   text-align: left;
   display: flex;
   align-items: center;
@@ -313,7 +316,7 @@ code {
 .editor-top .filename {
   font-family: 'Roboto';
   padding: 0 15px 0 25px;
-  background: var(--background-1);
+  background: var(--zinc-900);
   height: 30px;
   line-height: 30px;
   text-align: center;
@@ -340,7 +343,7 @@ code {
 }
 .editor-statusbar {
   height: 20px;
-  background: var(--background-1);
+  background: var(--zinc-900);
   border-top: 1px solid #27282a;
   display: flex;
   align-items: center;
@@ -452,7 +455,7 @@ body .monaco-diff-editor.side-by-side .editor.modified {
 .rightpanel-top {
   height: 50px;
   width: 100%;
-  background: var(--background-2);
+  background: var(--zinc-800);
   display: flex;
   align-items: center;
   font-family: 'Roboto';
@@ -462,110 +465,6 @@ body .monaco-diff-editor.side-by-side .editor.modified {
 .rightpanel-top span {
   padding: 0 8px;
   font-weight: bold;
-}
-
-.diff-markers-wrap {
-  overflow: auto;
-  background: var(--background-1);
-  padding: 15px;
-  height: 100%;
-}
-.diff-marker {
-  background: #202326;
-  border-radius: 4px;
-  min-height: 60px;
-  margin-bottom: 15px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  position: relative;
-}
-
-.diff-marker .buttons {
-  position: absolute;
-  right: 0;
-  display: none;
-}
-.diff-marker .buttons svg {
-  background: var(--background-4);
-  padding: 5px;
-  color: #666;
-}
-.diff-marker .buttons svg:hover {
-  color: #ccc;
-}
-.diff-marker.active {
-  background: #303539;
-}
-.diff-marker.active .buttons {
-  display: block;
-}
-
-.diff-marker .bottom {
-  display: flex;
-  align-items: center;
-  margin-top: 10px;
-}
-.diff-marker .bottom .line {
-  width: 100%;
-  display: flex;
-  padding-left: 7px;
-}
-.diff-marker .bottom .line .insert {
-  border-bottom: 1px solid #0e8d2a;
-}
-.diff-marker .bottom .line .delete {
-  border-bottom: 1px solid #9a1b20;
-}
-.diff-marker.highlight-delete .bottom .line .delete {
-  border-bottom: 2px solid #d32329;
-}
-.diff-marker.highlight-insert .bottom .line .insert {
-  border-bottom: 2px solid #11b434;
-}
-
-.diff-marker.indent .bottom .line > span {
-  border-bottom-style: dotted;
-  border-bottom-width: 2px;
-}
-.diff-marker.whitespace .bottom .line > span {
-  border-bottom-style: dotted;
-  border-bottom-width: 2px;
-}
-
-.diff-marker .stat {
-  text-align: right;
-  width: 30%;
-  white-space: nowrap;
-  font-family: 'Inconsolata';
-  font-size: 11px;
-  font-weight: bold;
-  padding-right: 7px;
-  max-width: 70px;
-}
-.diff-marker .stat .additions {
-  color: #3be300;
-  display: inline-block;
-  text-align: right;
-  padding-right: 5px;
-}
-.diff-marker .stat .deletions {
-  color: #ff5252;
-  display: inline-block;
-  text-align: right;
-}
-
-.diff-marker.indent .delta-preview .code,
-.diff-marker.whitespace .delta-preview .code {
-  color: rgb(131 122 29);
-}
-
-.diff-marker.applied {
-  opacity: 0.3;
-  background: #181a1c;
-}
-.diff-marker.applied .delta-preview {
-  opacity: 0.5;
 }
 
 svg.disabled {

@@ -93,7 +93,7 @@ export function Guide() {
               }}
             >
               <div className="step-line-v"></div>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div className="flex items-center">
                 <div className="step-circle">
                   <span style={{ display: change.isDraft ? 'none' : 'block' }}>
                     {isBeforeActive && <FontAwesomeIcon icon="check" />}
@@ -126,7 +126,7 @@ export function Guide() {
               active: !activeChangeId,
             })}
           >
-            <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div className="flex items-center">
               <div className="step-line-v last"></div>
               <div className="step-circle"></div>
               <>
