@@ -6,8 +6,7 @@ import { useEffect, useRef } from 'react';
 
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { FileNode } from '../atoms/files';
-import { monacoThemeRef } from '../atoms/layout';
-import { showWhitespaceAtom } from '../atoms/options';
+import { showWhitespaceAtom } from '../atoms/layout';
 import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
 import { composeDeltas, getFileContent } from '../utils/deltaUtils';
 import { modifiedModel, originalModel, previewModel } from '../utils/monaco';
@@ -33,10 +32,9 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
 
     diffEditor.current?.dispose();
 
-    monacoThemeRef.current = 'darkInvertedDiff';
     diffEditor.current = monaco.editor.createDiffEditor(editorDiffDom.current, {
       automaticLayout: true,
-      theme: monacoThemeRef.current,
+      theme: 'darkInvertedDiff',
       glyphMargin: true,
       ignoreTrimWhitespace: !showWhitespace,
     });
@@ -134,7 +132,7 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
           )
         );
       });
-  }, [activeFile, changesOrder, saveDelta, saveHighlight]); // not watching changes as dep, because it is covered by changesOrder
+  }, [activeFile, changesOrder, prevFile?.path, saveDelta, saveHighlight]); // not watching changes as dep, because it is covered by changesOrder
 
   return <div ref={editorDiffDom} className="monaco edit-mode"></div>;
 }

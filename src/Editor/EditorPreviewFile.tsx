@@ -2,7 +2,6 @@ import * as monaco from 'monaco-editor';
 import { useEffect, useRef } from 'react';
 
 import { FileNode } from '../atoms/files';
-import { monacoThemeRef } from '../atoms/layout';
 import { modifiedModel } from '../utils/monaco';
 import { useHighlight } from './useHighlight';
 
@@ -18,10 +17,9 @@ export function EditorPreviewFile({ activeFile }: { activeFile: FileNode }) {
 
     standaloneEditor.current?.dispose();
 
-    monacoThemeRef.current = 'darkInvertedDiff';
     standaloneEditor.current = monaco.editor.create(editorDom.current, {
       automaticLayout: true,
-      theme: monacoThemeRef.current,
+      theme: 'darkInvertedDiff',
       glyphMargin: true,
       model: modifiedModel,
       readOnly: true,

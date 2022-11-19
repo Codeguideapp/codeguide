@@ -1,11 +1,10 @@
 import { useAtomValue } from 'jotai';
 import * as monaco from 'monaco-editor';
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
-import { monacoThemeRef } from '../atoms/layout';
-import { showWhitespaceAtom } from '../atoms/options';
+import { showWhitespaceAtom } from '../atoms/layout';
 import { getFileContent } from '../utils/deltaUtils';
 import { getRange } from '../utils/monaco';
 
@@ -36,8 +35,6 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
     const currentChangeIndex = changesOrder.findIndex((c) => c === changeId);
     const prevChange = changes[changesOrder[currentChangeIndex - 1]];
 
-    monacoThemeRef.current = 'darkTheme';
-
     if (activeFile.path !== currentChange.path) {
       const changesUpToChangeId = changesOrder
         .slice(0, currentChangeIndex)
@@ -61,7 +58,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
 
       standaloneEditor.current = monaco.editor.create(monacoDom.current, {
         automaticLayout: true,
-        theme: monacoThemeRef.current,
+        theme: 'darkTheme',
         readOnly: true,
       });
       standaloneEditor.current.setModel(modelCurrent);
@@ -70,7 +67,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
 
       standaloneEditor.current = monaco.editor.create(monacoDom.current, {
         automaticLayout: true,
-        theme: monacoThemeRef.current,
+        theme: 'darkTheme',
         readOnly: true,
       });
       standaloneEditor.current.setModel(modelCurrent);
@@ -87,7 +84,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
       if (!diffEditor.current) {
         diffEditor.current = monaco.editor.createDiffEditor(monacoDom.current, {
           automaticLayout: true,
-          theme: monacoThemeRef.current,
+          theme: 'darkTheme',
           readOnly: true,
           renderSideBySide: false,
           glyphMargin: true,

@@ -6,7 +6,7 @@ import {
 import { Tooltip } from 'antd';
 import { useAtom } from 'jotai';
 
-import { showWhitespaceAtom } from '../atoms/options';
+import { showWhitespaceAtom } from '../atoms/layout';
 import { ReactComponent as WhitespaceIcon } from './whitespace.svg';
 
 library.add(faHighlighter, faCodeCompare);

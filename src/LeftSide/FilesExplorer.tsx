@@ -19,6 +19,7 @@ import {
   fileNodesAtom,
   setActiveFileByPathAtom,
 } from '../atoms/files';
+import { expandedFilesAtom } from '../atoms/layout';
 import { fetchWithThrow } from '../utils/fetchWithThrow';
 import { pathsToTreeStructure } from '../utils/pathsToTree';
 
@@ -32,7 +33,7 @@ export function FilesExplorer() {
   const [, setActiveFileByPath] = useAtom(setActiveFileByPathAtom);
   const [highlightChangeId] = useAtom(highlightChangeIdAtom);
   const [changes] = useAtom(changesAtom);
-  const [expanded, setExpanded] = useState<string[]>([]);
+  const [expanded, setExpanded] = useAtom(expandedFilesAtom);
   const [wrapperHeight, setWrapperHeight] = useState(400);
 
   const treeData = useMemo(
