@@ -7,8 +7,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { AntdTreeNodeAttribute } from 'antd/lib/tree';
 import ForwardDirectoryTree from 'antd/lib/tree/DirectoryTree';
 import { useAtom } from 'jotai';
-import React, { useMemo } from 'react';
+import { uniq } from 'lodash';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useResizeDetector } from 'react-resize-detector';
 
+import { changesAtom, highlightChangeIdAtom } from '../atoms/changes';
 import {
   activeFileAtom,
   allRepoFileRefsAtom,
@@ -22,28 +25,74 @@ import { pathsToTreeStructure } from '../utils/pathsToTree';
 let lastFetchController: AbortController | null;
 
 export function FilesExplorer() {
+  const treeRef = React.useRef<any>();
   const [allRepoFileRefs] = useAtom(allRepoFileRefsAtom);
-  const [, setActiveFile] = useAtom(activeFileAtom);
+  const [activeFile, setActiveFile] = useAtom(activeFileAtom);
   const [fileNodes, setFileNodes] = useAtom(fileNodesAtom);
   const [, setActiveFileByPath] = useAtom(setActiveFileByPathAtom);
+  const [highlightChangeId] = useAtom(highlightChangeIdAtom);
+  const [changes] = useAtom(changesAtom);
+  const [expanded, setExpanded] = useState<string[]>([]);
+  const [wrapperHeight, setWrapperHeight] = useState(400);
 
   const treeData = useMemo(
     () => pathsToTreeStructure(allRepoFileRefs),
     [allRepoFileRefs]
   );
 
+  const { ref } = useResizeDetector({
+    onResize(_, height) {
+      if (typeof height === 'number' && wrapperHeight !== height) {
+        setWrapperHeight(height);
+      }
+    },
+  });
+
+  useEffect(() => {
+    if (!highlightChangeId) return;
+
+    const pathArr = changes[highlightChangeId].path.split('/');
+    const toExpland = pathArr.reduce((acc: string[], curr: string) => {
+      const nextPath = [...acc, curr].join('/');
+      return [...acc, nextPath];
+    }, []);
+
+    setExpanded((prevVal) => uniq([...prevVal, ...toExpland]));
+
+    setTimeout(() => {
+      treeRef.current.scrollTo({
+        key: changes[highlightChangeId].path,
+        align: 'top',
+        offset: 50,
+      });
+    }, 200);
+  }, [highlightChangeId, changes]);
+
   return (
-    <div className="file-tree">
+    <div className="file-tree" ref={ref}>
       <div className="header">Explorer</div>
       <ForwardDirectoryTree
+        ref={treeRef}
         className="directory-tree"
         treeData={treeData}
         switcherIcon={<span></span>}
         icon={getIcon}
-        // activeKey={activeFile?.path}
-        // selectedKeys={[activeFile?.path || '']}
-        onSelect={(_selected, info) => {
+        activeKey={activeFile?.path}
+        selectedKeys={[activeFile?.path || '']}
+        expandedKeys={expanded}
+        height={wrapperHeight - 40}
+        onSelect={(selected, info) => {
           const node = info.node as any;
+
+          if (node.type === 'tree' && selected.length === 1) {
+            if (node.expanded) {
+              setExpanded((prevVal) =>
+                prevVal.filter((key) => key !== selected[0])
+              );
+            } else {
+              setExpanded((prevVal) => [...prevVal, selected[0] as string]);
+            }
+          }
 
           if (node.type === 'blob') {
             if (fileNodes.find((f) => f.path === node.key)) {
