@@ -5,7 +5,7 @@ export function fetchWithThrow(
   return fetch(input, init)
     .then(function (response) {
       if (!response.ok) {
-        throw Error(response.statusText);
+        throw response;
       }
       return response;
     })

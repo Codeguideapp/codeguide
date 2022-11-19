@@ -10,11 +10,11 @@ import { guideAtom } from './guide';
 export const repoApiStatusAtom = atom<{
   isLoading: boolean;
   shouldTryLogin: boolean;
-  isError: boolean;
+  errorStatus: number;
 }>({
   isLoading: true,
   shouldTryLogin: false,
-  isError: false,
+  errorStatus: 0,
 });
 
 export const initAtom = atom(null, async (get, set) => {
@@ -36,10 +36,9 @@ export const initAtom = atom(null, async (get, set) => {
     const guide = await fetchWithThrow(`${backendApi}/guide/${guideId}`);
 
     set(guideAtom, guide);
-  } catch (err) {
-    // todo: new error prop
+  } catch (err: any) {
     return set(repoApiStatusAtom, {
-      isError: true,
+      errorStatus: err?.status || 500,
       shouldTryLogin: false,
       isLoading: false,
     });
@@ -66,20 +65,20 @@ export const initAtom = atom(null, async (get, set) => {
     );
 
     set(repoApiStatusAtom, {
-      isError: false,
+      errorStatus: 0,
       shouldTryLogin: false,
       isLoading: false,
     });
-  } catch (err) {
+  } catch (err: any) {
     if (!localStorage.getItem('token')) {
       set(repoApiStatusAtom, {
-        isError: true,
+        errorStatus: err?.status || 0,
         shouldTryLogin: true,
         isLoading: false,
       });
     } else {
       set(repoApiStatusAtom, {
-        isError: true,
+        errorStatus: err?.status || 0,
         shouldTryLogin: false,
         isLoading: false,
       });

@@ -6,7 +6,6 @@ import '@fontsource/inconsolata';
 import '@fontsource/roboto';
 
 import { useAtom } from 'jotai';
-import { debounce } from 'lodash';
 import * as monaco from 'monaco-editor';
 import * as Mousetrap from 'mousetrap';
 import 'mousetrap/plugins/global-bind/mousetrap-global-bind'; // must be imported after Mousetrap
@@ -14,17 +13,15 @@ import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom';
 
 import { undraftActiveFileAtom } from './atoms/files';
-import { windowHeightAtom, windowWidthAtom } from './atoms/layout';
 import { darkTheme, darkThemeInvertedDif } from './Editor/monaco-themes/dark';
 import { App } from './App';
 import { initAtom, repoApiStatusAtom } from './atoms/init';
 import { AccessDenied } from './indexAccessDenied';
 import { GuideNotFound } from './indexGuideNotFound';
 import { Loading } from './indexLoading';
+import { InternalError } from './indexInternalError';
 
 function Loader() {
-  const [, setWindowHeight] = useAtom(windowHeightAtom);
-  const [, setWindowWidth] = useAtom(windowWidthAtom);
   const [, undraftActiveFile] = useAtom(undraftActiveFileAtom);
   const [, init] = useAtom(initAtom);
   const [repoApiStatus] = useAtom(repoApiStatusAtom);
@@ -38,22 +35,14 @@ function Loader() {
   }, [undraftActiveFile]);
 
   useEffect(() => {
-    window.addEventListener(
-      'resize',
-      debounce(() => {
-        setWindowWidth(window.innerWidth);
-        setWindowHeight(window.innerHeight);
-      }, 100)
-    );
-  }, [setWindowHeight, setWindowWidth]);
-
-  useEffect(() => {
     init();
   }, [init]);
 
-  if (repoApiStatus.shouldTryLogin) return <AccessDenied />;
-  if (repoApiStatus.isError) return <GuideNotFound />;
   if (repoApiStatus.isLoading) return <Loading />;
+  if (repoApiStatus.shouldTryLogin) return <AccessDenied />;
+  if (repoApiStatus.errorStatus === 404) return <GuideNotFound />;
+  if (repoApiStatus.errorStatus !== 0 && repoApiStatus.errorStatus !== 404)
+    return <InternalError />;
 
   return <App />;
 }
