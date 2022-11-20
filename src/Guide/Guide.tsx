@@ -1,7 +1,12 @@
 import './Guide.css';
 
 import { library } from '@fortawesome/fontawesome-svg-core';
-import { faCheck, faImage, faUpload } from '@fortawesome/free-solid-svg-icons';
+import {
+  faCheck,
+  faImage,
+  faMessage,
+  faUpload,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classNames from 'classnames';
 import { useAtom } from 'jotai';
@@ -12,6 +17,7 @@ import {
   changesOrderAtom,
   highlightChangeIdAtom,
 } from '../atoms/changes';
+import { savedCommentsAtom } from '../atoms/comments';
 import { setActiveFileByPathAtom } from '../atoms/files';
 import { DeltaPreview } from '../Shared/DeltaPreview';
 import { getFileContent } from '../utils/deltaUtils';
@@ -23,6 +29,7 @@ export function Guide() {
   const [changes] = useAtom(changesAtom);
   const [changesOrder] = useAtom(changesOrderAtom);
   const [activeChangeId] = useAtom(activeChangeIdAtom);
+  const [savedComments] = useAtom(savedCommentsAtom);
   const [, setHighlightChangeId] = useAtom(highlightChangeIdAtom);
   const [, setFileByPath] = useAtom(setActiveFileByPathAtom);
 
@@ -93,7 +100,7 @@ export function Guide() {
               }}
             >
               <div className="step-line-v"></div>
-              <div className="flex items-center">
+              <div className="flex items-center relative">
                 <div className="step-circle">
                   <span style={{ display: change.isDraft ? 'none' : 'block' }}>
                     {isBeforeActive && <FontAwesomeIcon icon="check" />}
@@ -111,6 +118,27 @@ export function Guide() {
                       <DeltaPreview preview={preview} />
                     </div>
                   </>
+                )}
+                {savedComments[change.id] && (
+                  <div
+                    title={savedComments[change.id].length + ' comments'}
+                    className={
+                      'absolute right-3 p-2 ' +
+                      (isBeforeActive ? 'bg-[#2c3035]' : 'bg-[#24262a]')
+                    }
+                  >
+                    <div
+                      className={
+                        'text-zinc-400 ' +
+                        (isBeforeActive ? 'opacity-60' : 'opacity-30')
+                      }
+                    >
+                      <FontAwesomeIcon
+                        style={{ fontSize: 12 }}
+                        icon={faMessage}
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
