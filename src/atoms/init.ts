@@ -5,7 +5,7 @@ import { backendApi } from '../config';
 import { checkToken, exchangeCodeForToken } from '../login';
 import { fetchWithThrow } from '../utils/fetchWithThrow';
 import { allRepoFileRefsAtom, fileNodesAtom } from './files';
-import { guideAtom } from './guide';
+import { guideAtom, isEditAtom } from './guide';
 
 export const repoApiStatusAtom = atom<{
   isLoading: boolean;
@@ -33,6 +33,9 @@ export const initAtom = atom(null, async (get, set) => {
 
   try {
     const guideId = document.location.pathname.split('/')[1];
+    const isEdit = document.location.pathname.split('/')[2] === 'edit';
+
+    set(isEditAtom, isEdit);
     const guide = await fetchWithThrow(`${backendApi}/guide/${guideId}`);
 
     set(guideAtom, guide);

@@ -5,7 +5,7 @@ import {
   highlightChangeIdAtom,
   undraftChangeAtom,
 } from './changes';
-import { saveFileNodeAtom } from './saveDeltaAtom';
+import { saveFileNodeAtom } from './saveChange';
 
 export type FileNode = {
   isFileDiff: boolean;

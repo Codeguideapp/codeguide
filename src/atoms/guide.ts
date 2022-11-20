@@ -13,3 +13,4 @@ export const guideAtom = atom<Guide>({
   createdBy: '',
   repository: '',
 });
+export const isEditAtom = atom(false);

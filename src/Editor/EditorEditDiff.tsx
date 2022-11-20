@@ -7,7 +7,7 @@ import { useEffect, useRef } from 'react';
 import { changesAtom, changesOrderAtom } from '../atoms/changes';
 import { FileNode } from '../atoms/files';
 import { showWhitespaceAtom } from '../atoms/layout';
-import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
+import { saveDeltaAtom } from '../atoms/saveChange';
 import { composeDeltas, getFileContent } from '../utils/deltaUtils';
 import { modifiedModel, originalModel, previewModel } from '../utils/monaco';
 import { usePrevious } from '../utils/usePrevious';

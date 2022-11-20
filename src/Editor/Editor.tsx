@@ -8,6 +8,7 @@ import {
   highlightChangeIndexAtom,
 } from '../atoms/changes';
 import { activeFileAtom, unsavedFilePathsAtom } from '../atoms/files';
+import { isEditAtom } from '../atoms/guide';
 import { stepControlHeightAtom } from '../atoms/layout';
 import { Guide } from '../Guide/Guide';
 import { StepControls } from '../StepControls/StepControls';
@@ -23,6 +24,7 @@ export function Editor() {
   const [unsavedFilePaths] = useAtom(unsavedFilePathsAtom);
   const [highlightChangeIndex] = useAtom(highlightChangeIndexAtom);
   const [stepControlHeight] = useAtom(stepControlHeightAtom);
+  const [isEdit] = useAtom(isEditAtom);
   const [isDragging, setDragging] = useState(false);
 
   return (

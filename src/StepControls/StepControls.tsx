@@ -25,6 +25,7 @@ export function StepControls() {
   const [savedComments] = useAtom(savedCommentsAtom);
   const [, setStepControlHeight] = useAtom(stepControlHeightAtom);
   const { ref } = useResizeDetector({
+    skipOnMount: true,
     onResize(_, height) {
       if (typeof height === 'number') {
         setStepControlHeight(height);

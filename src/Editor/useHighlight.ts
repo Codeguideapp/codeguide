@@ -4,7 +4,7 @@ import Delta from 'quill-delta';
 import { useCallback } from 'react';
 
 import { activeFileAtom } from '../atoms/files';
-import { saveDeltaAtom } from '../atoms/saveDeltaAtom';
+import { saveDeltaAtom } from '../atoms/saveChange';
 import { modifiedModel } from '../utils/monaco';
 
 export function useHighlight() {
