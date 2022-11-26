@@ -74,10 +74,13 @@ export function PrevNextControls() {
     }
 
     const currentIndex = changesIdsNoFile.indexOf(highlightChangeId);
-
     const nextChangeId = changesIdsNoFile[currentIndex + 1];
+
     setHighlightChangeId(nextChangeId);
-    setFileByPath(changes[nextChangeId].path);
+
+    if (nextChangeId) {
+      setFileByPath(changes[nextChangeId].path);
+    }
   }, [
     highlightChangeId,
     changes,
@@ -95,10 +98,10 @@ export function PrevNextControls() {
   }, [changes, changesOrder, setHighlightChangeId, setFileByPath]);
 
   useEffect(() => {
-    Mousetrap.bindGlobal(['shift+up', 'shift+left'], goToFirstChange);
-    Mousetrap.bindGlobal(['up', 'left'], goToPrevChange);
-    Mousetrap.bindGlobal(['down', 'right', 'space'], goToNextChange);
-    Mousetrap.bindGlobal(['shift+down', 'shift+right'], goToLastChange);
+    Mousetrap.bind(['shift+up', 'shift+left'], goToFirstChange);
+    Mousetrap.bind(['up', 'left'], goToPrevChange);
+    Mousetrap.bind(['down', 'right', 'space'], goToNextChange);
+    Mousetrap.bind(['shift+down', 'shift+right'], goToLastChange);
 
     return () => {
       Mousetrap.unbind('shift+up');
