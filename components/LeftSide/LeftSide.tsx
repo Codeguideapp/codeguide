@@ -3,8 +3,8 @@ import { useAtom } from 'jotai';
 
 import { activeSectionAtom } from '../atoms/layout';
 import { ChangedFiles } from './ChangedFiles';
-import { ReactComponent as FilesDiffIcon } from './filediff.svg';
-import { ReactComponent as FilesIcon } from './files.svg';
+// import { ReactComponent as FilesDiffIcon } from './filediff.svg';
+// import { ReactComponent as FilesIcon } from './files.svg';
 import { FilesExplorer } from './FilesExplorer';
 
 export function LeftSide() {
@@ -20,7 +20,7 @@ export function LeftSide() {
             active: activeSection === 'filesExplorer',
           })}
         >
-          <FilesIcon width={28} />
+          e
         </div>
         <div
           onClick={() => setActiveSection('changedFiles')}
@@ -29,7 +29,7 @@ export function LeftSide() {
             active: activeSection === 'changedFiles',
           })}
         >
-          <FilesDiffIcon width={28} />
+          c
         </div>
       </div>
       {activeSection === 'changedFiles' ? (

@@ -1,0 +1,27 @@
+features
+
+- (v2) add terminal step
+
+GITHUB API
+
+- (V2) ako je truncate:true, onda req bez reqursive
+- save za taj repo da ni ne pokušava više sa reqursive
+- dir ako nije refreshan radi req bez recursive (to će bit uvijek u slučaju truncate=false)
+
+- na osnovu toga ide diff changed files ili ovaj sa svime
+
+- ljude prvo zanima tour a tek onda kako ga napravit
+- neki način da se taj tour može isprobat na početnoj šta lakše (možda iframe koji se louda ili nešto slično)
+možda čak embedded app ko glavna sekcija na landing pageu
+
+
+todo
+- u startu modal di pita github repo url ili pull req url
+- ili dio landing pagea?
+- monaco za ostale jezike
+- edit/view viewovi. Defaultni je view, a edit je na blabla/edit.
+- ako je edit, onda mora bit logirat i isti mail kao owner
+- publish
+- add media button na prazni draft u guideu (tj + ikona pa na hover piše add picture/vid)
+- Kad je u view modeu, defaultno je gledat file explorer koji se otvara kako se mijenja highlight
+- welcome screen

@@ -1,7 +1,6 @@
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-
-import { login } from './login';
+import { signIn } from 'next-auth/react';
 
 export function AccessDenied() {
   return (
@@ -17,7 +16,7 @@ export function AccessDenied() {
           </p>
 
           <span
-            onClick={login}
+            onClick={() => signIn('github')}
             className="cursor-pointer inline-flex items-center py-2 px-4 mr-3 text-xs font-medium text-gray-900 bg-white rounded-lg border border-gray-200 focus:outline-none hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-gray-300"
           >
             <FontAwesomeIcon icon={faGithub} className="mr-2 w-4 h-4" />

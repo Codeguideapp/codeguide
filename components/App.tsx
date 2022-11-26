@@ -3,13 +3,13 @@ import { faCloudArrowUp } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classNames from 'classnames';
 import { useAtom } from 'jotai';
+import { signOut } from 'next-auth/react';
 import { useState } from 'react';
 import Split from 'react-split';
 
 import { guideAtom } from './atoms/guide';
 import { Editor } from './Editor/Editor';
 import { LeftSide } from './LeftSide/LeftSide';
-import { logout } from './login';
 import { PrevNextControls } from './PrevNextControls/PrevNextControls';
 
 export function App() {
@@ -32,7 +32,7 @@ export function App() {
         <div className="action">
           <FontAwesomeIcon icon={faCloudArrowUp} />
           <span>Publish</span>
-          <span onClick={logout}>logout</span>
+          <span onClick={() => signOut()}>logout</span>
         </div>
       </div>
       <div className="fixed top-[40px] bottom-0 left-0 right-0">

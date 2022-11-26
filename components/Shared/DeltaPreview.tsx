@@ -1,5 +1,3 @@
-import './DeltaPreview.css';
-
 import classNames from 'classnames';
 
 import { StepPreview } from '../Guide/getStepPreview';

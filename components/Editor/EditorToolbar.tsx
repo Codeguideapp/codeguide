@@ -7,7 +7,7 @@ import { Tooltip } from 'antd';
 import { useAtom } from 'jotai';
 
 import { showWhitespaceAtom } from '../atoms/layout';
-import { ReactComponent as WhitespaceIcon } from './whitespace.svg';
+//import { ReactComponent as WhitespaceIcon } from './whitespace.svg';
 
 library.add(faHighlighter, faCodeCompare);
 
@@ -17,11 +17,12 @@ export function EditorToolbar() {
   return (
     <div className="editor-toolbar">
       <Tooltip title="Show Leading/Trailing Whitespace Differences">
-        <WhitespaceIcon
+        w
+        {/* <WhitespaceIcon
           width={16}
           style={{ opacity: showWhitespace ? 1 : 0.4 }}
           onClick={() => setShowWhitespace(!showWhitespace)}
-        />
+        /> */}
       </Tooltip>
     </div>
   );

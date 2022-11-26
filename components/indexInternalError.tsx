@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export function InternalError() {
   return (
     <div className=" flex items-center justify-center w-screen h-screen bg-gradient-to-br bg-zinc-900">
@@ -11,12 +13,12 @@ export function InternalError() {
             Something went wrong! :( Please try again later
           </p>
 
-          <a
+          <Link
             href="/"
             className="inline-flex items-center py-2 px-4 mr-3 text-xs font-medium text-gray-900 bg-white rounded-lg border border-gray-200 focus:outline-none hover:bg-gray-100 hover:text-blue-700 focus:z-10 focus:ring-2 focus:ring-gray-300"
           >
             Go home
-          </a>
+          </Link>
         </div>
       </div>
     </div>

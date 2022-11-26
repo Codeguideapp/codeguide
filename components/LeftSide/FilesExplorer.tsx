@@ -8,6 +8,7 @@ import { AntdTreeNodeAttribute } from 'antd/lib/tree';
 import ForwardDirectoryTree from 'antd/lib/tree/DirectoryTree';
 import { useAtom } from 'jotai';
 import { uniq } from 'lodash';
+import { useSession } from 'next-auth/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useResizeDetector } from 'react-resize-detector';
 
@@ -35,6 +36,7 @@ export function FilesExplorer() {
   const [changes] = useAtom(changesAtom);
   const [expanded, setExpanded] = useAtom(expandedFilesAtom);
   const [wrapperHeight, setWrapperHeight] = useState(400);
+  const { data: session } = useSession();
 
   const treeData = useMemo(
     () => pathsToTreeStructure(allRepoFileRefs),
@@ -116,9 +118,9 @@ export function FilesExplorer() {
               lastFetchController = new AbortController();
               fetchWithThrow(node.file.url, {
                 signal: lastFetchController.signal,
-                headers: localStorage.getItem('token')
+                headers: session
                   ? {
-                      Authorization: 'Bearer ' + localStorage.getItem('token'),
+                      Authorization: 'Bearer ' + session.user.accessToken,
                     }
                   : {},
               })

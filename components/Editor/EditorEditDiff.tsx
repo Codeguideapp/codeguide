@@ -30,8 +30,6 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
     // initializing editor
     if (!editorDiffDom.current) return;
 
-    diffEditor.current?.dispose();
-
     diffEditor.current = monaco.editor.createDiffEditor(editorDiffDom.current, {
       automaticLayout: true,
       theme: 'darkInvertedDiff',

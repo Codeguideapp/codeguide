@@ -1,5 +1,3 @@
-import 'highlight.js/styles/github-dark.css';
-
 import { Avatar, Comment, Tooltip } from 'antd';
 import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
@@ -16,6 +14,7 @@ export function PreviewComment({ value }: { value: string }) {
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeHighlight]}
+          // eslint-disable-next-line react/no-children-prop
           children={value}
         />
       }

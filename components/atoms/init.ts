@@ -1,8 +1,7 @@
 import { atom } from 'jotai';
+import { getSession } from 'next-auth/react';
 
 import { getFiles } from '../api/api';
-import { backendApi } from '../config';
-import { checkToken, exchangeCodeForToken } from '../login';
 import { fetchWithThrow } from '../utils/fetchWithThrow';
 import { allRepoFileRefsAtom, fileNodesAtom } from './files';
 import { guideAtom, isEditAtom } from './guide';
@@ -18,25 +17,12 @@ export const repoApiStatusAtom = atom<{
 });
 
 export const initAtom = atom(null, async (get, set) => {
-  const searchParams = new URLSearchParams(document.location.search);
-
-  const params: any = {};
-  for (const [key, value] of searchParams.entries()) {
-    params[key] = value;
-  }
-
-  if (params.code) {
-    await exchangeCodeForToken(params.code);
-  } else {
-    await checkToken();
-  }
-
   try {
     const guideId = document.location.pathname.split('/')[1];
     const isEdit = document.location.pathname.split('/')[2] === 'edit';
 
     set(isEditAtom, isEdit);
-    const guide = await fetchWithThrow(`${backendApi}/guide/${guideId}`);
+    const guide = await fetchWithThrow(`/api/guide/${guideId}`);
 
     set(guideAtom, guide);
   } catch (err: any) {
@@ -47,14 +33,17 @@ export const initAtom = atom(null, async (get, set) => {
     });
   }
 
+  const session = await getSession();
+
+  console.log(session);
   try {
     const guide = get(guideAtom);
     const repoFiles = await fetchWithThrow(
       `https://api.github.com/repos/${guide.owner}/${guide.repository}/git/trees/HEAD?recursive=1`,
       {
-        headers: localStorage.getItem('token')
+        headers: session
           ? {
-              Authorization: 'Bearer ' + localStorage.getItem('token'),
+              Authorization: 'Bearer ' + session.user.accessToken,
             }
           : {},
       }
@@ -73,7 +62,7 @@ export const initAtom = atom(null, async (get, set) => {
       isLoading: false,
     });
   } catch (err: any) {
-    if (!localStorage.getItem('token')) {
+    if (!session) {
       set(repoApiStatusAtom, {
         errorStatus: err?.status || 0,
         shouldTryLogin: true,
