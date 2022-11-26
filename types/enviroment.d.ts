@@ -7,6 +7,7 @@ declare global {
       CODEGUIDE_DYNAMODB_TABLE: string;
       GITHUB_ID: string;
       GITHUB_SECRET: string;
+      NEXTAUTH_SECRET: string;
     }
   }
 }
