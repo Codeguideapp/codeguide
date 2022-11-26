@@ -1,10 +1,9 @@
+/* eslint-disable @next/next/no-img-element */
 import classNames from 'classnames';
 import { useAtom } from 'jotai';
 
 import { activeSectionAtom } from '../atoms/layout';
 import { ChangedFiles } from './ChangedFiles';
-// import { ReactComponent as FilesDiffIcon } from './filediff.svg';
-// import { ReactComponent as FilesIcon } from './files.svg';
 import { FilesExplorer } from './FilesExplorer';
 
 export function LeftSide() {
@@ -20,7 +19,7 @@ export function LeftSide() {
             active: activeSection === 'filesExplorer',
           })}
         >
-          e
+          <img width="22" src="/icons/files.svg" alt="File Explorer" />
         </div>
         <div
           onClick={() => setActiveSection('changedFiles')}
@@ -29,7 +28,7 @@ export function LeftSide() {
             active: activeSection === 'changedFiles',
           })}
         >
-          c
+          <img width="24" src="/icons/filediff.svg" alt="File Changes" />
         </div>
       </div>
       {activeSection === 'changedFiles' ? (

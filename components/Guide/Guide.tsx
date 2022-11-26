@@ -120,14 +120,15 @@ export function Guide() {
                 {savedComments[change.id] && (
                   <div
                     title={savedComments[change.id].length + ' comments'}
+                    style={{ height: 'calc(100% - 2px)' }}
                     className={
-                      'absolute right-3 p-2 ' +
+                      'absolute right-3 px-2 ' +
                       (isBeforeActive ? 'bg-[#2c3035]' : 'bg-[#24262a]')
                     }
                   >
                     <div
                       className={
-                        'text-zinc-400 ' +
+                        'text-zinc-400 h-full flex items-center ' +
                         (isBeforeActive ? 'opacity-60' : 'opacity-30')
                       }
                     >

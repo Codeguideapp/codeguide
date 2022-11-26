@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { library } from '@fortawesome/fontawesome-svg-core';
 import {
   faCodeCompare,
@@ -6,24 +7,27 @@ import {
 import { Tooltip } from 'antd';
 import { useAtom } from 'jotai';
 
+import { activeFileAtom } from '../atoms/files';
 import { showWhitespaceAtom } from '../atoms/layout';
-//import { ReactComponent as WhitespaceIcon } from './whitespace.svg';
 
 library.add(faHighlighter, faCodeCompare);
 
 export function EditorToolbar() {
+  const [activeFile] = useAtom(activeFileAtom);
   const [showWhitespace, setShowWhitespace] = useAtom(showWhitespaceAtom);
 
   return (
     <div className="editor-toolbar">
-      <Tooltip title="Show Leading/Trailing Whitespace Differences">
-        w
-        {/* <WhitespaceIcon
-          width={16}
-          style={{ opacity: showWhitespace ? 1 : 0.4 }}
-          onClick={() => setShowWhitespace(!showWhitespace)}
-        /> */}
-      </Tooltip>
+      {activeFile?.isFileDiff && (
+        <Tooltip title="Show Leading/Trailing Whitespace Differences">
+          <img
+            width="16"
+            src="/icons/whitespace.svg"
+            alt=""
+            onClick={() => setShowWhitespace(!showWhitespace)}
+          />
+        </Tooltip>
+      )}
     </div>
   );
 }
