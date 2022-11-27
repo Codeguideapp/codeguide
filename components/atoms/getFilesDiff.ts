@@ -1,22 +1,22 @@
 import type { Octokit } from 'octokit';
 
 import { mockFiles } from '../__mocks__/mockFiles';
-import { Guide } from '../atoms/guide';
+import { Guide } from './guide';
 
-export type ApiFile = {
+export type FileDiff = {
   status: 'added' | 'modified' | 'deleted';
   path: string;
   oldVal: string;
   newVal: string;
 };
 
-export const getFiles = async (
+export const getFilesDiff = async (
   guide: Guide,
   octokit: Octokit
-): Promise<ApiFile[]> => {
+): Promise<FileDiff[]> => {
   return mockFiles;
 
-  const files: ApiFile[] = [];
+  const files: FileDiff[] = [];
 
   let owner = guide.owner;
   let repo = guide.repository;

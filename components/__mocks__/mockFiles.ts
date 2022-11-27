@@ -1,6 +1,6 @@
-import { ApiFile } from '../api/api';
+import { FileDiff } from '../atoms/getFilesDiff';
 
-export const mockFiles: ApiFile[] = [
+export const mockFiles: FileDiff[] = [
   {
     path: 'src/atoms/saveDeltaAtom.ts',
     status: 'modified',

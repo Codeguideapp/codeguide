@@ -2,9 +2,9 @@ import { atom } from 'jotai';
 import { getSession } from 'next-auth/react';
 import { Octokit } from 'octokit';
 
-import { getFiles } from '../api/api';
 import { fetchWithThrow } from '../utils/fetchWithThrow';
 import { allRepoFileRefsAtom, fileNodesAtom } from './files';
+import { getFilesDiff } from './getFilesDiff';
 import { guideAtom, isEditAtom } from './guide';
 
 export const repoApiStatusAtom = atom<{
@@ -54,7 +54,7 @@ export const initAtom = atom(null, async (get, set) => {
 
     set(allRepoFileRefsAtom, repoFiles.data.tree);
 
-    const apiFiles = await getFiles(guide, octokit);
+    const apiFiles = await getFilesDiff(guide, octokit);
     set(
       fileNodesAtom,
       apiFiles.map((file) => ({ ...file, isFileDiff: true, isFetching: false }))
