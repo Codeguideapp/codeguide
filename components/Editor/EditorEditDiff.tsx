@@ -4,7 +4,7 @@ import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 import { useEffect, useRef } from 'react';
 
-import { changesAtom, changesOrderAtom } from '../atoms/changes';
+import { changesAtom } from '../atoms/changes';
 import { FileNode } from '../atoms/files';
 import { showWhitespaceAtom } from '../atoms/layout';
 import { saveDeltaAtom } from '../atoms/saveChange';
@@ -20,7 +20,6 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
   const diffEditor = useRef<monaco.editor.IStandaloneDiffEditor>();
   const [, saveDelta] = useAtom(saveDeltaAtom);
   const [changes] = useAtom(changesAtom);
-  const [changesOrder] = useAtom(changesOrderAtom);
   const [showWhitespace] = useAtom(showWhitespaceAtom);
   const saveHighlight = useHighlight();
   const prevFile = usePrevious(activeFile);
@@ -66,7 +65,7 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
     selectionListener.current?.dispose();
 
     const previousChangeId = findLast(
-      changesOrder,
+      Object.keys(changes).sort(),
       (id) => changes[id].path === activeFile.path
     );
 
@@ -74,7 +73,6 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
       ? getFileContent({
           upToChangeId: previousChangeId,
           changes,
-          changesOrder,
         })
       : activeFile.oldVal;
 
@@ -130,7 +128,7 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
           )
         );
       });
-  }, [activeFile, changesOrder, prevFile?.path, saveDelta, saveHighlight]); // not watching changes as dep, because it is covered by changesOrder
+  }, [changes, activeFile, prevFile?.path, saveDelta, saveHighlight]);
 
   return <div ref={editorDiffDom} className="monaco edit-mode"></div>;
 }

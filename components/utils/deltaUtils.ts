@@ -18,17 +18,17 @@ export function deltaToString(deltas: Delta[]) {
 
 export function getFileContent({
   upToChangeId,
-  changesOrder,
   changes,
   excludeChange,
 }: {
   upToChangeId: string;
-  changesOrder: string[];
   changes: Record<string, Change>;
   excludeChange?: boolean;
 }) {
   const change = changes[upToChangeId];
   if (!change) throw new Error('change not found');
+
+  const changesOrder = Object.keys(changes).sort();
 
   const pathFilteredIds = changesOrder.filter(
     (id) => changes[id].path === change.path && changes[id].delta

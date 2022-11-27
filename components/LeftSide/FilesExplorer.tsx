@@ -65,7 +65,7 @@ export function FilesExplorer() {
     setTimeout(() => {
       treeRef.current.scrollTo({
         key: changes[highlightChangeId].path,
-        align: 'top',
+        align: 'bottom',
         offset: 50,
       });
     }, 200);

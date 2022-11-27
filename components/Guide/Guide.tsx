@@ -8,11 +8,11 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classNames from 'classnames';
 import { useAtom } from 'jotai';
+import { useMemo } from 'react';
 
 import {
   activeChangeIdAtom,
   changesAtom,
-  changesOrderAtom,
   highlightChangeIdAtom,
 } from '../atoms/changes';
 import { savedCommentsAtom } from '../atoms/comments';
@@ -25,11 +25,11 @@ library.add(faCheck, faImage, faUpload);
 
 export function Guide() {
   const [changes] = useAtom(changesAtom);
-  const [changesOrder] = useAtom(changesOrderAtom);
   const [activeChangeId] = useAtom(activeChangeIdAtom);
   const [savedComments] = useAtom(savedCommentsAtom);
   const [, setHighlightChangeId] = useAtom(highlightChangeIdAtom);
   const [, setFileByPath] = useAtom(setActiveFileByPathAtom);
+  const changesOrder = useMemo(() => Object.keys(changes).sort(), [changes]);
 
   const nonDepChanges = changesOrder
     .filter((id) => !changes[id].isFileDepChange)
@@ -48,7 +48,7 @@ export function Guide() {
   return (
     <div className="guide">
       <div className="body">
-        {nonDepChanges.map((change, index) => {
+        {nonDepChanges.map((change) => {
           const changeIndex = changesOrder.indexOf(change.id);
 
           const preview = getStepPreview({
@@ -56,13 +56,11 @@ export function Guide() {
             before: getFileContent({
               upToChangeId: change.id,
               changes,
-              changesOrder,
               excludeChange: true,
             }),
             after: getFileContent({
               upToChangeId: change.id,
               changes,
-              changesOrder,
               excludeChange: false,
             }),
             selections: change.highlight,

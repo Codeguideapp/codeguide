@@ -9,18 +9,13 @@ import { last } from 'lodash';
 import * as Mousetrap from 'mousetrap';
 import { useCallback, useEffect, useMemo } from 'react';
 
-import {
-  changesAtom,
-  changesOrderAtom,
-  highlightChangeIdAtom,
-} from '../atoms/changes';
+import { changesAtom, highlightChangeIdAtom } from '../atoms/changes';
 import { setActiveFileByPathAtom } from '../atoms/files';
 
 library.add(faBackwardStep, faForwardStep, faPlay);
 
 export function PrevNextControls() {
   const [changes] = useAtom(changesAtom);
-  const [changesOrder] = useAtom(changesOrderAtom);
   const [highlightChangeId, setHighlightChangeId] = useAtom(
     highlightChangeIdAtom
   );
@@ -28,10 +23,12 @@ export function PrevNextControls() {
 
   const changesIdsNoFile = useMemo(
     () =>
-      changesOrder.filter(
-        (id) => !changes[id].isFileDepChange && !changes[id].isFileNode
-      ),
-    [changesOrder, changes]
+      Object.keys(changes)
+        .sort()
+        .filter(
+          (id) => !changes[id].isFileDepChange && !changes[id].isFileNode
+        ),
+    [changes]
   );
 
   const goToFirstChange = useCallback(() => {
@@ -91,11 +88,11 @@ export function PrevNextControls() {
 
   const goToLastChange = useCallback(() => {
     setHighlightChangeId(null);
-    const lastChange = last(changesOrder);
-    if (lastChange) {
-      setFileByPath(changes[lastChange].path);
+    const lastChangeId = last(Object.keys(changes).sort());
+    if (lastChangeId) {
+      setFileByPath(changes[lastChangeId].path);
     }
-  }, [changes, changesOrder, setHighlightChangeId, setFileByPath]);
+  }, [changes, setHighlightChangeId, setFileByPath]);
 
   useEffect(() => {
     Mousetrap.bind(['shift+up', 'shift+left'], goToFirstChange);
@@ -117,31 +114,4 @@ export function PrevNextControls() {
   }, [goToFirstChange, goToPrevChange, goToNextChange, goToLastChange]);
 
   return null;
-
-  // return (
-  //   <div className={styles['prev-next-controls']}>
-  //     {highlightChangeIndex === 1 ? (
-  //       <FontAwesomeIcon icon="backward-step" className="disabled" />
-  //     ) : (
-  //       <FontAwesomeIcon icon="backward-step" onClick={goToFirstChange} />
-  //     )}
-  //     {highlightChangeIndex === 1 ? (
-  //       <FontAwesomeIcon icon="play" className="disabled" rotation={180} />
-  //     ) : (
-  //       <FontAwesomeIcon icon="play" onClick={goToPrevChange} rotation={180} />
-  //     )}
-
-  //     {!highlightChangeId ? (
-  //       <FontAwesomeIcon icon="play" className="disabled" />
-  //     ) : (
-  //       <FontAwesomeIcon icon="play" onClick={goToNextChange} />
-  //     )}
-
-  //     {!highlightChangeId ? (
-  //       <FontAwesomeIcon icon="forward-step" className="disabled" />
-  //     ) : (
-  //       <FontAwesomeIcon icon="forward-step" onClick={goToLastChange} />
-  //     )}
-  //   </div>
-  // );
 }

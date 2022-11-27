@@ -6,7 +6,6 @@ import { useMemo, useState } from 'react';
 import {
   activeChangeIdAtom,
   changesAtom,
-  changesOrderAtom,
   deleteChangeAtom,
   highlightChangeIdAtom,
   undraftChangeAtom,
@@ -18,7 +17,6 @@ export function StepActions() {
     highlightChangeIdAtom
   );
   const [submitting, setSubmitting] = useState(false);
-  const [changesOrder] = useAtom(changesOrderAtom);
   const [activeChangeId] = useAtom(activeChangeIdAtom);
   const [changes] = useAtom(changesAtom);
   const [, undraftChange] = useAtom(undraftChangeAtom);
@@ -40,9 +38,12 @@ export function StepActions() {
   };
   const [, createNewComment] = useAtom(createNewCommentAtom);
 
+  const lastChangeId = useMemo(() => {
+    return last(Object.keys(changes).sort());
+  }, [changes]);
+
   const isLastChangePreview =
-    last(changesOrder) === highlightChangeId &&
-    changes[highlightChangeId].isDraft;
+    lastChangeId === highlightChangeId && changes[highlightChangeId].isDraft;
 
   const commentValue = useMemo(() => {
     const changeId = highlightChangeId || activeChangeId;
@@ -65,7 +66,7 @@ export function StepActions() {
       {activeChangeId && !isLastChangePreview && (
         <Tooltip
           title={
-            last(changesOrder) !== activeChangeId
+            lastChangeId !== activeChangeId
               ? 'Only last step can be deleted'
               : ''
           }
@@ -80,7 +81,7 @@ export function StepActions() {
             cancelText="No"
           >
             <Button
-              disabled={last(changesOrder) !== activeChangeId}
+              disabled={lastChangeId !== activeChangeId}
               htmlType="submit"
               danger
               type="primary"

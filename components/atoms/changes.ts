@@ -22,7 +22,6 @@ export type Change = {
 };
 
 export const changesAtom = atom<Changes>(produce({}, () => {}));
-export const changesOrderAtom = atom<string[]>([]);
 export const highlightChangeIdAtom = atom<string | null>(null);
 
 // same as highlightChangeIdAtom but if nothing is highlighted,
@@ -35,7 +34,7 @@ export const activeChangeIdAtom = atom((get) => {
   }
 
   const changes = get(changesAtom);
-  const changesOrder = get(changesOrderAtom);
+  const changesOrder = Object.keys(changes).sort();
   const ids = changesOrder.filter((id) => !changes[id].isFileDepChange);
 
   const lastChangeId = last(ids);
@@ -50,7 +49,7 @@ export const activeChangeIdAtom = atom((get) => {
 
 export const highlightChangeIndexAtom = atom((get) => {
   const changes = get(changesAtom);
-  const changesOrder = get(changesOrderAtom);
+  const changesOrder = Object.keys(changes).sort();
   const highlightChangeId = get(highlightChangeIdAtom);
 
   const ids = changesOrder.filter(
@@ -77,7 +76,7 @@ export const undraftChangeAtom = atom(null, (get, set, id: string) => {
 
 export const deleteChangeAtom = atom(null, (get, set, id: string) => {
   const changes = get(changesAtom);
-  const changesOrder = get(changesOrderAtom);
+  const changesOrder = Object.keys(changes).sort();
 
   if (last(changesOrder) !== id) {
     throw new Error('only last step can be deleted');
@@ -88,7 +87,6 @@ export const deleteChangeAtom = atom(null, (get, set, id: string) => {
   });
 
   set(changesAtom, newChanges);
-  set(changesOrderAtom, changesOrder.slice(0, changesOrder.length - 1));
 
   if (get(highlightChangeIdAtom) === id) {
     set(highlightChangeIdAtom, null);

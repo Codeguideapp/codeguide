@@ -1,5 +1,6 @@
 import { atom } from 'jotai';
 import { getSession } from 'next-auth/react';
+import { Octokit } from 'octokit';
 
 import { getFiles } from '../api/api';
 import { fetchWithThrow } from '../utils/fetchWithThrow';
@@ -35,22 +36,25 @@ export const initAtom = atom(null, async (get, set) => {
 
   const session = await getSession();
 
-  console.log(session);
   try {
+    const octokit = new Octokit({
+      auth: session?.user.accessToken,
+    });
+
     const guide = get(guideAtom);
-    const repoFiles = await fetchWithThrow(
-      `https://api.github.com/repos/${guide.owner}/${guide.repository}/git/trees/HEAD?recursive=1`,
+
+    const repoFiles = await octokit.request(
+      'GET /repos/{owner}/{repo}/git/trees/{sha}?recursive=1',
       {
-        headers: session
-          ? {
-              Authorization: 'Bearer ' + session.user.accessToken,
-            }
-          : {},
+        sha: 'HEAD', // todo
+        owner: guide.owner,
+        repo: guide.repository,
       }
     );
-    set(allRepoFileRefsAtom, repoFiles.tree);
 
-    const apiFiles = await getFiles(0);
+    set(allRepoFileRefsAtom, repoFiles.data.tree);
+
+    const apiFiles = await getFiles(guide, octokit);
     set(
       fileNodesAtom,
       apiFiles.map((file) => ({ ...file, isFileDiff: true, isFetching: false }))

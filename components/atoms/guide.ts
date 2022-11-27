@@ -1,10 +1,14 @@
 import { atom } from 'jotai';
 
 export type Guide = {
-  createdBy: string;
+  type: 'diff' | 'browse';
   id: string;
+  createdBy: string;
   owner: string;
   repository: string;
+  baseSha: string;
+  prNum?: number;
+  mergeCommitSha?: string;
 };
 
 export const guideAtom = atom<Guide>({
@@ -12,5 +16,7 @@ export const guideAtom = atom<Guide>({
   owner: '',
   createdBy: '',
   repository: '',
+  baseSha: '',
+  type: 'diff',
 });
 export const isEditAtom = atom(false);

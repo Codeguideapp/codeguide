@@ -2,7 +2,7 @@ import { useAtomValue } from 'jotai';
 import * as monaco from 'monaco-editor';
 import { useEffect, useRef } from 'react';
 
-import { changesAtom, changesOrderAtom } from '../atoms/changes';
+import { changesAtom } from '../atoms/changes';
 import { activeFileAtom } from '../atoms/files';
 import { showWhitespaceAtom } from '../atoms/layout';
 import { getFileContent } from '../utils/deltaUtils';
@@ -17,7 +17,6 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
   const diffEditor = useRef<monaco.editor.IStandaloneDiffEditor>();
   const diffNavigatorRef = useRef<monaco.IDisposable>();
   const changes = useAtomValue(changesAtom);
-  const changesOrder = useAtomValue(changesOrderAtom);
   const activeFile = useAtomValue(activeFileAtom);
   const showWhitespace = useAtomValue(showWhitespaceAtom);
 
@@ -28,10 +27,10 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
     const contentCurrent = getFileContent({
       upToChangeId: changeId,
       changes,
-      changesOrder,
     });
 
     const currentChange = changes[changeId];
+    const changesOrder = Object.keys(changes).sort();
     const currentChangeIndex = changesOrder.findIndex((c) => c === changeId);
     const prevChange = changes[changesOrder[currentChangeIndex - 1]];
 
@@ -49,7 +48,6 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
           getFileContent({
             upToChangeId: changeForTheFile.id,
             changes,
-            changesOrder,
           })
         );
       } else {
@@ -75,7 +73,6 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
       const contentPrev = getFileContent({
         upToChangeId: prevChange.id,
         changes,
-        changesOrder,
       });
 
       modelCurrent.setValue(contentCurrent);
@@ -145,7 +142,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
       diffEditor.current?.dispose();
       diffEditor.current = undefined;
     };
-  }, [changes, changesOrder, activeFile, changeId, monacoDom, showWhitespace]);
+  }, [changes, activeFile, changeId, monacoDom, showWhitespace]);
 
   return <div ref={monacoDom} className="monaco read-mode"></div>;
 }
