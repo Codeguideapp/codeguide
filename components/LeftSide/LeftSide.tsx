@@ -2,7 +2,7 @@
 import classNames from 'classnames';
 import { useAtom } from 'jotai';
 
-import { activeSectionAtom } from '../atoms/layout';
+import { activeSectionAtom } from '../store/atoms';
 import { ChangedFiles } from './ChangedFiles';
 import { FilesExplorer } from './FilesExplorer';
 

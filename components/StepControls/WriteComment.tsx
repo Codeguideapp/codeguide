@@ -1,25 +1,18 @@
 import TextArea from 'antd/lib/input/TextArea';
-import { useAtom } from 'jotai';
 import { useMemo } from 'react';
 
-import {
-  activeChangeIdAtom,
-  highlightChangeIdAtom,
-  highlightChangeIndexAtom,
-} from '../atoms/changes';
-import { draftCommentsAtom, saveActiveNoteValAtom } from '../atoms/comments';
+import { useChangesStore } from '../store/changes';
+import { useCommentsStore } from '../store/comments';
 
 export function WriteComment() {
-  const [highlightChangeId] = useAtom(highlightChangeIdAtom);
-  const [draftComments] = useAtom(draftCommentsAtom);
-  const [highlightChangeIndex] = useAtom(highlightChangeIndexAtom);
-  const [, saveActiveNoteVal] = useAtom(saveActiveNoteValAtom);
-  const [activeChangeId] = useAtom(activeChangeIdAtom);
+  const activeChangeId = useChangesStore((s) => s.activeChangeId);
+  const getChangeIndex = useChangesStore((s) => s.getChangeIndex);
+  const draftComments = useCommentsStore((s) => s.draftComments);
+  const saveActiveNoteVal = useCommentsStore((s) => s.saveActiveNoteVal);
 
   const value = useMemo(() => {
-    const changeId = highlightChangeId || activeChangeId;
-    return changeId ? draftComments[changeId] || '' : '';
-  }, [highlightChangeId, activeChangeId, draftComments]);
+    return activeChangeId ? draftComments[activeChangeId] || '' : '';
+  }, [activeChangeId, draftComments]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     saveActiveNoteVal(e.target.value);
@@ -36,7 +29,7 @@ export function WriteComment() {
       onChange={handleChange}
       value={value}
       placeholder={`Write a note/explanation for step ${
-        highlightChangeIndex || 0 + 1
+        (activeChangeId ? getChangeIndex(activeChangeId) : 0) + 1
       } (optional)`}
     />
   );

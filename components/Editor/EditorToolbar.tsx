@@ -7,13 +7,13 @@ import {
 import { Tooltip } from 'antd';
 import { useAtom } from 'jotai';
 
-import { activeFileAtom } from '../atoms/files';
-import { showWhitespaceAtom } from '../atoms/layout';
+import { showWhitespaceAtom } from '../store/atoms';
+import { useFilesStore } from '../store/files';
 
 library.add(faHighlighter, faCodeCompare);
 
 export function EditorToolbar() {
-  const [activeFile] = useAtom(activeFileAtom);
+  const activeFile = useFilesStore((s) => s.activeFile);
   const [showWhitespace, setShowWhitespace] = useAtom(showWhitespaceAtom);
 
   return (

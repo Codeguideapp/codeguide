@@ -2,9 +2,9 @@ import { useAtomValue } from 'jotai';
 import * as monaco from 'monaco-editor';
 import { useEffect, useRef } from 'react';
 
-import { changesAtom } from '../atoms/changes';
-import { activeFileAtom } from '../atoms/files';
-import { showWhitespaceAtom } from '../atoms/layout';
+import { showWhitespaceAtom } from '../store/atoms';
+import { useChangesStore } from '../store/changes';
+import { useFilesStore } from '../store/files';
 import { getFileContent } from '../utils/deltaUtils';
 import { getRange } from '../utils/monaco';
 
@@ -16,52 +16,63 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
   const standaloneEditor = useRef<monaco.editor.IStandaloneCodeEditor>();
   const diffEditor = useRef<monaco.editor.IStandaloneDiffEditor>();
   const diffNavigatorRef = useRef<monaco.IDisposable>();
-  const changes = useAtomValue(changesAtom);
-  const activeFile = useAtomValue(activeFileAtom);
+  const currentChange = useChangesStore((s) => s.changes[changeId]);
+  const activeFile = useFilesStore((s) => s.activeFile);
   const showWhitespace = useAtomValue(showWhitespaceAtom);
-
-  useEffect(() => {
-    if (!monacoDom.current) return;
-    if (!activeFile) return;
+  const { currValue, prevValue } = useChangesStore((s) => {
+    if (!activeFile) return {};
 
     const contentCurrent = getFileContent({
       upToChangeId: changeId,
-      changes,
+      changes: s.changes,
     });
 
-    const currentChange = changes[changeId];
-    const changesOrder = Object.keys(changes).sort();
+    const currentChange = s.changes[changeId];
+    const changesOrder = Object.keys(s.changes).sort();
     const currentChangeIndex = changesOrder.findIndex((c) => c === changeId);
-    const prevChange = changes[changesOrder[currentChangeIndex - 1]];
+    const prevChange = s.changes[changesOrder[currentChangeIndex - 1]];
 
     if (activeFile.path !== currentChange.path) {
       const changesUpToChangeId = changesOrder
         .slice(0, currentChangeIndex)
-        .map((id) => changes[id]);
+        .map((id) => s.changes[id]);
 
       const changeForTheFile = changesUpToChangeId
         .reverse()
         .find((c) => c.path === activeFile.path);
 
       if (changeForTheFile) {
-        modelCurrent.setValue(
-          getFileContent({
+        return {
+          currValue: getFileContent({
             upToChangeId: changeForTheFile.id,
-            changes,
-          })
-        );
+            changes: s.changes,
+          }),
+        };
       } else {
-        modelCurrent.setValue(''); // todo
+        return {
+          currValue: '',
+        };
       }
-
-      standaloneEditor.current = monaco.editor.create(monacoDom.current, {
-        automaticLayout: true,
-        theme: 'darkTheme',
-        readOnly: true,
-      });
-      standaloneEditor.current.setModel(modelCurrent);
     } else if (!prevChange || prevChange.path !== currentChange.path) {
-      modelCurrent.setValue(contentCurrent);
+      return {
+        currValue: contentCurrent,
+      };
+    } else {
+      return {
+        currValue: contentCurrent,
+        prevValue: getFileContent({
+          upToChangeId: prevChange.id,
+          changes: s.changes,
+        }),
+      };
+    }
+  });
+
+  useEffect(() => {
+    if (!monacoDom.current) return;
+
+    if (currValue !== undefined && prevValue === undefined) {
+      modelCurrent.setValue(currValue);
 
       standaloneEditor.current = monaco.editor.create(monacoDom.current, {
         automaticLayout: true,
@@ -69,14 +80,11 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
         readOnly: true,
       });
       standaloneEditor.current.setModel(modelCurrent);
-    } else {
-      const contentPrev = getFileContent({
-        upToChangeId: prevChange.id,
-        changes,
-      });
+    }
 
-      modelCurrent.setValue(contentCurrent);
-      modelPrev.setValue(contentPrev);
+    if (currValue !== undefined && prevValue !== undefined) {
+      modelCurrent.setValue(currValue);
+      modelPrev.setValue(prevValue);
 
       if (!diffEditor.current) {
         diffEditor.current = monaco.editor.createDiffEditor(monacoDom.current, {
@@ -88,49 +96,49 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
           ignoreTrimWhitespace: !showWhitespace,
           renderMarginRevertIcon: false,
         });
-      }
 
-      diffEditor.current.setModel({
-        original: modelPrev,
-        modified: modelCurrent,
-      });
+        diffEditor.current.setModel({
+          original: modelPrev,
+          modified: modelCurrent,
+        });
 
-      diffNavigatorRef.current = monaco.editor.createDiffNavigator(
-        diffEditor.current,
-        {
-          alwaysRevealFirst: true,
-        }
-      );
+        diffNavigatorRef.current = monaco.editor.createDiffNavigator(
+          diffEditor.current,
+          {
+            alwaysRevealFirst: true,
+          }
+        );
 
-      diffEditor.current.getModifiedEditor().createDecorationsCollection(
-        currentChange.highlight.map((h) => {
-          return {
-            range: getRange(modelCurrent, h.offset, h.length),
-            options: {
-              className: 'select-highlight',
-              overviewRuler: {
-                color: '#3c5177',
-                position: monaco.editor.OverviewRulerLane.Right,
+        diffEditor.current.getModifiedEditor().createDecorationsCollection(
+          currentChange.highlight.map((h) => {
+            return {
+              range: getRange(modelCurrent, h.offset, h.length),
+              options: {
+                className: 'select-highlight',
+                overviewRuler: {
+                  color: '#3c5177',
+                  position: monaco.editor.OverviewRulerLane.Right,
+                },
               },
-            },
-          };
-        })
-      );
+            };
+          })
+        );
 
-      if (
-        currentChange.stat[0] === 0 &&
-        currentChange.stat[1] === 0 &&
-        currentChange.highlight.length
-      ) {
-        diffEditor.current
-          .getModifiedEditor()
-          .revealRangeInCenterIfOutsideViewport(
-            getRange(
-              modelCurrent,
-              currentChange.highlight[0].offset,
-              currentChange.highlight[0].length
-            )
-          );
+        if (
+          currentChange.stat[0] === 0 &&
+          currentChange.stat[1] === 0 &&
+          currentChange.highlight.length
+        ) {
+          diffEditor.current
+            .getModifiedEditor()
+            .revealRangeInCenterIfOutsideViewport(
+              getRange(
+                modelCurrent,
+                currentChange.highlight[0].offset,
+                currentChange.highlight[0].length
+              )
+            );
+        }
       }
     }
 
@@ -142,7 +150,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
       diffEditor.current?.dispose();
       diffEditor.current = undefined;
     };
-  }, [changes, activeFile, changeId, monacoDom, showWhitespace]);
+  }, [currValue, prevValue, showWhitespace, currentChange]);
 
   return <div ref={monacoDom} className="monaco read-mode"></div>;
 }

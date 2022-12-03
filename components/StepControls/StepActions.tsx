@@ -1,112 +1,99 @@
-import { Button, Popconfirm, Tooltip } from 'antd';
+import { faMagnifyingGlass, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Button, message, Popconfirm, Tooltip } from 'antd';
 import { useAtom } from 'jotai';
 import { last } from 'lodash';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
-import {
-  activeChangeIdAtom,
-  changesAtom,
-  deleteChangeAtom,
-  highlightChangeIdAtom,
-  undraftChangeAtom,
-} from '../atoms/changes';
-import { createNewCommentAtom, draftCommentsAtom } from '../atoms/comments';
+import { useChangesStore } from '../store/changes';
+import { useCommentsStore } from '../store/comments';
 
 export function StepActions() {
-  const [highlightChangeId, setHighlightChangeId] = useAtom(
-    highlightChangeIdAtom
+  const activeChange = useChangesStore((s) =>
+    s.activeChangeId ? s.changes[s.activeChangeId] : null
   );
+  const lastChangeId = useChangesStore((s) =>
+    last(Object.keys(s.changes).sort())
+  );
+  const setChangePreview = useChangesStore((s) => s.setChangePreview);
+  const setActiveChangeId = useChangesStore((s) => s.setActiveChangeId);
+  const undraftChange = useChangesStore((s) => s.undraftChange);
+  const deleteChange = useChangesStore((s) => s.deleteChange);
   const [submitting, setSubmitting] = useState(false);
-  const [activeChangeId] = useAtom(activeChangeIdAtom);
-  const [changes] = useAtom(changesAtom);
-  const [, undraftChange] = useAtom(undraftChangeAtom);
-  const [draftComments] = useAtom(draftCommentsAtom);
-  const [, deleteChange] = useAtom(deleteChangeAtom);
+  const draftComments = useCommentsStore((s) => s.draftComments);
+  const createNewComment = useCommentsStore((s) => s.createNewComment);
 
   const handleSaveStep = () => {
     setSubmitting(true);
-    if (!activeChangeId) return;
+    if (!activeChange) return;
 
-    if (draftComments[activeChangeId]) {
+    if (activeChange.isDraft === false) {
+      throw new Error('change is not a draft');
+    }
+
+    if (draftComments[activeChange.id]) {
       createNewComment();
     }
 
     setTimeout(() => {
       setSubmitting(false);
-      undraftChange(activeChangeId);
+      undraftChange(activeChange.id);
+      message.success({
+        content: 'Step created successfully!',
+      });
     }, 100);
   };
-  const [, createNewComment] = useAtom(createNewCommentAtom);
 
-  const lastChangeId = useMemo(() => {
-    return last(Object.keys(changes).sort());
-  }, [changes]);
-
-  const isLastChangePreview =
-    lastChangeId === highlightChangeId && changes[highlightChangeId].isDraft;
-
-  const commentValue = useMemo(() => {
-    const changeId = highlightChangeId || activeChangeId;
-    return changeId ? draftComments[changeId] || '' : '';
-  }, [highlightChangeId, activeChangeId, draftComments]);
-
-  if (commentValue) {
-    return (
-      <Button
-        disabled={!activeChangeId}
-        type="default"
-        onClick={() => createNewComment()}
-      >
-        Add a Comment
-      </Button>
-    );
-  }
   return (
-    <div style={{ display: 'flex', gap: 10 }}>
-      {activeChangeId && !isLastChangePreview && (
+    <div className="flex gap-3 items-center">
+      {activeChange?.isDraft && activeChange.previewOpened === false && (
+        <Tooltip title="Preview Step">
+          <FontAwesomeIcon
+            onClick={() => {
+              setChangePreview(activeChange.id, true);
+            }}
+            icon={faMagnifyingGlass}
+            className="cursor-pointer"
+          />
+        </Tooltip>
+      )}
+
+      {activeChange && activeChange.previewOpened === false && (
         <Tooltip
           title={
-            lastChangeId !== activeChangeId
+            lastChangeId !== activeChange?.id
               ? 'Only last step can be deleted'
-              : ''
+              : activeChange?.id
+              ? 'Delete Step'
+              : 'Discard'
           }
         >
           <Popconfirm
+            disabled={lastChangeId !== activeChange?.id}
             title="Are you sure you want to delete this step?"
             onConfirm={() => {
-              setHighlightChangeId(null);
-              deleteChange(activeChangeId);
+              setActiveChangeId(null);
+              deleteChange(activeChange.id);
             }}
             okText="Yes"
             cancelText="No"
           >
-            <Button
-              disabled={lastChangeId !== activeChangeId}
-              htmlType="submit"
-              danger
-              type="primary"
-            >
-              {highlightChangeId ? 'Delete Step' : 'Discard'}
-            </Button>
+            <FontAwesomeIcon
+              icon={faTrash}
+              className={
+                lastChangeId !== activeChange.id
+                  ? 'opacity-20'
+                  : 'cursor-pointer'
+              }
+            />
           </Popconfirm>
         </Tooltip>
       )}
 
-      {!highlightChangeId && (
-        <Button
-          disabled={!activeChangeId}
-          onClick={() => {
-            setHighlightChangeId(activeChangeId);
-          }}
-          type="default"
-        >
-          Preview
-        </Button>
-      )}
-      {highlightChangeId && isLastChangePreview && (
+      {activeChange?.previewOpened && (
         <Button
           onClick={() => {
-            setHighlightChangeId(null);
+            setChangePreview(activeChange.id, false);
           }}
           type="default"
         >
@@ -114,15 +101,25 @@ export function StepActions() {
         </Button>
       )}
 
-      {!highlightChangeId && (
+      {activeChange?.id === lastChangeId && activeChange?.isDraft ? (
         <Button
-          disabled={!activeChangeId}
+          disabled={!activeChange}
           htmlType="submit"
           loading={submitting}
           onClick={handleSaveStep}
           type="primary"
         >
           Create Step
+        </Button>
+      ) : (
+        <Button
+          disabled={!activeChange}
+          htmlType="submit"
+          loading={submitting}
+          onClick={createNewComment}
+          type="primary"
+        >
+          Add Comment
         </Button>
       )}
     </div>

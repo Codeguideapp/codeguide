@@ -1,4 +1,4 @@
-import { atom } from 'jotai';
+import create from 'zustand';
 
 export type Guide = {
   type: 'diff' | 'browse';
@@ -11,12 +11,11 @@ export type Guide = {
   mergeCommitSha?: string;
 };
 
-export const guideAtom = atom<Guide>({
+export const useGuideStore = create<Guide>((set, get) => ({
   id: '',
   owner: '',
   createdBy: '',
   repository: '',
   baseSha: '',
   type: 'diff',
-});
-export const isEditAtom = atom(false);
+}));

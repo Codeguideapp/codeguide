@@ -12,15 +12,9 @@ import { useSession } from 'next-auth/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useResizeDetector } from 'react-resize-detector';
 
-import { changesAtom, highlightChangeIdAtom } from '../atoms/changes';
-import {
-  activeFileAtom,
-  allRepoFileRefsAtom,
-  FileNode,
-  fileNodesAtom,
-  setActiveFileByPathAtom,
-} from '../atoms/files';
-import { expandedFilesAtom } from '../atoms/layout';
+import { expandedFilesAtom } from '../store/atoms';
+import { useChangesStore } from '../store/changes';
+import { FileNode, useFilesStore } from '../store/files';
 import { fetchWithThrow } from '../utils/fetchWithThrow';
 import { pathsToTreeStructure } from '../utils/pathsToTree';
 
@@ -28,12 +22,15 @@ let lastFetchController: AbortController | null;
 
 export function FilesExplorer() {
   const treeRef = React.useRef<any>();
-  const [allRepoFileRefs] = useAtom(allRepoFileRefsAtom);
-  const [activeFile, setActiveFile] = useAtom(activeFileAtom);
-  const [fileNodes, setFileNodes] = useAtom(fileNodesAtom);
-  const [, setActiveFileByPath] = useAtom(setActiveFileByPathAtom);
-  const [highlightChangeId] = useAtom(highlightChangeIdAtom);
-  const [changes] = useAtom(changesAtom);
+  const highlightChange = useChangesStore((s) =>
+    s.activeChangeId ? s.changes[s.activeChangeId] : null
+  );
+  const fileNodes = useFilesStore((s) => s.fileNodes);
+  const setFileNodes = useFilesStore((s) => s.setFileNodes);
+  const allRepoFileRefs = useFilesStore((s) => s.allRepoFileRefs);
+  const activeFile = useFilesStore((s) => s.activeFile);
+  const setActiveFile = useFilesStore((s) => s.setActiveFile);
+  const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const [expanded, setExpanded] = useAtom(expandedFilesAtom);
   const [wrapperHeight, setWrapperHeight] = useState(400);
   const { data: session } = useSession();
@@ -52,9 +49,9 @@ export function FilesExplorer() {
   });
 
   useEffect(() => {
-    if (!highlightChangeId) return;
+    if (!highlightChange) return;
 
-    const pathArr = changes[highlightChangeId].path.split('/');
+    const pathArr = highlightChange.path.split('/');
     const toExpland = pathArr.reduce((acc: string[], curr: string) => {
       const nextPath = [...acc, curr].join('/');
       return [...acc, nextPath];
@@ -64,12 +61,12 @@ export function FilesExplorer() {
 
     setTimeout(() => {
       treeRef.current.scrollTo({
-        key: changes[highlightChangeId].path,
+        key: highlightChange.path,
         align: 'bottom',
         offset: 50,
       });
     }, 200);
-  }, [highlightChangeId, changes]);
+  }, [highlightChange, setExpanded]);
 
   return (
     <div className="file-tree" ref={ref}>

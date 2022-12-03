@@ -7,13 +7,14 @@ import { signOut } from 'next-auth/react';
 import { useState } from 'react';
 import Split from 'react-split';
 
-import { guideAtom } from './atoms/guide';
 import { Editor } from './Editor/Editor';
 import { LeftSide } from './LeftSide/LeftSide';
 import { PrevNextControls } from './PrevNextControls/PrevNextControls';
+import { useGuideStore } from './store/guide';
 
 export function App() {
-  const [guide] = useAtom(guideAtom);
+  const repository = useGuideStore((s) => s.repository);
+  const owner = useGuideStore((s) => s.owner);
   const [isDragging, setDragging] = useState(false);
 
   return (
@@ -24,7 +25,7 @@ export function App() {
           <div className="action">
             <FontAwesomeIcon icon={faGithub} />
             <span>
-              {guide.owner}/{guide.repository}#122
+              {owner}/{repository}#122
             </span>
           </div>
         </div>
@@ -32,6 +33,7 @@ export function App() {
         <div className="action">
           <FontAwesomeIcon icon={faCloudArrowUp} />
           <span>Publish</span>
+          <span>save</span>
           <span onClick={() => signOut()}>logout</span>
         </div>
       </div>

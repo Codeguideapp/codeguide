@@ -4,25 +4,39 @@ import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 import { useEffect, useRef } from 'react';
 
-import { changesAtom } from '../atoms/changes';
-import { FileNode } from '../atoms/files';
-import { showWhitespaceAtom } from '../atoms/layout';
-import { saveDeltaAtom } from '../atoms/saveChange';
+import { showWhitespaceAtom } from '../store/atoms';
+import { useChangesStore } from '../store/changes';
+import { FileNode } from '../store/files';
 import { composeDeltas, getFileContent } from '../utils/deltaUtils';
 import { modifiedModel, originalModel, previewModel } from '../utils/monaco';
 import { usePrevious } from '../utils/usePrevious';
 import { useHighlight } from './useHighlight';
 
 export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
+  const saveDelta = useChangesStore((s) => s.saveDelta);
   const modifiedContentListener = useRef<monaco.IDisposable>();
   const selectionListener = useRef<monaco.IDisposable>();
   const editorDiffDom = useRef<HTMLDivElement>(null);
   const diffEditor = useRef<monaco.editor.IStandaloneDiffEditor>();
-  const [, saveDelta] = useAtom(saveDeltaAtom);
-  const [changes] = useAtom(changesAtom);
   const [showWhitespace] = useAtom(showWhitespaceAtom);
   const saveHighlight = useHighlight();
   const prevFile = usePrevious(activeFile);
+  const savedChangesLength = useChangesStore(
+    (s) => Object.values(s.changes).filter((c) => !c.isDraft).length
+  );
+  const currentVal = useChangesStore((s) => {
+    const previousChangeId = findLast(
+      Object.keys(s.changes).sort(),
+      (id) => s.changes[id].path === activeFile.path
+    );
+
+    return previousChangeId
+      ? getFileContent({
+          upToChangeId: previousChangeId,
+          changes: s.changes,
+        })
+      : activeFile.oldVal;
+  });
   const diffNavigatorRef = useRef<monaco.IDisposable>();
 
   useEffect(() => {
@@ -61,28 +75,24 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
   }, [showWhitespace]);
 
   useEffect(() => {
+    if (!diffEditor.current) return;
+
+    diffEditor.current
+      .getModifiedEditor()
+      .setSelection(new monaco.Selection(0, 0, 0, 0));
+  }, [savedChangesLength]);
+
+  useEffect(() => {
     modifiedContentListener.current?.dispose();
     selectionListener.current?.dispose();
 
-    const previousChangeId = findLast(
-      Object.keys(changes).sort(),
-      (id) => changes[id].path === activeFile.path
-    );
-
-    const current = previousChangeId
-      ? getFileContent({
-          upToChangeId: previousChangeId,
-          changes,
-        })
-      : activeFile.oldVal;
-
     const goal = activeFile.newVal;
 
-    if (modifiedModel.getValue() !== current) {
-      modifiedModel.setValue(current);
+    if (modifiedModel.getValue() !== currentVal) {
+      modifiedModel.setValue(currentVal);
     }
-    if (previewModel.getValue() !== current) {
-      previewModel.setValue(current);
+    if (previewModel.getValue() !== currentVal) {
+      previewModel.setValue(currentVal);
     }
     if (originalModel.getValue() !== goal) {
       originalModel.setValue(goal);
@@ -128,7 +138,7 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
           )
         );
       });
-  }, [changes, activeFile, prevFile?.path, saveDelta, saveHighlight]);
+  }, [currentVal, activeFile, prevFile?.path, saveDelta, saveHighlight]);
 
   return <div ref={editorDiffDom} className="monaco edit-mode"></div>;
 }

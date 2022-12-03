@@ -1,12 +1,11 @@
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faComment } from '@fortawesome/free-solid-svg-icons';
 import { useAtom } from 'jotai';
-import { useMemo } from 'react';
 import { useResizeDetector } from 'react-resize-detector';
 
-import { activeChangeIdAtom, highlightChangeIdAtom } from '../atoms/changes';
-import { savedCommentsAtom } from '../atoms/comments';
-import { stepControlHeightAtom } from '../atoms/layout';
+import { stepControlHeightAtom } from '../store/atoms';
+import { useChangesStore } from '../store/changes';
+import { useCommentsStore } from '../store/comments';
 import { PreviewComment } from './PreviewComment';
 import { StepActions } from './StepActions';
 import { WriteComment } from './WriteComment';
@@ -14,13 +13,8 @@ import { WriteComment } from './WriteComment';
 library.add(faComment);
 
 export function StepControls() {
-  const [highlightChangeId] = useAtom(highlightChangeIdAtom);
-  const [activeChangeId] = useAtom(activeChangeIdAtom);
-  const changeId = useMemo(
-    () => highlightChangeId || activeChangeId,
-    [highlightChangeId, activeChangeId]
-  );
-  const [savedComments] = useAtom(savedCommentsAtom);
+  const activeChangeId = useChangesStore((s) => s.activeChangeId);
+  const savedComments = useCommentsStore((s) => s.savedComments);
   const [, setStepControlHeight] = useAtom(stepControlHeightAtom);
   const { ref } = useResizeDetector({
     skipOnMount: true,
@@ -37,9 +31,9 @@ export function StepControls() {
       ref={ref}
     >
       <div className="overflow-auto max-h-[40vh]">
-        {changeId &&
-          savedComments[changeId] &&
-          savedComments[changeId].map((comment, i) => (
+        {activeChangeId &&
+          savedComments[activeChangeId] &&
+          savedComments[activeChangeId].map((comment, i) => (
             <PreviewComment key={i} value={comment.value} />
           ))}
       </div>

@@ -1,25 +1,20 @@
 import { Tree } from 'antd';
 import { DataNode } from 'antd/lib/tree';
-import { useAtom } from 'jotai';
 import React, { useMemo } from 'react';
 
-import {
-  activeFileAtom,
-  fileNodesAtom,
-  setActiveFileByPathAtom,
-} from '../atoms/files';
+import { useFilesStore } from '../store/files';
 
 const { DirectoryTree } = Tree;
 
 export function ChangedFiles() {
-  const [activeFile] = useAtom(activeFileAtom);
-  const [, setFileByPath] = useAtom(setActiveFileByPathAtom);
-  const [fileChanges] = useAtom(fileNodesAtom);
+  const fileNodes = useFilesStore((s) => s.fileNodes);
+  const activeFile = useFilesStore((s) => s.activeFile);
+  const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
 
   const treeData = useMemo(() => {
     const treeData: DataNode[] = [];
 
-    for (const file of fileChanges || []) {
+    for (const file of fileNodes || []) {
       if (!file.isFileDiff) continue;
 
       const filename = file.path.split('/').pop();
@@ -32,9 +27,9 @@ export function ChangedFiles() {
     }
 
     return treeData;
-  }, [fileChanges]);
+  }, [fileNodes]);
 
-  if (!fileChanges || fileChanges.length === 0) {
+  if (!fileNodes || fileNodes.length === 0) {
     return <div className="file-tree">loading...</div>;
   }
 
@@ -49,7 +44,7 @@ export function ChangedFiles() {
         activeKey={activeFile?.path}
         selectedKeys={[activeFile?.path || '']}
         onSelect={(selected) => {
-          setFileByPath(selected[0] as string);
+          setActiveFileByPath(selected[0] as string);
         }}
       />
     </div>

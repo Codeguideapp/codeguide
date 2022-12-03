@@ -3,15 +3,11 @@ import { useAtom } from 'jotai';
 import { useState } from 'react';
 import Split from 'react-split';
 
-import {
-  highlightChangeIdAtom,
-  highlightChangeIndexAtom,
-} from '../atoms/changes';
-import { activeFileAtom, unsavedFilePathsAtom } from '../atoms/files';
-import { isEditAtom } from '../atoms/guide';
-import { stepControlHeightAtom } from '../atoms/layout';
 import { Guide } from '../Guide/Guide';
 import { StepControls } from '../StepControls/StepControls';
+import { stepControlHeightAtom } from '../store/atoms';
+import { useChangesStore } from '../store/changes';
+import { useFilesStore } from '../store/files';
 import { EditorEditDiff } from './EditorEditDiff';
 import { EditorHighlightChange } from './EditorHighlightChange';
 import { EditorPreviewFile } from './EditorPreviewFile';
@@ -19,12 +15,13 @@ import { EditorToolbar } from './EditorToolbar';
 import { Welcome } from './Welcome';
 
 export function Editor() {
-  const [highlightChangeId] = useAtom(highlightChangeIdAtom);
-  const [activeFile] = useAtom(activeFileAtom);
-  const [unsavedFilePaths] = useAtom(unsavedFilePathsAtom);
-  const [highlightChangeIndex] = useAtom(highlightChangeIndexAtom);
+  const activeChange = useChangesStore((s) =>
+    s.activeChangeId ? s.changes[s.activeChangeId] : null
+  );
+  const getChangeIndex = useChangesStore((s) => s.getChangeIndex);
+  const activeFile = useFilesStore((s) => s.activeFile);
+  const unsavedFilePaths = useFilesStore((s) => s.getUnsavedFilePaths());
   const [stepControlHeight] = useAtom(stepControlHeightAtom);
-  const [isEdit] = useAtom(isEditAtom);
   const [isDragging, setDragging] = useState(false);
 
   return (
@@ -56,11 +53,13 @@ export function Editor() {
               <div
                 className={classNames({
                   filename: true,
-                  'in-past': Boolean(highlightChangeId),
+                  'in-past': Boolean(activeChange),
                 })}
               >
                 {activeFile ? activeFile?.path.split('/').pop() : 'Welcome'}
-                {highlightChangeId ? `  (step ${highlightChangeIndex})` : ''}
+                {activeChange
+                  ? `  (step ${getChangeIndex(activeChange.id)})`
+                  : ''}
                 <div
                   className={classNames({
                     unsaved: true,
@@ -75,8 +74,9 @@ export function Editor() {
             <div style={{ width: '100%', flexGrow: 1 }}>
               {!activeFile ? (
                 <Welcome />
-              ) : highlightChangeId ? (
-                <EditorHighlightChange changeId={highlightChangeId} />
+              ) : activeChange?.isDraft === false ||
+                activeChange?.previewOpened ? (
+                <EditorHighlightChange changeId={activeChange.id} />
               ) : activeFile.isFileDiff ? (
                 <EditorEditDiff activeFile={activeFile} />
               ) : (

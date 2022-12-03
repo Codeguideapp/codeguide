@@ -1,7 +1,9 @@
+import { message } from 'antd';
 import * as monaco from 'monaco-editor';
 import { useEffect, useRef } from 'react';
 
-import { FileNode } from '../atoms/files';
+import { useChangesStore } from '../store/changes';
+import { FileNode } from '../store/files';
 import { modifiedModel } from '../utils/monaco';
 import { useHighlight } from './useHighlight';
 
@@ -10,6 +12,16 @@ export function EditorPreviewFile({ activeFile }: { activeFile: FileNode }) {
   const editorDom = useRef<HTMLDivElement>(null);
   const standaloneEditor = useRef<monaco.editor.IStandaloneCodeEditor>();
   const saveHighlight = useHighlight();
+  const savedChangesLength = useChangesStore(
+    (s) => Object.values(s.changes).filter((c) => !c.isDraft).length
+  );
+
+  useEffect(() => {
+    if (!editorDom.current) return;
+    if (!standaloneEditor.current) return;
+
+    standaloneEditor.current.setSelection(new monaco.Selection(0, 0, 0, 0));
+  }, [savedChangesLength]);
 
   useEffect(() => {
     // initializing editor

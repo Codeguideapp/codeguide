@@ -1,7 +1,7 @@
 import type { Octokit } from 'octokit';
 
 import { mockFiles } from '../__mocks__/mockFiles';
-import { Guide } from './guide';
+import { Guide } from '../store/guide';
 
 export type FileDiff = {
   status: 'added' | 'modified' | 'deleted';

@@ -4,22 +4,20 @@ import {
   faForwardStep,
   faPlay,
 } from '@fortawesome/free-solid-svg-icons';
-import { useAtom } from 'jotai';
 import { last } from 'lodash';
 import * as Mousetrap from 'mousetrap';
 import { useCallback, useEffect, useMemo } from 'react';
 
-import { changesAtom, highlightChangeIdAtom } from '../atoms/changes';
-import { setActiveFileByPathAtom } from '../atoms/files';
+import { useChangesStore } from '../store/changes';
+import { useFilesStore } from '../store/files';
 
 library.add(faBackwardStep, faForwardStep, faPlay);
 
 export function PrevNextControls() {
-  const [changes] = useAtom(changesAtom);
-  const [highlightChangeId, setHighlightChangeId] = useAtom(
-    highlightChangeIdAtom
-  );
-  const [, setFileByPath] = useAtom(setActiveFileByPathAtom);
+  const changes = useChangesStore((s) => s.changes);
+  const activeChangeId = useChangesStore((s) => s.activeChangeId);
+  const setActiveChangeId = useChangesStore((s) => s.setActiveChangeId);
+  const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
 
   const changesIdsNoFile = useMemo(
     () =>
@@ -36,63 +34,63 @@ export function PrevNextControls() {
 
     if (!firstChange) return;
 
-    setHighlightChangeId(firstChange);
-    setFileByPath(changes[firstChange].path);
-  }, [changesIdsNoFile, changes, setHighlightChangeId, setFileByPath]);
+    setActiveChangeId(firstChange);
+    setActiveFileByPath(changes[firstChange].path);
+  }, [changesIdsNoFile, changes, setActiveChangeId, setActiveFileByPath]);
 
   const goToPrevChange = useCallback(() => {
-    if (!highlightChangeId) {
+    if (!activeChangeId) {
       const lastChangeId = last(changesIdsNoFile);
       if (lastChangeId) {
-        setHighlightChangeId(lastChangeId);
-        setFileByPath(changes[lastChangeId].path);
+        setActiveChangeId(lastChangeId);
+        setActiveFileByPath(changes[lastChangeId].path);
       }
       return;
     }
 
-    const currentIndex = changesIdsNoFile.indexOf(highlightChangeId);
+    const currentIndex = changesIdsNoFile.indexOf(activeChangeId);
 
     const prevChangeId = changesIdsNoFile[currentIndex - 1];
     if (!prevChangeId) return;
 
-    setHighlightChangeId(prevChangeId);
-    setFileByPath(changes[prevChangeId].path);
+    setActiveChangeId(prevChangeId);
+    setActiveFileByPath(changes[prevChangeId].path);
   }, [
-    highlightChangeId,
+    activeChangeId,
     changes,
     changesIdsNoFile,
-    setHighlightChangeId,
-    setFileByPath,
+    setActiveChangeId,
+    setActiveFileByPath,
   ]);
 
   const goToNextChange = useCallback(() => {
-    if (!highlightChangeId) {
+    if (!activeChangeId) {
       return;
     }
 
-    const currentIndex = changesIdsNoFile.indexOf(highlightChangeId);
+    const currentIndex = changesIdsNoFile.indexOf(activeChangeId);
     const nextChangeId = changesIdsNoFile[currentIndex + 1];
 
-    setHighlightChangeId(nextChangeId);
+    setActiveChangeId(nextChangeId);
 
     if (nextChangeId) {
-      setFileByPath(changes[nextChangeId].path);
+      setActiveFileByPath(changes[nextChangeId].path);
     }
   }, [
-    highlightChangeId,
+    activeChangeId,
     changes,
     changesIdsNoFile,
-    setFileByPath,
-    setHighlightChangeId,
+    setActiveFileByPath,
+    setActiveChangeId,
   ]);
 
   const goToLastChange = useCallback(() => {
-    setHighlightChangeId(null);
+    setActiveChangeId(null);
     const lastChangeId = last(Object.keys(changes).sort());
     if (lastChangeId) {
-      setFileByPath(changes[lastChangeId].path);
+      setActiveFileByPath(changes[lastChangeId].path);
     }
-  }, [changes, setHighlightChangeId, setFileByPath]);
+  }, [changes, setActiveChangeId, setActiveFileByPath]);
 
   useEffect(() => {
     Mousetrap.bind(['shift+up', 'shift+left'], goToFirstChange);
