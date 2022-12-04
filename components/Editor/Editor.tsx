@@ -1,9 +1,11 @@
 import classNames from 'classnames';
 import { useAtom } from 'jotai';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Split from 'react-split';
 
 import { Guide } from '../Guide/Guide';
+import { useActiveChange } from '../hooks/useActiveChange';
+import { useShallowChanges } from '../hooks/useShallowChanges';
 import { StepControls } from '../StepControls/StepControls';
 import { stepControlHeightAtom } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
@@ -15,12 +17,10 @@ import { EditorToolbar } from './EditorToolbar';
 import { Welcome } from './Welcome';
 
 export function Editor() {
-  const activeChange = useChangesStore((s) =>
-    s.activeChangeId ? s.changes[s.activeChangeId] : null
-  );
-  const getChangeIndex = useChangesStore((s) => s.getChangeIndex);
+  const activeChange = useActiveChange();
   const activeFile = useFilesStore((s) => s.activeFile);
-  const unsavedFilePaths = useFilesStore((s) => s.getUnsavedFilePaths());
+  const unsavedFilePaths = useUnsavedFilePaths();
+  const getChangeIndex = useChangesStore((s) => s.getChangeIndex);
   const [stepControlHeight] = useAtom(stepControlHeightAtom);
   const [isDragging, setDragging] = useState(false);
 
@@ -90,5 +90,17 @@ export function Editor() {
         <Guide />
       </Split>
     </div>
+  );
+}
+
+function useUnsavedFilePaths() {
+  const changes = useShallowChanges();
+
+  return useMemo(
+    () =>
+      Object.values(changes)
+        .filter((c) => c.isDraft)
+        .map((c) => c.path),
+    [changes]
   );
 }

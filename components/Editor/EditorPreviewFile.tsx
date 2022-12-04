@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react';
 
 import { useChangesStore } from '../store/changes';
 import { FileNode } from '../store/files';
-import { modifiedModel } from '../utils/monaco';
+import { modifiedModel } from '../../utils/monaco';
 import { useHighlight } from './useHighlight';
 
 export function EditorPreviewFile({ activeFile }: { activeFile: FileNode }) {

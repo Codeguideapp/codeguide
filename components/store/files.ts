@@ -23,7 +23,6 @@ interface FilesState {
   allRepoFileRefs: RepoFileRef[];
   fileNodes: FileNode[];
   activeFile?: FileNode;
-  getUnsavedFilePaths: () => string[];
   undraftActiveFile: () => void;
   setActiveFileByPath: (path: string | undefined) => void;
   setActiveFile: (file: FileNode) => void;
@@ -42,13 +41,6 @@ export const useFilesStore = create<FilesState>((set, get) => ({
   },
   setAllRepoFileRefs: (allRepoFileRefs: RepoFileRef[]) => {
     set({ allRepoFileRefs });
-  },
-  getUnsavedFilePaths: () => {
-    // todo: move to changes
-    const changes = useChangesStore.getState().changes;
-    return Object.values(changes)
-      .filter((c) => c.isDraft)
-      .map((c) => c.path);
   },
   undraftActiveFile: () => {
     const activeFile = get().activeFile;

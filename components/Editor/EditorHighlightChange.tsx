@@ -2,11 +2,11 @@ import { useAtomValue } from 'jotai';
 import * as monaco from 'monaco-editor';
 import { useEffect, useRef } from 'react';
 
+import { getFileContent } from '../../utils/deltaUtils';
+import { getRange } from '../../utils/monaco';
 import { showWhitespaceAtom } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
 import { useFilesStore } from '../store/files';
-import { getFileContent } from '../utils/deltaUtils';
-import { getRange } from '../utils/monaco';
 
 const modelPrev = monaco.editor.createModel('', 'typescript');
 const modelCurrent = monaco.editor.createModel('', 'typescript');

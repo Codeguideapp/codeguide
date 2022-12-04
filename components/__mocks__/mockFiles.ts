@@ -1,4 +1,4 @@
-import { FileDiff } from '../utils/getFilesDiff';
+import { FileDiff } from '../../utils/getFilesDiff';
 
 export const mockFiles: FileDiff[] = [
   {

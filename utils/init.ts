@@ -1,8 +1,8 @@
 import { getSession } from 'next-auth/react';
 import { Octokit } from 'octokit';
 
-import { useFilesStore } from '../store/files';
-import { Guide, useGuideStore } from '../store/guide';
+import { useFilesStore } from '../components/store/files';
+import { Guide, useGuideStore } from '../components/store/guide';
 import { fetchWithThrow } from './fetchWithThrow';
 import { getFilesDiff } from './getFilesDiff';
 

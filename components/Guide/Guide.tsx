@@ -7,12 +7,13 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classNames from 'classnames';
+import { useMemo } from 'react';
 
+import { getFileContent } from '../../utils/deltaUtils';
 import { DeltaPreview } from '../Shared/DeltaPreview';
 import { useChangesStore } from '../store/changes';
 import { useCommentsStore } from '../store/comments';
 import { useFilesStore } from '../store/files';
-import { getFileContent } from '../utils/deltaUtils';
 import { getStepPreview } from './getStepPreview';
 
 library.add(faCheck, faImage, faUpload);
@@ -22,27 +23,28 @@ export function Guide() {
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const activeChangeId = useChangesStore((s) => s.activeChangeId);
   const savedComments = useCommentsStore((s) => s.savedComments);
-  const changesForGuide = useChangesStore((s) => {
-    const changesOrder = Object.keys(s.changes).sort();
-    const activeChangeIndex = s.activeChangeId
-      ? changesOrder.indexOf(s.activeChangeId)
+  const changes = useChangesStore((s) => s.changes);
+  const changesForGuide = useMemo(() => {
+    const changesOrder = Object.keys(changes).sort();
+    const activeChangeIndex = activeChangeId
+      ? changesOrder.indexOf(activeChangeId)
       : null;
 
-    return Object.keys(s.changes)
+    return Object.keys(changes)
       .sort()
-      .filter((id) => !s.changes[id].isFileDepChange)
-      .map((id) => s.changes[id])
+      .filter((id) => !changes[id].isFileDepChange)
+      .map((id) => changes[id])
       .map((change) => {
         const preview = getStepPreview({
           delta: change.delta,
           before: getFileContent({
             upToChangeId: change.id,
-            changes: s.changes,
+            changes: changes,
             excludeChange: true,
           }),
           after: getFileContent({
             upToChangeId: change.id,
-            changes: s.changes,
+            changes: changes,
             excludeChange: false,
           }),
           selections: change.highlight,
@@ -57,10 +59,10 @@ export function Guide() {
             activeChangeIndex === null ? true : changeIndex < activeChangeIndex,
           isAfterActive:
             activeChangeIndex !== null && changeIndex > activeChangeIndex,
-          active: change.id === s.activeChangeId,
+          active: change.id === activeChangeId,
         };
       });
-  });
+  }, [changes, activeChangeId]);
 
   if (changesForGuide.length === 0) {
     return <div className="guide"></div>;

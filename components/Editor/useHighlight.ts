@@ -2,9 +2,9 @@ import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 import { useCallback } from 'react';
 
+import { modifiedModel } from '../../utils/monaco';
 import { useChangesStore } from '../store/changes';
 import { useFilesStore } from '../store/files';
-import { modifiedModel } from '../utils/monaco';
 
 export function useHighlight() {
   const activeFile = useFilesStore((s) => s.activeFile);

@@ -4,12 +4,12 @@ import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 import { useEffect, useRef } from 'react';
 
+import { composeDeltas, getFileContent } from '../../utils/deltaUtils';
+import { modifiedModel, originalModel, previewModel } from '../../utils/monaco';
+import { usePrevious } from '../hooks/usePrevious';
 import { showWhitespaceAtom } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
 import { FileNode } from '../store/files';
-import { composeDeltas, getFileContent } from '../utils/deltaUtils';
-import { modifiedModel, originalModel, previewModel } from '../utils/monaco';
-import { usePrevious } from '../utils/usePrevious';
 import { useHighlight } from './useHighlight';
 
 export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {

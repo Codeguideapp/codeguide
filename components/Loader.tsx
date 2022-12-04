@@ -10,7 +10,7 @@ import React, { useEffect, useState } from 'react';
 
 import { darkTheme, darkThemeInvertedDif } from './Editor/monaco-themes/dark';
 import { App } from './App';
-import { init } from './utils/init';
+import { init } from '../utils/init';
 import { AccessDenied } from './indexAccessDenied';
 import { GuideNotFound } from './indexGuideNotFound';
 import { Loading } from './indexLoading';

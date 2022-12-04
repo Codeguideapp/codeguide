@@ -1,6 +1,6 @@
 import Delta from 'quill-delta';
 
-import { Change } from '../store/changes';
+import { Change } from '../components/store/changes';
 
 export function composeDeltas(deltas: Delta[]) {
   return deltas.reduce((acc, curr) => acc.compose(curr), new Delta());

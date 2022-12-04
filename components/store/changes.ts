@@ -4,7 +4,7 @@ import Delta from 'quill-delta';
 import { ulid } from 'ulid';
 import create from 'zustand';
 
-import { calcStat, composeDeltas, deltaToString } from '../utils/deltaUtils';
+import { calcStat, composeDeltas, deltaToString } from '../../utils/deltaUtils';
 import { useCommentsStore } from './comments';
 import { FileNode, useFilesStore } from './files';
 
@@ -34,6 +34,7 @@ interface SaveDeltaParams {
   isFileDepChange?: boolean;
 }
 interface ChangesState {
+  savedChanges: string[];
   activeChangeId: string | null;
   changes: Changes;
   getChangeIndex: (changeId: string) => number;
@@ -43,9 +44,11 @@ interface ChangesState {
   saveFileNode: (path: string) => void;
   deleteChange: (id: string) => void;
   undraftChange: (id: string) => void;
+  saveChangesToServer: () => void;
 }
 
 export const useChangesStore = create<ChangesState>((set, get) => ({
+  savedChanges: [],
   changes: {},
   activeChangeId: null,
   noviChangeId: null,
@@ -261,5 +264,13 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
       changesDraft[id].previewOpened = false;
     });
     set({ changes: newChanges, activeChangeId: null });
+  },
+  saveChangesToServer: () => {
+    const { savedChanges, changes } = get();
+    const changesToSave = Object.values(changes)
+      .filter((change) => !change.isFileDepChange)
+      .filter((change) => !savedChanges.includes(change.id));
+
+    console.log(changesToSave);
   },
 }));

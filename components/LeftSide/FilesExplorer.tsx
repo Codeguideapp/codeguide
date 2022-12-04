@@ -15,8 +15,8 @@ import { useResizeDetector } from 'react-resize-detector';
 import { expandedFilesAtom } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
 import { FileNode, useFilesStore } from '../store/files';
-import { fetchWithThrow } from '../utils/fetchWithThrow';
-import { pathsToTreeStructure } from '../utils/pathsToTree';
+import { fetchWithThrow } from '../../utils/fetchWithThrow';
+import { pathsToTreeStructure } from '../../utils/pathsToTree';
 
 let lastFetchController: AbortController | null;
 
