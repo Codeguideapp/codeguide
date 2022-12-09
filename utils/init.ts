@@ -1,6 +1,7 @@
 import { getSession } from 'next-auth/react';
 import { Octokit } from 'octokit';
 
+import { Change, useChangesStore } from '../components/store/changes';
 import { useFilesStore } from '../components/store/files';
 import { Guide, useGuideStore } from '../components/store/guide';
 import { fetchWithThrow } from './fetchWithThrow';
@@ -13,15 +14,21 @@ export type RepoApiStatus = {
 };
 
 export async function init(): Promise<RepoApiStatus> {
-  let guide: Guide | undefined;
-
+  let initChanges: Change[] = [];
   try {
     const guideId = document.location.pathname.split('/')[1];
     //const isEdit = document.location.pathname.split('/')[2] === 'edit';
 
-    guide = (await fetchWithThrow(`/api/guide/${guideId}`)) as Guide;
-    useGuideStore.setState(guide);
+    const res = (await fetchWithThrow(`/api/guide/${guideId}`)) as {
+      guide: Guide;
+      changes: Change[];
+    };
+
+    initChanges = res.changes;
+    useGuideStore.setState(res.guide);
   } catch (err: any) {
+    console.error(err);
+
     return {
       errorStatus: err?.status || 500,
       shouldTryLogin: false,
@@ -30,6 +37,7 @@ export async function init(): Promise<RepoApiStatus> {
   }
 
   const session = await getSession();
+  const guide = useGuideStore.getState();
 
   try {
     const octokit = new Octokit({
@@ -39,20 +47,16 @@ export async function init(): Promise<RepoApiStatus> {
     const repoFiles = await octokit.request(
       'GET /repos/{owner}/{repo}/git/trees/{sha}?recursive=1',
       {
-        sha: 'HEAD', // todo
+        sha: guide.baseSha,
         owner: guide.owner,
         repo: guide.repository,
       }
     );
 
     useFilesStore.getState().setAllRepoFileRefs(repoFiles.data.tree);
-    //set(allRepoFileRefsAtom, repoFiles.data.tree);
 
     const apiFiles = await getFilesDiff(guide, octokit);
-    // set(
-    //   fileNodesAtom,
-    //   apiFiles.map((file) => ({ ...file, isFileDiff: true, isFetching: false }))
-    // );
+
     useFilesStore.getState().setFileNodes(
       apiFiles.map((file) => ({
         ...file,
@@ -60,6 +64,8 @@ export async function init(): Promise<RepoApiStatus> {
         isFetching: false,
       }))
     );
+
+    useChangesStore.getState().saveChanges(initChanges);
 
     return {
       errorStatus: 0,

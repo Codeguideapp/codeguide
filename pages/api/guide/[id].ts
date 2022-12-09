@@ -1,13 +1,7 @@
-import { DynamoDB } from 'aws-sdk';
 import type { NextApiRequest, NextApiResponse } from 'next';
 
-const dynamoDb = new DynamoDB.DocumentClient({
-  region: process.env.AWS_APP_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_APP_ACCESS_KEY,
-    secretAccessKey: process.env.AWS_APP_SECRET_KEY,
-  },
-});
+import { getChanges } from '../../../server/getChanges';
+import { getGuide } from '../../../server/getGuide';
 
 export default async function handler(
   req: NextApiRequest,
@@ -19,21 +13,20 @@ export default async function handler(
     return;
   }
 
-  const params = {
-    TableName: process.env.CODEGUIDE_DYNAMODB_TABLE,
-    Key: {
-      id: req.query.id,
-    },
-  };
-
   try {
-    const result = await dynamoDb.get(params).promise();
+    const guideId = req.query.id;
+    if (typeof guideId !== 'string') {
+      throw new Error('Invalid id');
+    }
 
-    if (!result.Item) {
+    const guide = await getGuide(guideId);
+    const changes = await getChanges(guideId);
+
+    if (!guide) {
       return res.status(404).json({});
     }
 
-    return res.status(200).json(result.Item);
+    return res.status(200).json({ guide, changes });
   } catch (error: any) {
     console.log(error);
 

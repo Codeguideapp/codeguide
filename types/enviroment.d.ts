@@ -4,7 +4,8 @@ declare global {
       AWS_APP_REGION: string;
       AWS_APP_ACCESS_KEY: string;
       AWS_APP_SECRET_KEY: string;
-      CODEGUIDE_DYNAMODB_TABLE: string;
+      DYNAMODB_GUIDES_TABLE: string;
+      DYNAMODB_CHANGES_TABLE: string;
       GITHUB_ID: string;
       GITHUB_SECRET: string;
       NEXTAUTH_SECRET: string;

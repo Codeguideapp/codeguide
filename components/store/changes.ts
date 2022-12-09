@@ -1,12 +1,14 @@
 import produce from 'immer';
 import { last } from 'lodash';
 import Delta from 'quill-delta';
-import { ulid } from 'ulid';
+import { decodeTime, ulid } from 'ulid';
 import create from 'zustand';
 
 import { calcStat, composeDeltas, deltaToString } from '../../utils/deltaUtils';
+import { fetchWithThrow } from '../../utils/fetchWithThrow';
 import { useCommentsStore } from './comments';
 import { FileNode, useFilesStore } from './files';
+import { useGuideStore } from './guide';
 
 export type Changes = Record<string, Readonly<Change>>; // changes is updated using immer so the result object can be read only
 
@@ -28,6 +30,7 @@ export type Change = {
 };
 
 interface SaveDeltaParams {
+  id?: string;
   delta: Delta;
   highlight: Change['highlight'];
   file: FileNode;
@@ -44,7 +47,8 @@ interface ChangesState {
   saveFileNode: (path: string) => void;
   deleteChange: (id: string) => void;
   undraftChange: (id: string) => void;
-  saveChangesToServer: () => void;
+  saveChangesToServer: () => Promise<{ success: boolean; error?: string }>;
+  saveChanges: (changesToSave: Change[]) => void;
 }
 
 export const useChangesStore = create<ChangesState>((set, get) => ({
@@ -72,7 +76,7 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
     set({ changes: newChanges });
   },
   saveDelta: (params: SaveDeltaParams) => {
-    const { delta, file, highlight, isFileDepChange } = params;
+    const { delta, file, highlight, isFileDepChange, id } = params;
     const changes = get().changes;
     const changesOrder = Object.keys(changes).sort();
 
@@ -140,7 +144,7 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
         return;
       }
 
-      const newChangeId = ulid();
+      const newChangeId = id || ulid();
 
       const newChanges = produce(changes, (changesDraft) => {
         if (!isFileDepChange) {
@@ -265,12 +269,75 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
     });
     set({ changes: newChanges, activeChangeId: null });
   },
-  saveChangesToServer: () => {
+  saveChangesToServer: (): Promise<{ success: boolean; error?: string }> => {
     const { savedChanges, changes } = get();
     const changesToSave = Object.values(changes)
       .filter((change) => !change.isFileDepChange)
       .filter((change) => !savedChanges.includes(change.id));
 
-    console.log(changesToSave);
+    const guideId = useGuideStore.getState().id;
+
+    return fetchWithThrow(`/api/changes?guideId=${guideId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(changesToSave.slice(0, 25)),
+    })
+      .then((saved: string[]) => {
+        set({
+          savedChanges: [...savedChanges, ...saved],
+        });
+
+        // If there are more changes to save, send another request
+        if (changesToSave.length > 25) {
+          return get().saveChangesToServer();
+        } else {
+          return {
+            success: true,
+          };
+        }
+      })
+      .catch((err) => {
+        return {
+          success: false,
+          error: err.message,
+        };
+      });
+  },
+  saveChanges(changesToSave: Change[]) {
+    for (const change of changesToSave) {
+      const file = useFilesStore
+        .getState()
+        .fileNodes.find((f) => f.path === change.path);
+
+      if (!file) {
+        throw new Error('file not found');
+      }
+
+      if (
+        file.status !== 'added' &&
+        !Object.values(get().changes).find(
+          (change) => change.path === file.path
+        )
+      ) {
+        // this is first time change is saved for a file
+        get().saveDelta({
+          id: ulid(decodeTime(changesToSave[0].id) - 1), // make sure this change is before the first change
+          file,
+          isFileDepChange: true,
+          delta: new Delta().insert(file.oldVal),
+          highlight: [],
+        });
+      }
+    }
+
+    const newChanges = produce(get().changes, (changesDraft) => {
+      for (const change of changesToSave) {
+        changesDraft[change.id] = change;
+      }
+    });
+
+    set({ changes: newChanges });
   },
 }));
