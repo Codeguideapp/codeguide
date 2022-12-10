@@ -1,7 +1,8 @@
 import type { Octokit } from 'octokit';
 
+import { IGuide } from '../types/Guide';
+
 //import { mockFiles } from '../components/__mocks__/mockFiles';
-import { Guide } from '../components/store/guide';
 
 export type FileDiff = {
   status: 'added' | 'modified' | 'deleted';
@@ -11,7 +12,7 @@ export type FileDiff = {
 };
 
 export const getFilesDiff = async (
-  guide: Guide,
+  guide: IGuide,
   octokit: Octokit
 ): Promise<FileDiff[]> => {
   //return mockFiles;

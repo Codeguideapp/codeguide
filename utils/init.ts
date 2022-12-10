@@ -3,7 +3,8 @@ import { Octokit } from 'octokit';
 
 import { Change, useChangesStore } from '../components/store/changes';
 import { useFilesStore } from '../components/store/files';
-import { Guide, useGuideStore } from '../components/store/guide';
+import { useGuideStore } from '../components/store/guide';
+import { IGuide } from '../types/Guide';
 import { fetchWithThrow } from './fetchWithThrow';
 import { getFilesDiff } from './getFilesDiff';
 
@@ -20,7 +21,7 @@ export async function init(): Promise<RepoApiStatus> {
     //const isEdit = document.location.pathname.split('/')[2] === 'edit';
 
     const res = (await fetchWithThrow(`/api/guide/${guideId}`)) as {
-      guide: Guide;
+      guide: IGuide;
       changes: Change[];
     };
 
@@ -65,7 +66,7 @@ export async function init(): Promise<RepoApiStatus> {
       }))
     );
 
-    useChangesStore.getState().saveChanges(initChanges);
+    useChangesStore.getState().storeChangesFromServer(initChanges);
 
     return {
       errorStatus: 0,

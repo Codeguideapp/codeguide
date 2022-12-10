@@ -1,21 +1,13 @@
 import create from 'zustand';
 
-export type Guide = {
-  type: 'diff' | 'browse';
-  id: string;
-  createdBy: string;
-  owner: string;
-  repository: string;
-  baseSha: string;
-  prNum?: number;
-  mergeCommitSha?: string;
-};
+import { IGuide } from '../../types/Guide';
 
-export const useGuideStore = create<Guide>((set, get) => ({
+export const useGuideStore = create<IGuide>((set, get) => ({
   id: '',
   owner: '',
   createdBy: '',
   repository: '',
   baseSha: '',
   type: 'diff',
+  canEdit: [],
 }));

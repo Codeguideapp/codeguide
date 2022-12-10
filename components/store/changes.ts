@@ -48,7 +48,7 @@ interface ChangesState {
   deleteChange: (id: string) => void;
   undraftChange: (id: string) => void;
   saveChangesToServer: () => Promise<{ success: boolean; error?: string }>;
-  saveChanges: (changesToSave: Change[]) => void;
+  storeChangesFromServer: (changesToSave: Change[]) => void;
 }
 
 export const useChangesStore = create<ChangesState>((set, get) => ({
@@ -269,24 +269,60 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
     });
     set({ changes: newChanges, activeChangeId: null });
   },
-  saveChangesToServer: (): Promise<{ success: boolean; error?: string }> => {
-    const { savedChanges, changes } = get();
-    const changesToSave = Object.values(changes)
+  saveChangesToServer: async (): Promise<{
+    success: boolean;
+    error?: string;
+  }> => {
+    const newChanges = produce(get().changes, (changesDraft) => {
+      for (const id of Object.keys(changesDraft)) {
+        changesDraft[id].isDraft = false;
+        changesDraft[id].previewOpened = false;
+      }
+    });
+    set({ changes: newChanges, activeChangeId: null });
+
+    const changesToSave = Object.values(get().changes)
       .filter((change) => !change.isFileDepChange)
-      .filter((change) => !savedChanges.includes(change.id));
+      .filter((change) => !get().savedChanges.includes(change.id));
 
     const guideId = useGuideStore.getState().id;
 
-    return fetchWithThrow(`/api/changes?guideId=${guideId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(changesToSave.slice(0, 25)),
-    })
-      .then((saved: string[]) => {
+    const changesToDelete = get().savedChanges.filter(
+      (id) => !Object.keys(get().changes).includes(id)
+    );
+
+    try {
+      if (changesToDelete.length) {
+        await fetchWithThrow(`/api/changes?guideId=${guideId}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ changeIds: changesToDelete }),
+        }).then((deleted: string[]) => {
+          set({
+            savedChanges: get().savedChanges.filter(
+              (id) => !deleted.includes(id)
+            ),
+          });
+        });
+      }
+
+      if (changesToSave.length === 0) {
+        return {
+          success: true,
+        };
+      }
+
+      await fetchWithThrow(`/api/changes?guideId=${guideId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(changesToSave.slice(0, 25)),
+      }).then((saved: string[]) => {
         set({
-          savedChanges: [...savedChanges, ...saved],
+          savedChanges: [...get().savedChanges, ...saved],
         });
 
         // If there are more changes to save, send another request
@@ -297,15 +333,19 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
             success: true,
           };
         }
-      })
-      .catch((err) => {
-        return {
-          success: false,
-          error: err.message,
-        };
       });
+
+      return {
+        success: true,
+      };
+    } catch (err: any) {
+      return {
+        success: false,
+        error: err.message,
+      };
+    }
   },
-  saveChanges(changesToSave: Change[]) {
+  storeChangesFromServer(changesToSave: Change[]) {
     for (const change of changesToSave) {
       const file = useFilesStore
         .getState()
@@ -338,6 +378,6 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
       }
     });
 
-    set({ changes: newChanges });
+    set({ changes: newChanges, savedChanges: changesToSave.map((c) => c.id) });
   },
 }));

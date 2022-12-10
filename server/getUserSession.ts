@@ -10,7 +10,7 @@ export async function getUserSession(
   const session = await unstable_getServerSession(req, res, authOptions);
 
   if (session) {
-    return session.user;
+    return session.user as { email: string; name?: string; image?: string };
   } else {
     throw new Error('Not authenticated');
   }
