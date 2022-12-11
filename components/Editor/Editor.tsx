@@ -3,10 +3,10 @@ import { useAtom } from 'jotai';
 import { useMemo, useState } from 'react';
 import Split from 'react-split';
 
+import { BottomBar } from '../BottomBar/BottomBar';
 import { Guide } from '../Guide/Guide';
 import { useActiveChange } from '../hooks/useActiveChange';
 import { useShallowChanges } from '../hooks/useShallowChanges';
-import { StepControls } from '../StepControls/StepControls';
 import { stepControlHeightAtom } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
 import { useFilesStore } from '../store/files';
@@ -84,7 +84,7 @@ export function Editor() {
               )}
             </div>
           </div>
-          <StepControls />
+          <BottomBar />
         </div>
 
         <Guide />

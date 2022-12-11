@@ -3,8 +3,7 @@ import 'antd/dist/antd.dark.css';
 import '../styles/globals.css';
 import '../components/Editor/Welcome.css';
 import '../components/Guide/Guide.css';
-import '../components/Shared/DeltaPreview.css';
-import '../components/StepControls/StepControls.css';
+import '../components/BottomBar/BottomBar.css';
 import 'highlight.js/styles/github-dark.css';
 
 import type { AppProps } from 'next/app';

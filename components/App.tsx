@@ -9,7 +9,7 @@ import Split from 'react-split';
 
 import { Editor } from './Editor/Editor';
 import { LeftSide } from './LeftSide/LeftSide';
-import { PrevNextControls } from './PrevNextControls/PrevNextControls';
+import { PrevNextControls } from './PrevNextControls';
 import { useChangesStore } from './store/changes';
 import { useCommentsStore } from './store/comments';
 import { useGuideStore } from './store/guide';

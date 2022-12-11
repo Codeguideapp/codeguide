@@ -8,8 +8,8 @@ import { last } from 'lodash';
 import * as Mousetrap from 'mousetrap';
 import { useCallback, useEffect, useMemo } from 'react';
 
-import { useChangesStore } from '../store/changes';
-import { useFilesStore } from '../store/files';
+import { useChangesStore } from './store/changes';
+import { useFilesStore } from './store/files';
 
 library.add(faBackwardStep, faForwardStep, faPlay);
 

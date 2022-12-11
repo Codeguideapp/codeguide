@@ -10,10 +10,10 @@ import classNames from 'classnames';
 import { useMemo } from 'react';
 
 import { getFileContent } from '../../utils/deltaUtils';
-import { DeltaPreview } from '../Shared/DeltaPreview';
 import { useChangesStore } from '../store/changes';
 import { useCommentsStore } from '../store/comments';
 import { useFilesStore } from '../store/files';
+import { DeltaPreview } from './DeltaPreview';
 import { getStepPreview } from './getStepPreview';
 
 library.add(faCheck, faImage, faUpload);

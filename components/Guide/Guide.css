@@ -1,3 +1,18 @@
+.delta-preview {
+  font-family: 'Inconsolata';
+  overflow: hidden;
+  white-space: nowrap;
+  color: rgb(225, 225, 225);
+  font-size: 12px;
+  line-height: 11px;
+  padding: 5px;
+}
+
+.delta-preview .deleted {
+  text-decoration: line-through;
+  color: #5c5a5a;
+}
+
 .guide {
   overflow: auto;
   background: var(--zinc-custom-850);
@@ -181,9 +196,7 @@
 .guide .delta-preview {
   color: #4b856a;
 }
-.guide .delta-preview .linenumber {
-  color: #909090;
-}
+
 .guide .delta-preview .deleted {
   color: #995454;
 }

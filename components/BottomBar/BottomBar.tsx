@@ -12,7 +12,7 @@ import { WriteComment } from './WriteComment';
 
 library.add(faComment);
 
-export function StepControls() {
+export function BottomBar() {
   const activeChangeId = useChangesStore((s) => s.activeChangeId);
   const committedComments = useCommentsStore((s) => s.committedComments);
   const [, setStepControlHeight] = useAtom(stepControlHeightAtom);
