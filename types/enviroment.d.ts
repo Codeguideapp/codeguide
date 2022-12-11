@@ -6,6 +6,7 @@ declare global {
       AWS_APP_SECRET_KEY: string;
       DYNAMODB_GUIDES_TABLE: string;
       DYNAMODB_CHANGES_TABLE: string;
+      DYNAMODB_COMMENTS_TABLE: string;
       GITHUB_ID: string;
       GITHUB_SECRET: string;
       NEXTAUTH_SECRET: string;

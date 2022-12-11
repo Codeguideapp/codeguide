@@ -11,11 +11,13 @@ import { Editor } from './Editor/Editor';
 import { LeftSide } from './LeftSide/LeftSide';
 import { PrevNextControls } from './PrevNextControls/PrevNextControls';
 import { useChangesStore } from './store/changes';
+import { useCommentsStore } from './store/comments';
 import { useGuideStore } from './store/guide';
 
 export function App() {
   const repository = useGuideStore((s) => s.repository);
   const owner = useGuideStore((s) => s.owner);
+  const pushComments = useCommentsStore((s) => s.pushComments);
   const saveChangesToServer = useChangesStore((s) => s.saveChangesToServer);
   const [isDragging, setDragging] = useState(false);
 
@@ -35,7 +37,14 @@ export function App() {
         <div className="action">
           <FontAwesomeIcon icon={faCloudArrowUp} />
           <span>Publish</span>
-          <span onClick={saveChangesToServer}>save</span>
+          <span
+            onClick={() => {
+              saveChangesToServer();
+              pushComments();
+            }}
+          >
+            save
+          </span>
           <span onClick={() => signOut()}>logout</span>
         </div>
       </div>

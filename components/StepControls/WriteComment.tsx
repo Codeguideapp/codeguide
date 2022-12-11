@@ -7,12 +7,16 @@ import { useCommentsStore } from '../store/comments';
 export function WriteComment() {
   const activeChangeId = useChangesStore((s) => s.activeChangeId);
   const getChangeIndex = useChangesStore((s) => s.getChangeIndex);
-  const draftComments = useCommentsStore((s) => s.draftComments);
+  const stagedComments = useCommentsStore((s) => s.stagedComments);
   const saveActiveNoteVal = useCommentsStore((s) => s.saveActiveNoteVal);
 
   const value = useMemo(() => {
-    return activeChangeId ? draftComments[activeChangeId] || '' : '';
-  }, [activeChangeId, draftComments]);
+    if (activeChangeId) {
+      return stagedComments[activeChangeId]?.commentBody || '';
+    } else {
+      return '';
+    }
+  }, [activeChangeId, stagedComments]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     saveActiveNoteVal(e.target.value);

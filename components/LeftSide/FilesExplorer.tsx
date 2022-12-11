@@ -12,13 +12,11 @@ import { useSession } from 'next-auth/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useResizeDetector } from 'react-resize-detector';
 
+import { fetchWithThrow } from '../../utils/fetchWithThrow';
+import { pathsToTreeStructure } from '../../utils/pathsToTree';
 import { expandedFilesAtom } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
 import { FileNode, useFilesStore } from '../store/files';
-import { fetchWithThrow } from '../../utils/fetchWithThrow';
-import { pathsToTreeStructure } from '../../utils/pathsToTree';
-
-let lastFetchController: AbortController | null;
 
 export function FilesExplorer() {
   const treeRef = React.useRef<any>();
@@ -30,10 +28,10 @@ export function FilesExplorer() {
   const allRepoFileRefs = useFilesStore((s) => s.allRepoFileRefs);
   const activeFile = useFilesStore((s) => s.activeFile);
   const setActiveFile = useFilesStore((s) => s.setActiveFile);
+  const loadFile = useFilesStore((s) => s.loadFile);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const [expanded, setExpanded] = useAtom(expandedFilesAtom);
   const [wrapperHeight, setWrapperHeight] = useState(400);
-  const { data: session } = useSession();
 
   const treeData = useMemo(
     () => pathsToTreeStructure(allRepoFileRefs),
@@ -108,37 +106,9 @@ export function FilesExplorer() {
                 isFetching: true,
               });
 
-              if (lastFetchController) {
-                lastFetchController.abort();
-              }
-
-              lastFetchController = new AbortController();
-              fetchWithThrow(node.file.url, {
-                signal: lastFetchController.signal,
-                headers: session
-                  ? {
-                      Authorization: 'Bearer ' + session.user.accessToken,
-                    }
-                  : {},
-              })
-                .then((res) => {
-                  const content = atob(res.content);
-                  const newFile: FileNode = {
-                    isFileDiff: false,
-                    oldVal: content,
-                    newVal: content,
-                    path: node.file.path,
-                    status: 'modified',
-                    isFetching: false,
-                  };
-                  setFileNodes([...fileNodes, newFile]);
-                  setActiveFileByPath(node.file.path);
-                })
-                .catch((err) => {
-                  if (err.name === 'AbortError') {
-                    return;
-                  }
-
+              loadFile(node.file.path)
+                .then(() => setActiveFileByPath(node.file.path))
+                .catch(() => {
                   // make "error file"
                   setActiveFile({
                     isFileDiff: false,

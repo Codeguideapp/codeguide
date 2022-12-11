@@ -14,7 +14,7 @@ library.add(faComment);
 
 export function StepControls() {
   const activeChangeId = useChangesStore((s) => s.activeChangeId);
-  const savedComments = useCommentsStore((s) => s.savedComments);
+  const committedComments = useCommentsStore((s) => s.committedComments);
   const [, setStepControlHeight] = useAtom(stepControlHeightAtom);
   const { ref } = useResizeDetector({
     skipOnMount: true,
@@ -32,9 +32,9 @@ export function StepControls() {
     >
       <div className="overflow-auto max-h-[40vh]">
         {activeChangeId &&
-          savedComments[activeChangeId] &&
-          savedComments[activeChangeId].map((comment, i) => (
-            <PreviewComment key={i} value={comment.value} />
+          committedComments[activeChangeId] &&
+          committedComments[activeChangeId].map((comment, i) => (
+            <PreviewComment key={i} value={comment.commentBody} />
           ))}
       </div>
 

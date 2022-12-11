@@ -2,6 +2,7 @@ import { getSession } from 'next-auth/react';
 import { Octokit } from 'octokit';
 
 import { Change, useChangesStore } from '../components/store/changes';
+import { IComment, useCommentsStore } from '../components/store/comments';
 import { useFilesStore } from '../components/store/files';
 import { useGuideStore } from '../components/store/guide';
 import { IGuide } from '../types/Guide';
@@ -16,6 +17,8 @@ export type RepoApiStatus = {
 
 export async function init(): Promise<RepoApiStatus> {
   let initChanges: Change[] = [];
+  let initComments: IComment[] = [];
+
   try {
     const guideId = document.location.pathname.split('/')[1];
     //const isEdit = document.location.pathname.split('/')[2] === 'edit';
@@ -23,9 +26,11 @@ export async function init(): Promise<RepoApiStatus> {
     const res = (await fetchWithThrow(`/api/guide/${guideId}`)) as {
       guide: IGuide;
       changes: Change[];
+      comments: IComment[];
     };
 
     initChanges = res.changes;
+    initComments = res.comments;
     useGuideStore.setState(res.guide);
   } catch (err: any) {
     console.error(err);
@@ -66,7 +71,8 @@ export async function init(): Promise<RepoApiStatus> {
       }))
     );
 
-    useChangesStore.getState().storeChangesFromServer(initChanges);
+    await useChangesStore.getState().storeChangesFromServer(initChanges);
+    useCommentsStore.getState().storeCommentsFromServer(initComments);
 
     return {
       errorStatus: 0,

@@ -22,7 +22,7 @@ export function Guide() {
   const setActiveChangeId = useChangesStore((s) => s.setActiveChangeId);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const activeChangeId = useChangesStore((s) => s.activeChangeId);
-  const savedComments = useCommentsStore((s) => s.savedComments);
+  const committedComments = useCommentsStore((s) => s.committedComments);
   const changes = useChangesStore((s) => s.changes);
   const changesForGuide = useMemo(() => {
     const changesOrder = Object.keys(changes).sort();
@@ -115,9 +115,9 @@ export function Guide() {
                       </div>
                     </>
                   )}
-                  {savedComments[change.id] && (
+                  {committedComments[change.id] && (
                     <div
-                      title={savedComments[change.id].length + ' comments'}
+                      title={committedComments[change.id].length + ' comments'}
                       style={{ height: 'calc(100% - 2px)' }}
                       className={
                         'absolute right-3 px-2 ' +

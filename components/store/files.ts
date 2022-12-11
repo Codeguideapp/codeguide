@@ -1,5 +1,7 @@
+import { getSession } from 'next-auth/react';
 import create from 'zustand';
 
+import { fetchWithThrow } from '../../utils/fetchWithThrow';
 import { useChangesStore } from './changes';
 
 export type FileNode = {
@@ -28,6 +30,7 @@ interface FilesState {
   setActiveFile: (file: FileNode) => void;
   setFileNodes: (refs: FileNode[]) => void;
   setAllRepoFileRefs: (refs: RepoFileRef[]) => void;
+  loadFile: (path: string) => Promise<FileNode>;
 }
 
 export const useFilesStore = create<FilesState>((set, get) => ({
@@ -67,9 +70,38 @@ export const useFilesStore = create<FilesState>((set, get) => ({
     if (!file) return;
 
     // save new change filenode
-    const activeChangeId = useChangesStore.getState().activeChangeId;
-    if (!activeChangeId) {
+    const activeChange = useChangesStore.getState().getActiveChange();
+    if (!activeChange || activeChange.path !== file.path) {
       useChangesStore.getState().saveFileNode(file.path);
     }
+  },
+  loadFile: async (path: string): Promise<FileNode> => {
+    const repoFileRef = get().allRepoFileRefs.find((f) => f.path === path);
+
+    if (!repoFileRef) {
+      throw new Error('File not found');
+    }
+
+    const session = await getSession().catch(() => null);
+    return fetchWithThrow(repoFileRef.url, {
+      headers: session
+        ? {
+            Authorization: 'Bearer ' + session.user.accessToken,
+          }
+        : {},
+    }).then((res) => {
+      const content = atob(res.content);
+      const newFile: FileNode = {
+        isFileDiff: false,
+        oldVal: content,
+        newVal: content,
+        path: repoFileRef.path,
+        status: 'modified',
+        isFetching: false,
+      };
+      get().setFileNodes([...get().fileNodes, newFile]);
+
+      return newFile;
+    });
   },
 }));

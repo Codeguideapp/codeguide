@@ -1,5 +1,6 @@
 import produce from 'immer';
 import { last } from 'lodash';
+import { getSession } from 'next-auth/react';
 import Delta from 'quill-delta';
 import { decodeTime, ulid } from 'ulid';
 import create from 'zustand';
@@ -41,6 +42,7 @@ interface ChangesState {
   activeChangeId: string | null;
   changes: Changes;
   getChangeIndex: (changeId: string) => number;
+  getActiveChange: () => Change | null;
   setActiveChangeId: (id: string | null) => void;
   setChangePreview: (changeId: string, opened: boolean) => void;
   saveDelta: (params: SaveDeltaParams) => void;
@@ -48,7 +50,7 @@ interface ChangesState {
   deleteChange: (id: string) => void;
   undraftChange: (id: string) => void;
   saveChangesToServer: () => Promise<{ success: boolean; error?: string }>;
-  storeChangesFromServer: (changesToSave: Change[]) => void;
+  storeChangesFromServer: (changesToSave: Change[]) => Promise<any>;
 }
 
 export const useChangesStore = create<ChangesState>((set, get) => ({
@@ -65,6 +67,11 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
     );
 
     return ids.indexOf(changeId) + 1;
+  },
+  getActiveChange() {
+    const activeChangeId = get().activeChangeId;
+    if (!activeChangeId) return null;
+    return get().changes[activeChangeId];
   },
   setActiveChangeId: (activeChangeId: string | null) => {
     set({ activeChangeId });
@@ -116,13 +123,13 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
       const before = deltaToString(fileChanges);
       const after = deltaToString([...fileChanges, newDelta]);
 
-      const { draftComments, savedComments } = useCommentsStore.getState();
+      const { stagedComments, committedComments } = useCommentsStore.getState();
 
       if (
         before === after &&
         highlight.length === 0 &&
-        !draftComments[lastChangeId] &&
-        !savedComments[lastChangeId]
+        !stagedComments[lastChangeId] &&
+        !committedComments[lastChangeId]
       ) {
         const newChanges = produce(changes, (changesDraft) => {
           delete changesDraft[lastChangeId];
@@ -345,14 +352,25 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
       };
     }
   },
-  storeChangesFromServer(changesToSave: Change[]) {
-    for (const change of changesToSave) {
+  storeChangesFromServer: async (changesToSave: Change[]) => {
+    const getFile = async (change: Change) => {
       const file = useFilesStore
         .getState()
         .fileNodes.find((f) => f.path === change.path);
 
+      if (file) {
+        return file;
+      }
+
+      // file not in store, fetch it
+      return useFilesStore.getState().loadFile(change.path);
+    };
+
+    for (const change of changesToSave) {
+      const file = await getFile(change);
+
       if (!file) {
-        throw new Error('file not found');
+        throw new Error("Couldn't fetch file");
       }
 
       if (
