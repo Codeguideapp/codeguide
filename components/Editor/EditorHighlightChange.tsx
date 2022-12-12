@@ -3,7 +3,7 @@ import * as monaco from 'monaco-editor';
 import { useEffect, useRef } from 'react';
 
 import { getFileContent } from '../../utils/deltaUtils';
-import { getRange } from '../../utils/monaco';
+import { getMonacoEdits, getRange } from '../../utils/monaco';
 import { showWhitespaceAtom } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
 import { useFilesStore } from '../store/files';
@@ -70,19 +70,91 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
 
   useEffect(() => {
     if (!monacoDom.current) return;
+    if (currValue === undefined) return;
 
-    if (currValue !== undefined && prevValue === undefined) {
-      modelCurrent.setValue(currValue);
+    const noInserts = currentChange.stat[0] === 0;
+    const noDeletes = currentChange.stat[1] === 0;
 
+    if (prevValue === undefined || noInserts || noDeletes) {
       standaloneEditor.current = monaco.editor.create(monacoDom.current, {
         automaticLayout: true,
         theme: 'darkTheme',
         readOnly: true,
+        minimap: {
+          enabled: true,
+        },
       });
-      standaloneEditor.current.setModel(modelCurrent);
-    }
 
-    if (currValue !== undefined && prevValue !== undefined) {
+      standaloneEditor.current.setModel(modelCurrent);
+
+      if (noInserts && noDeletes) {
+        // no changes (only highlight)
+        modelCurrent.setValue(currValue);
+
+        const decorations = currentChange.highlight.map((h) => {
+          return {
+            range: getRange(modelCurrent, h.offset, h.length),
+            options: {
+              className: 'select-highlight',
+              overviewRuler: {
+                color: '#3c5177',
+                position: monaco.editor.OverviewRulerLane.Right,
+              },
+              minimap: { position: 1, color: '#3c5177' },
+            },
+          };
+        });
+
+        standaloneEditor.current.createDecorationsCollection(decorations);
+        standaloneEditor.current.revealRangeInCenterIfOutsideViewport(
+          decorations[0].range
+        );
+      } else if (noDeletes) {
+        // only inserts
+        modelCurrent.setValue(currValue);
+        const edits = getMonacoEdits(currentChange.delta, modelCurrent);
+        const decorations = edits.map((ed) => {
+          return {
+            range: ed.range,
+            options: {
+              className: 'insert-highlight',
+              overviewRuler: {
+                color: '#3f6212',
+                position: monaco.editor.OverviewRulerLane.Right,
+              },
+              minimap: { position: 1, color: '#3f6212' },
+            },
+          };
+        });
+
+        standaloneEditor.current.createDecorationsCollection(decorations);
+        standaloneEditor.current.revealRangeInCenterIfOutsideViewport(
+          decorations[0].range
+        );
+      } else if (noInserts && prevValue) {
+        // only deletes
+        modelCurrent.setValue(prevValue);
+        const edits = getMonacoEdits(currentChange.delta, modelCurrent);
+        const decorations = edits.map((ed) => {
+          return {
+            range: ed.range,
+            options: {
+              className: 'delete-highlight',
+              overviewRuler: {
+                color: '#991b1b',
+                position: monaco.editor.OverviewRulerLane.Right,
+              },
+              minimap: { position: 1, color: '#991b1b' },
+            },
+          };
+        });
+
+        standaloneEditor.current.createDecorationsCollection(decorations);
+        standaloneEditor.current.revealRangeInCenterIfOutsideViewport(
+          decorations[0].range
+        );
+      }
+    } else {
       modelCurrent.setValue(currValue);
       modelPrev.setValue(prevValue);
 
@@ -124,11 +196,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
           })
         );
 
-        if (
-          currentChange.stat[0] === 0 &&
-          currentChange.stat[1] === 0 &&
-          currentChange.highlight.length
-        ) {
+        if (noInserts && noDeletes && currentChange.highlight.length) {
           diffEditor.current
             .getModifiedEditor()
             .revealRangeInCenterIfOutsideViewport(
