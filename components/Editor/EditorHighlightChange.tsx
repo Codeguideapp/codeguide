@@ -75,6 +75,20 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
     const noInserts = currentChange.stat[0] === 0;
     const noDeletes = currentChange.stat[1] === 0;
 
+    const highlightDecorations = currentChange.highlight.map((h) => {
+      return {
+        range: getRange(modelCurrent, h.offset, h.length),
+        options: {
+          className: 'select-highlight',
+          overviewRuler: {
+            color: '#3c5177',
+            position: monaco.editor.OverviewRulerLane.Right,
+          },
+          minimap: { position: 1, color: '#3c5177' },
+        },
+      };
+    });
+
     if (prevValue === undefined || noInserts || noDeletes) {
       standaloneEditor.current = monaco.editor.create(monacoDom.current, {
         automaticLayout: true,
@@ -91,23 +105,11 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
         // no changes (only highlight)
         modelCurrent.setValue(currValue);
 
-        const decorations = currentChange.highlight.map((h) => {
-          return {
-            range: getRange(modelCurrent, h.offset, h.length),
-            options: {
-              className: 'select-highlight',
-              overviewRuler: {
-                color: '#3c5177',
-                position: monaco.editor.OverviewRulerLane.Right,
-              },
-              minimap: { position: 1, color: '#3c5177' },
-            },
-          };
-        });
-
-        standaloneEditor.current.createDecorationsCollection(decorations);
+        standaloneEditor.current.createDecorationsCollection(
+          highlightDecorations
+        );
         standaloneEditor.current.revealRangeInCenterIfOutsideViewport(
-          decorations[0].range
+          highlightDecorations[0].range
         );
       } else if (noDeletes) {
         // only inserts
@@ -127,7 +129,10 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
           };
         });
 
-        standaloneEditor.current.createDecorationsCollection(decorations);
+        standaloneEditor.current.createDecorationsCollection([
+          ...decorations,
+          ...highlightDecorations,
+        ]);
         standaloneEditor.current.revealRangeInCenterIfOutsideViewport(
           decorations[0].range
         );
@@ -149,7 +154,10 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
           };
         });
 
-        standaloneEditor.current.createDecorationsCollection(decorations);
+        standaloneEditor.current.createDecorationsCollection([
+          ...decorations,
+          ...highlightDecorations,
+        ]);
         standaloneEditor.current.revealRangeInCenterIfOutsideViewport(
           decorations[0].range
         );
@@ -181,32 +189,9 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
           }
         );
 
-        diffEditor.current.getModifiedEditor().createDecorationsCollection(
-          currentChange.highlight.map((h) => {
-            return {
-              range: getRange(modelCurrent, h.offset, h.length),
-              options: {
-                className: 'select-highlight',
-                overviewRuler: {
-                  color: '#3c5177',
-                  position: monaco.editor.OverviewRulerLane.Right,
-                },
-              },
-            };
-          })
-        );
-
-        if (noInserts && noDeletes && currentChange.highlight.length) {
-          diffEditor.current
-            .getModifiedEditor()
-            .revealRangeInCenterIfOutsideViewport(
-              getRange(
-                modelCurrent,
-                currentChange.highlight[0].offset,
-                currentChange.highlight[0].length
-              )
-            );
-        }
+        diffEditor.current
+          .getModifiedEditor()
+          .createDecorationsCollection(highlightDecorations);
       }
     }
 

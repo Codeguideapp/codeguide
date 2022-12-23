@@ -55,6 +55,38 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
       modified: modifiedModel,
     });
 
+    diffEditor.current
+      .getOriginalEditor()
+      .changeViewZones(function (changeAccessor) {
+        const domNode = document.createElement('div');
+        domNode.className = 'diff-header';
+        domNode.innerHTML = `
+        <h2>Reference File</h2>
+        <p>The final version of the file</p>
+      `;
+        changeAccessor.addZone({
+          afterLineNumber: 0,
+          heightInLines: 4,
+          domNode: domNode,
+        });
+      });
+
+    diffEditor.current
+      .getModifiedEditor()
+      .changeViewZones(function (changeAccessor) {
+        const domNode = document.createElement('div');
+        domNode.className = 'diff-header';
+        domNode.innerHTML = `
+          <h2>Working Copy</h2>
+          <p>The version of the file currently being edited</p>
+        `;
+        changeAccessor.addZone({
+          afterLineNumber: 0,
+          heightInLines: 4,
+          domNode: domNode,
+        });
+      });
+
     return () => {
       diffEditor.current?.dispose();
       selectionListener.current?.dispose();

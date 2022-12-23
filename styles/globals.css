@@ -395,7 +395,7 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   background: rgba(213, 255, 116, 0.3);
 }
 .select-highlight {
-  background: rgba(116, 160, 255, 0.4);
+  background: rgba(42, 110, 255, 0.4);
 }
 .replace-highlight {
   background: rgba(116, 162, 255, 0.3);
@@ -457,4 +457,22 @@ body .monaco-diff-editor.side-by-side .editor.modified {
 
 svg.disabled {
   opacity: 0.2;
+}
+
+.diff-header {
+  padding: 10px;
+  padding-top: 15px;
+}
+.diff-header h2 {
+  font-weight: bold;
+}
+.diff-header p {
+  max-width: 400px;
+  font-style: italic;
+  opacity: 0.5;
+  font-size: 90%;
+}
+.diff-header .line {
+  border-top: 1px dashed #4c4c53;
+  margin-top: 15px;
 }
