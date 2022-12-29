@@ -1,8 +1,8 @@
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
-import { faCloudArrowUp } from '@fortawesome/free-solid-svg-icons';
+import { faSave } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { message } from 'antd';
 import classNames from 'classnames';
-import { useAtom } from 'jotai';
 import { signOut } from 'next-auth/react';
 import { useState } from 'react';
 import Split from 'react-split';
@@ -17,9 +17,26 @@ import { useGuideStore } from './store/guide';
 export function App() {
   const repository = useGuideStore((s) => s.repository);
   const owner = useGuideStore((s) => s.owner);
-  const pushComments = useCommentsStore((s) => s.pushComments);
-  const saveChangesToServer = useChangesStore((s) => s.saveChangesToServer);
+  const publishComments = useCommentsStore((s) => s.publishComments);
+  const publishChanges = useChangesStore((s) => s.publishChanges);
+  const hasUnpublishedChanges = useChangesStore((s) => s.hasDataToPublish());
+  const hasUnpublishedComments = useCommentsStore((s) => s.hasDataToPublish());
   const [isDragging, setDragging] = useState(false);
+  const [isSaving, setSaving] = useState(false);
+  const shouldPublish = hasUnpublishedChanges || hasUnpublishedComments;
+
+  const handlePublish = async () => {
+    setSaving(true);
+    const changesRes = await publishChanges();
+    const commentsRes = await publishComments();
+    setSaving(false);
+
+    if (changesRes.success && commentsRes.success) {
+      message.success({
+        content: 'Guide published successfully!',
+      });
+    }
+  };
 
   return (
     <div>
@@ -35,16 +52,17 @@ export function App() {
         </div>
 
         <div className="action">
-          <FontAwesomeIcon icon={faCloudArrowUp} />
-          <span>Publish</span>
-          <span
-            onClick={() => {
-              saveChangesToServer();
-              pushComments();
-            }}
-          >
-            save
-          </span>
+          {isSaving ? (
+            <span>saving...</span>
+          ) : (
+            <div
+              onClick={shouldPublish ? handlePublish : undefined}
+              className={shouldPublish ? '' : 'opacity-30'}
+            >
+              <FontAwesomeIcon icon={faSave} />
+              <span>Save</span>
+            </div>
+          )}
           <span onClick={() => signOut()}>logout</span>
         </div>
       </div>
@@ -53,7 +71,7 @@ export function App() {
           className={classNames({ 'split-horiz': true, dragging: isDragging })}
           direction="horizontal"
           sizes={[20, 80]}
-          minSize={[300, 300]}
+          minSize={[200, 300]}
           gutterSize={5}
           onDragStart={() => setDragging(true)}
           onDragEnd={() => setDragging(false)}

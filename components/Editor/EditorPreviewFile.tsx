@@ -5,11 +5,18 @@ import { useEffect, useRef } from 'react';
 
 import { composeDeltas, getFileContent } from '../../utils/deltaUtils';
 import { modifiedModel } from '../../utils/monaco';
+import { isEditing } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
 import { FileNode } from '../store/files';
 import { useHighlight } from './useHighlight';
 
-export function EditorPreviewFile({ activeFile }: { activeFile: FileNode }) {
+export function EditorPreviewFile({
+  activeFile,
+  upToChangeId,
+}: {
+  activeFile: FileNode;
+  upToChangeId?: string;
+}) {
   const saveDelta = useChangesStore((s) => s.saveDelta);
   const modifiedContentListener = useRef<monaco.IDisposable>();
   const selectionListener = useRef<monaco.IDisposable>();
@@ -21,8 +28,15 @@ export function EditorPreviewFile({ activeFile }: { activeFile: FileNode }) {
   );
 
   const currentVal = useChangesStore((s) => {
+    // refactor: better way to name vars
+    const changeIds = Object.keys(s.changes).sort();
+
+    const changesUntil = upToChangeId
+      ? changeIds.slice(0, changeIds.indexOf(upToChangeId) + 1)
+      : changeIds;
+
     const previousChangeId = findLast(
-      Object.keys(s.changes).sort(),
+      changesUntil,
       (id) => s.changes[id].path === activeFile.path
     );
 
@@ -61,38 +75,43 @@ export function EditorPreviewFile({ activeFile }: { activeFile: FileNode }) {
       theme: 'darkInvertedDiff',
       glyphMargin: true,
       model: modifiedModel,
+      readOnly: !isEditing(),
     });
 
-    selectionListener.current =
-      standaloneEditor.current?.onDidChangeCursorSelection((e) => {
-        saveHighlight(
-          [e.selection, ...e.secondarySelections].filter(
-            (sel) =>
-              sel.startLineNumber !== sel.endLineNumber ||
-              sel.startColumn !== sel.endColumn
-          )
-        );
-      });
-
-    modifiedContentListener.current = modifiedModel.onDidChangeContent((e) => {
-      const deltas: Delta[] = [];
-
-      e.changes
-        .sort((c1, c2) => c2.rangeOffset - c1.rangeOffset)
-        .forEach((change) => {
-          const delta = new Delta();
-          delta.retain(change.rangeOffset);
-          delta.delete(change.rangeLength);
-          delta.insert(change.text);
-          deltas.push(delta);
+    if (isEditing()) {
+      selectionListener.current =
+        standaloneEditor.current?.onDidChangeCursorSelection((e) => {
+          saveHighlight(
+            [e.selection, ...e.secondarySelections].filter(
+              (sel) =>
+                sel.startLineNumber !== sel.endLineNumber ||
+                sel.startColumn !== sel.endColumn
+            )
+          );
         });
 
-      saveDelta({
-        delta: composeDeltas(deltas),
-        file: activeFile,
-        highlight: [],
-      });
-    });
+      modifiedContentListener.current = modifiedModel.onDidChangeContent(
+        (e) => {
+          const deltas: Delta[] = [];
+
+          e.changes
+            .sort((c1, c2) => c2.rangeOffset - c1.rangeOffset)
+            .forEach((change) => {
+              const delta = new Delta();
+              delta.retain(change.rangeOffset);
+              delta.delete(change.rangeLength);
+              delta.insert(change.text);
+              deltas.push(delta);
+            });
+
+          saveDelta({
+            delta: composeDeltas(deltas),
+            file: activeFile,
+            highlight: [],
+          });
+        }
+      );
+    }
 
     return () => {
       modifiedContentListener.current?.dispose();

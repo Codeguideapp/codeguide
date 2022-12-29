@@ -7,14 +7,43 @@ import { BottomBar } from '../BottomBar/BottomBar';
 import { Guide } from '../Guide/Guide';
 import { useActiveChange } from '../hooks/useActiveChange';
 import { useShallowChanges } from '../hooks/useShallowChanges';
-import { stepControlHeightAtom } from '../store/atoms';
-import { useChangesStore } from '../store/changes';
-import { useFilesStore } from '../store/files';
+import { isEditing, stepControlHeightAtom } from '../store/atoms';
+import { Change, useChangesStore } from '../store/changes';
+import { FileNode, useFilesStore } from '../store/files';
 import { EditorEditDiff } from './EditorEditDiff';
 import { EditorHighlightChange } from './EditorHighlightChange';
 import { EditorPreviewFile } from './EditorPreviewFile';
 import { EditorToolbar } from './EditorToolbar';
 import { Welcome } from './Welcome';
+
+function GetEditorComponent({
+  activeFile,
+  activeChange,
+}: {
+  activeFile?: FileNode;
+  activeChange?: Change | null;
+}) {
+  if (!activeFile) return <Welcome />;
+
+  if (activeChange && activeChange.path !== activeFile.path) {
+    return (
+      <EditorPreviewFile
+        activeFile={activeFile}
+        upToChangeId={activeChange.id}
+      />
+    );
+  }
+
+  if (activeChange?.isDraft === false || activeChange?.previewOpened) {
+    return <EditorHighlightChange changeId={activeChange.id} />;
+  }
+
+  if (activeFile.isFileDiff && isEditing()) {
+    return <EditorEditDiff activeFile={activeFile} />;
+  }
+
+  return <EditorPreviewFile activeFile={activeFile} />;
+}
 
 export function Editor() {
   const activeChange = useActiveChange();
@@ -72,16 +101,10 @@ export function Editor() {
               <EditorToolbar />
             </div>
             <div style={{ width: '100%', flexGrow: 1 }}>
-              {!activeFile ? (
-                <Welcome />
-              ) : activeChange?.isDraft === false ||
-                activeChange?.previewOpened ? (
-                <EditorHighlightChange changeId={activeChange.id} />
-              ) : activeFile.isFileDiff ? (
-                <EditorEditDiff activeFile={activeFile} />
-              ) : (
-                <EditorPreviewFile activeFile={activeFile} />
-              )}
+              <GetEditorComponent
+                activeFile={activeFile}
+                activeChange={activeChange}
+              />
             </div>
           </div>
           <BottomBar />

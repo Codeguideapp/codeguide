@@ -1,6 +1,5 @@
 import produce from 'immer';
 import { last } from 'lodash';
-import { getSession } from 'next-auth/react';
 import Delta from 'quill-delta';
 import { decodeTime, ulid } from 'ulid';
 import create from 'zustand';
@@ -38,9 +37,10 @@ interface SaveDeltaParams {
   isFileDepChange?: boolean;
 }
 interface ChangesState {
-  savedChanges: string[];
+  publishedChangeIds: string[];
   activeChangeId: string | null;
   changes: Changes;
+  hasDataToPublish: () => boolean;
   getChangeIndex: (changeId: string) => number;
   getActiveChange: () => Change | null;
   setActiveChangeId: (id: string | null) => void;
@@ -49,15 +49,39 @@ interface ChangesState {
   saveFileNode: (path: string) => void;
   deleteChange: (id: string) => void;
   undraftChange: (id: string) => void;
-  saveChangesToServer: () => Promise<{ success: boolean; error?: string }>;
+  publishChanges: () => Promise<{ success: boolean; error?: string }>;
   storeChangesFromServer: (changesToSave: Change[]) => Promise<any>;
 }
 
 export const useChangesStore = create<ChangesState>((set, get) => ({
-  savedChanges: [],
+  publishedChangeIds: [],
   changes: {},
   activeChangeId: null,
   noviChangeId: null,
+  hasDataToPublish: () => {
+    const { changes, publishedChangeIds } = get();
+
+    const changesThatShouldBeSaved = Object.values(changes)
+      .filter((change) => !change.isFileNode)
+      .filter((change) => !change.isFileDepChange)
+      .filter(
+        (change) =>
+          change.isDraft === false ||
+          change.stat[0] !== 0 ||
+          change.stat[1] !== 0 ||
+          change.highlight.length > 0
+      );
+
+    const changesToSave = changesThatShouldBeSaved.filter(
+      (change) => !publishedChangeIds.includes(change.id)
+    );
+
+    const changesToDelete = publishedChangeIds.filter(
+      (id) => !Object.keys(changes).includes(id)
+    );
+
+    return changesToSave.length > 0 || changesToDelete.length > 0;
+  },
   getChangeIndex: (changeId: string) => {
     const { changes } = get();
     const changesOrder = Object.keys(changes).sort();
@@ -123,13 +147,14 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
       const before = deltaToString(fileChanges);
       const after = deltaToString([...fileChanges, newDelta]);
 
-      const { stagedComments, committedComments } = useCommentsStore.getState();
+      const { draftCommentPerChange, savedComments } =
+        useCommentsStore.getState();
 
       if (
         before === after &&
         highlight.length === 0 &&
-        !stagedComments[lastChangeId] &&
-        !committedComments[lastChangeId]
+        !draftCommentPerChange[lastChangeId] &&
+        !savedComments[lastChangeId]
       ) {
         const newChanges = produce(changes, (changesDraft) => {
           delete changesDraft[lastChangeId];
@@ -276,7 +301,7 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
     });
     set({ changes: newChanges, activeChangeId: null });
   },
-  saveChangesToServer: async (): Promise<{
+  publishChanges: async (): Promise<{
     success: boolean;
     error?: string;
   }> => {
@@ -290,11 +315,11 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
 
     const changesToSave = Object.values(get().changes)
       .filter((change) => !change.isFileDepChange)
-      .filter((change) => !get().savedChanges.includes(change.id));
+      .filter((change) => !get().publishedChangeIds.includes(change.id));
 
     const guideId = useGuideStore.getState().id;
 
-    const changesToDelete = get().savedChanges.filter(
+    const changesToDelete = get().publishedChangeIds.filter(
       (id) => !Object.keys(get().changes).includes(id)
     );
 
@@ -308,7 +333,7 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
           body: JSON.stringify({ changeIds: changesToDelete }),
         }).then((deleted: string[]) => {
           set({
-            savedChanges: get().savedChanges.filter(
+            publishedChangeIds: get().publishedChangeIds.filter(
               (id) => !deleted.includes(id)
             ),
           });
@@ -329,12 +354,12 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
         body: JSON.stringify(changesToSave.slice(0, 25)),
       }).then((saved: string[]) => {
         set({
-          savedChanges: [...get().savedChanges, ...saved],
+          publishedChangeIds: [...get().publishedChangeIds, ...saved],
         });
 
         // If there are more changes to save, send another request
         if (changesToSave.length > 25) {
-          return get().saveChangesToServer();
+          return get().publishChanges();
         } else {
           return {
             success: true,
@@ -396,6 +421,15 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
       }
     });
 
-    set({ changes: newChanges, savedChanges: changesToSave.map((c) => c.id) });
+    set({
+      changes: newChanges,
+      publishedChangeIds: changesToSave.map((c) => c.id),
+    });
+
+    const firstDeltaChange = changesToSave.find((c) => !c.isFileNode);
+    if (firstDeltaChange) {
+      useFilesStore.getState().setActiveFileByPath(firstDeltaChange.path);
+      get().setActiveChangeId(firstDeltaChange.id);
+    }
   },
 }));

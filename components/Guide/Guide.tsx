@@ -7,9 +7,11 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classNames from 'classnames';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import scrollIntoView from 'scroll-into-view-if-needed';
 
 import { getFileContent } from '../../utils/deltaUtils';
+import { isEditing } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
 import { useCommentsStore } from '../store/comments';
 import { useFilesStore } from '../store/files';
@@ -19,10 +21,12 @@ import { getStepPreview } from './getStepPreview';
 library.add(faCheck, faImage, faUpload);
 
 export function Guide() {
+  const activeChangeRef = useRef<HTMLDivElement>(null);
   const setActiveChangeId = useChangesStore((s) => s.setActiveChangeId);
+  const getChangeIndex = useChangesStore((s) => s.getChangeIndex);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const activeChangeId = useChangesStore((s) => s.activeChangeId);
-  const committedComments = useCommentsStore((s) => s.committedComments);
+  const savedComments = useCommentsStore((s) => s.savedComments);
   const changes = useChangesStore((s) => s.changes);
   const changesForGuide = useMemo(() => {
     const changesOrder = Object.keys(changes).sort();
@@ -30,11 +34,10 @@ export function Guide() {
       ? changesOrder.indexOf(activeChangeId)
       : null;
 
-    return Object.keys(changes)
-      .sort()
+    return changesOrder
       .filter((id) => !changes[id].isFileDepChange)
       .map((id) => changes[id])
-      .map((change) => {
+      .map((change, i, arr) => {
         const preview = getStepPreview({
           delta: change.delta,
           before: getFileContent({
@@ -64,11 +67,24 @@ export function Guide() {
       });
   }, [changes, activeChangeId]);
 
+  useEffect(() => {
+    if (!activeChangeRef.current) return;
+
+    scrollIntoView(activeChangeRef.current, {
+      scrollMode: 'if-needed',
+      block: 'center',
+    });
+  }, [activeChangeId, getChangeIndex]);
+
   if (changesForGuide.length === 0) {
     return <div className="guide"></div>;
   }
 
   const lastChange = changesForGuide[changesForGuide.length - 1];
+
+  if (!isEditing() && lastChange.change.isFileNode) {
+    changesForGuide.pop();
+  }
 
   return (
     <div className="guide">
@@ -77,6 +93,7 @@ export function Guide() {
           ({ change, isBeforeActive, isAfterActive, active, preview }) => {
             return (
               <div
+                ref={active ? activeChangeRef : null}
                 className={classNames({
                   'before-active': isBeforeActive,
                   'after-active': isAfterActive,
@@ -115,9 +132,9 @@ export function Guide() {
                       </div>
                     </>
                   )}
-                  {committedComments[change.id] && (
+                  {savedComments[change.id] && (
                     <div
-                      title={committedComments[change.id].length + ' comments'}
+                      title={savedComments[change.id].length + ' comments'}
                       style={{ height: 'calc(100% - 2px)' }}
                       className={
                         'absolute right-3 px-2 ' +
@@ -143,7 +160,7 @@ export function Guide() {
           }
         )}
 
-        {!lastChange.change.isDraft && (
+        {isEditing() && !lastChange.change.isDraft && (
           <div
             className={classNames({
               placeholder: true,

@@ -3,7 +3,7 @@ import { faComment } from '@fortawesome/free-solid-svg-icons';
 import { useAtom } from 'jotai';
 import { useResizeDetector } from 'react-resize-detector';
 
-import { stepControlHeightAtom } from '../store/atoms';
+import { isEditing, stepControlHeightAtom } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
 import { useCommentsStore } from '../store/comments';
 import { PreviewComment } from './PreviewComment';
@@ -14,7 +14,7 @@ library.add(faComment);
 
 export function BottomBar() {
   const activeChangeId = useChangesStore((s) => s.activeChangeId);
-  const committedComments = useCommentsStore((s) => s.committedComments);
+  const savedComments = useCommentsStore((s) => s.savedComments);
   const [, setStepControlHeight] = useAtom(stepControlHeightAtom);
   const { ref } = useResizeDetector({
     skipOnMount: true,
@@ -32,25 +32,27 @@ export function BottomBar() {
     >
       <div className="overflow-auto max-h-[40vh]">
         {activeChangeId &&
-          committedComments[activeChangeId] &&
-          committedComments[activeChangeId].map((comment, i) => (
+          savedComments[activeChangeId] &&
+          savedComments[activeChangeId].map((comment, i) => (
             <PreviewComment key={i} value={comment.commentBody} />
           ))}
       </div>
 
-      <div
-        style={{
-          padding: 10,
-          justifyContent: 'right',
-          display: 'flex',
-          gap: 10,
-        }}
-      >
-        <div style={{ marginRight: 'auto', flexGrow: 1 }}>
-          <WriteComment />
+      {isEditing() && (
+        <div
+          style={{
+            padding: 10,
+            justifyContent: 'right',
+            display: 'flex',
+            gap: 10,
+          }}
+        >
+          <div style={{ marginRight: 'auto', flexGrow: 1 }}>
+            <WriteComment />
+          </div>
+          <StepActions />
         </div>
-        <StepActions />
-      </div>
+      )}
     </div>
   );
 }

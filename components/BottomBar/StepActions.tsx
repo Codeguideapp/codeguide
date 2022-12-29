@@ -1,7 +1,6 @@
 import { faMagnifyingGlass, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button, message, Popconfirm, Tooltip } from 'antd';
-import { useAtom } from 'jotai';
 import { last } from 'lodash';
 import { useState } from 'react';
 
@@ -20,7 +19,7 @@ export function StepActions() {
   const undraftChange = useChangesStore((s) => s.undraftChange);
   const deleteChange = useChangesStore((s) => s.deleteChange);
   const [submitting, setSubmitting] = useState(false);
-  const stagedComments = useCommentsStore((s) => s.stagedComments);
+  const savedComments = useCommentsStore((s) => s.savedComments);
   const createNewComment = useCommentsStore((s) => s.createNewComment);
 
   const handleSaveStep = () => {
@@ -31,7 +30,7 @@ export function StepActions() {
       throw new Error('change is not a draft');
     }
 
-    if (stagedComments[activeChange.id]) {
+    if (savedComments[activeChange.id]) {
       createNewComment();
     }
 

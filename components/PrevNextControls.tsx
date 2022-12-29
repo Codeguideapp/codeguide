@@ -69,7 +69,7 @@ export function PrevNextControls() {
     }
 
     const currentIndex = changesIdsNoFile.indexOf(activeChangeId);
-    const nextChangeId = changesIdsNoFile[currentIndex + 1];
+    const nextChangeId: string | undefined = changesIdsNoFile[currentIndex + 1];
 
     setActiveChangeId(nextChangeId);
 

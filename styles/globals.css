@@ -390,15 +390,24 @@ body .monaco-diff-editor.side-by-side .editor.modified {
 
 .delete-highlight {
   background: rgba(255, 0, 0, 0.4);
+  min-width: 2px;
+}
+.delete-highlight:before {
+  position: absolute;
+  content: '';
+  left: 0;
+  top: 50%;
+  right: 0;
+  border-top: 1px solid;
+  border-color: var(--vscode-editor-foreground);
+  opacity: 0.8;
 }
 .insert-highlight {
   background: rgba(213, 255, 116, 0.3);
+  min-width: 2px;
 }
 .select-highlight {
-  background: rgba(42, 110, 255, 0.4);
-}
-.replace-highlight {
-  background: rgba(116, 162, 255, 0.3);
+  background: rgba(0, 157, 255, 0.4);
 }
 
 .delete-cursor {

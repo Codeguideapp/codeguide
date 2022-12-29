@@ -7,19 +7,19 @@ import { useCommentsStore } from '../store/comments';
 export function WriteComment() {
   const activeChangeId = useChangesStore((s) => s.activeChangeId);
   const getChangeIndex = useChangesStore((s) => s.getChangeIndex);
-  const stagedComments = useCommentsStore((s) => s.stagedComments);
-  const saveActiveNoteVal = useCommentsStore((s) => s.saveActiveNoteVal);
+  const draftComments = useCommentsStore((s) => s.draftCommentPerChange);
+  const saveActiveCommentVal = useCommentsStore((s) => s.saveActiveCommentVal);
 
   const value = useMemo(() => {
     if (activeChangeId) {
-      return stagedComments[activeChangeId]?.commentBody || '';
+      return draftComments[activeChangeId]?.commentBody || '';
     } else {
       return '';
     }
-  }, [activeChangeId, stagedComments]);
+  }, [activeChangeId, draftComments]);
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    saveActiveNoteVal(e.target.value);
+    saveActiveCommentVal(e.target.value);
   };
 
   return (

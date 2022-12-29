@@ -51,6 +51,20 @@
       "timeOffsetInMs": 0,
       "envVars": [],
       "stages": ["dev"]
+    },
+    {
+      "type": "dynamodb",
+      "title": "guide-changes",
+      "tableName": "guide-changes",
+      "awsProfile": "default",
+      "region": "us-east-1"
+    },
+    {
+      "type": "dynamodb",
+      "title": "guide-comments",
+      "tableName": "guide-comments",
+      "awsProfile": "default",
+      "region": "us-east-1"
     }
   ]
 }
