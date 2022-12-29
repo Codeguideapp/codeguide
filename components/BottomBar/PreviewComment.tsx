@@ -1,28 +1,46 @@
-import { Avatar, Comment, Tooltip } from 'antd';
+import { Avatar, Comment } from 'antd';
 import ReactMarkdown from 'react-markdown';
+import Moment from 'react-moment';
 import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
+import useSWRImmutable from 'swr/immutable';
 
-export function PreviewComment({ value }: { value: string }) {
+import type { IComment } from '../store/comments';
+import { useUserStore } from '../store/user';
+
+export function PreviewComment({ comment }: { comment: IComment }) {
+  const getOctokit = useUserStore((s) => s.getOctokit);
+  const author = useSWRImmutable(
+    comment.githubUserId
+      ? `https://api.github.com/user/${comment.githubUserId}`
+      : undefined,
+    (url) => getOctokit().then((octokit) => octokit.request(url))
+  );
+
+  const name = author.data?.data?.name || '';
+
   return (
     <Comment
-      author={<a>Han Solo</a>}
+      author={name}
       avatar={
-        <Avatar src="https://joeschmoe.io/api/v1/random" alt="Han Solo" />
+        <Avatar
+          src={
+            comment.githubUserId
+              ? `https://avatars.githubusercontent.com/u/${comment.githubUserId}?v=4`
+              : undefined
+          }
+          alt={name}
+        />
       }
       content={
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           rehypePlugins={[rehypeHighlight]}
-          // eslint-disable-next-line react/no-children-prop
-          children={value}
-        />
+        >
+          {comment.commentBody}
+        </ReactMarkdown>
       }
-      datetime={
-        <Tooltip title="2016-11-22 11:22:33">
-          <span>8 hours ago</span>
-        </Tooltip>
-      }
+      datetime={<Moment fromNow date={new Date(comment.timestamp)} />}
     />
   );
 }

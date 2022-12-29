@@ -1,10 +1,8 @@
-import { getSession } from 'next-auth/react';
-import { Octokit } from 'octokit';
-
 import { Change, useChangesStore } from '../components/store/changes';
 import { IComment, useCommentsStore } from '../components/store/comments';
 import { useFilesStore } from '../components/store/files';
 import { useGuideStore } from '../components/store/guide';
+import { useUserStore } from '../components/store/user';
 import { IGuide } from '../types/Guide';
 import { fetchWithThrow } from './fetchWithThrow';
 import { getFilesDiff } from './getFilesDiff';
@@ -42,13 +40,12 @@ export async function init(): Promise<RepoApiStatus> {
     };
   }
 
-  const session = await getSession();
   const guide = useGuideStore.getState();
+  const userStore = useUserStore.getState();
+  const session = await userStore.getUserSession();
 
   try {
-    const octokit = new Octokit({
-      auth: session?.user.accessToken,
-    });
+    const octokit = await userStore.getOctokit();
 
     const repoFiles = await octokit.request(
       'GET /repos/{owner}/{repo}/git/trees/{sha}?recursive=1',

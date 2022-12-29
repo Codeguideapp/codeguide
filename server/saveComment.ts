@@ -16,7 +16,9 @@ export async function saveComments({
   email,
   guide,
   comments,
+  githubUserId,
 }: {
+  githubUserId: string;
   email: string;
   guide: IGuide;
   comments: unknown;
@@ -40,6 +42,7 @@ export async function saveComments({
                 PutRequest: {
                   Item: {
                     guideId: guide.id,
+                    githubUserId,
                     ...comment,
                   },
                 },

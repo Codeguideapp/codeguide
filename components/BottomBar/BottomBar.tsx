@@ -34,7 +34,7 @@ export function BottomBar() {
         {activeChangeId &&
           savedComments[activeChangeId] &&
           savedComments[activeChangeId].map((comment, i) => (
-            <PreviewComment key={i} value={comment.commentBody} />
+            <PreviewComment key={i} comment={comment} />
           ))}
       </div>
 

@@ -1,8 +1,8 @@
-import { getSession } from 'next-auth/react';
 import create from 'zustand';
 
 import { fetchWithThrow } from '../../utils/fetchWithThrow';
 import { useChangesStore } from './changes';
+import { useUserStore } from './user';
 
 export type FileNode = {
   isFileDiff: boolean;
@@ -82,7 +82,7 @@ export const useFilesStore = create<FilesState>((set, get) => ({
       throw new Error('File not found');
     }
 
-    const session = await getSession().catch(() => null);
+    const session = await useUserStore.getState().getUserSession();
     return fetchWithThrow(repoFileRef.url, {
       headers: session
         ? {

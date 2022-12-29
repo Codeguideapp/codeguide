@@ -27,6 +27,7 @@ export default async function handler(
 
     if (req.method === 'POST') {
       const { statusCode, json } = await saveComments({
+        githubUserId: user.id,
         email: user.email,
         guide,
         comments: req.body.comments,
