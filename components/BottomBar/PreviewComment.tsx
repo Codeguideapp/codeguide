@@ -11,6 +11,7 @@ import { useUserStore } from '../store/user';
 
 export function PreviewComment({ comment }: { comment: IComment }) {
   const deleteComment = useCommentsStore((s) => s.deleteComment);
+  const editComment = useCommentsStore((s) => s.editComment);
   const getOctokit = useUserStore((s) => s.getOctokit);
   const author = useSWRImmutable(
     comment.githubUserId
@@ -29,13 +30,19 @@ export function PreviewComment({ comment }: { comment: IComment }) {
           ? [
               <Popconfirm
                 key="comment-delete"
-                title="Are you sure to delete this comment?"
+                title="Are you sure you want to delete this comment?"
                 onConfirm={() => deleteComment(comment.commentId)}
                 okText="Yes"
                 cancelText="No"
               >
                 <span>Delete</span>
               </Popconfirm>,
+              <span
+                key="comment-edit"
+                onClick={() => editComment(comment.commentId)}
+              >
+                Edit
+              </span>,
             ]
           : []
       }

@@ -9,6 +9,7 @@ const Comments = z.array(
     changeId: z.string(),
     commentId: z.string(),
     commentBody: z.string(),
+    timestamp: z.number(),
   })
 );
 

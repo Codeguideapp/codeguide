@@ -22,7 +22,10 @@ export function StepActions() {
   const draftCommentPerChange = useCommentsStore(
     (s) => s.draftCommentPerChange
   );
-  const createNewComment = useCommentsStore((s) => s.createNewComment);
+  const saveComment = useCommentsStore((s) => s.saveComment);
+  const activeDraftComment = activeChange
+    ? draftCommentPerChange[activeChange.id]
+    : undefined;
 
   const handleSaveStep = () => {
     setSubmitting(true);
@@ -32,8 +35,8 @@ export function StepActions() {
       throw new Error('change is not a draft');
     }
 
-    if (draftCommentPerChange[activeChange.id]) {
-      createNewComment();
+    if (activeDraftComment) {
+      saveComment();
     }
 
     setTimeout(() => {
@@ -43,6 +46,11 @@ export function StepActions() {
         content: 'Step created successfully!',
       });
     }, 100);
+  };
+
+  const handleAddComment = () => {
+    saveComment();
+    // todo: scroll to bottom
   };
 
   return (
@@ -114,13 +122,13 @@ export function StepActions() {
         </Button>
       ) : (
         <Button
-          disabled={!activeChange}
+          disabled={!activeDraftComment?.commentBody}
           htmlType="submit"
           loading={submitting}
-          onClick={createNewComment}
+          onClick={handleAddComment}
           type="primary"
         >
-          Add Comment
+          {activeDraftComment?.isEditing ? 'Edit Comment' : 'Add Comment'}
         </Button>
       )}
     </div>

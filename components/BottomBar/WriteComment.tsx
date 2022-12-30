@@ -1,5 +1,5 @@
 import TextArea from 'antd/lib/input/TextArea';
-import { useMemo } from 'react';
+import { useCallback } from 'react';
 
 import { useChangesStore } from '../store/changes';
 import { useCommentsStore } from '../store/comments';
@@ -7,20 +7,21 @@ import { useCommentsStore } from '../store/comments';
 export function WriteComment() {
   const activeChangeId = useChangesStore((s) => s.activeChangeId);
   const getChangeIndex = useChangesStore((s) => s.getChangeIndex);
-  const draftComments = useCommentsStore((s) => s.draftCommentPerChange);
-  const saveActiveCommentVal = useCommentsStore((s) => s.saveActiveCommentVal);
-
-  const value = useMemo(() => {
+  const value = useCommentsStore((s) => {
     if (activeChangeId) {
-      return draftComments[activeChangeId]?.commentBody || '';
+      return s.draftCommentPerChange[activeChangeId]?.commentBody || '';
     } else {
       return '';
     }
-  }, [activeChangeId, draftComments]);
+  });
+  const saveActiveCommentVal = useCommentsStore((s) => s.saveActiveCommentVal);
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    saveActiveCommentVal(e.target.value);
-  };
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      saveActiveCommentVal(e.target.value);
+    },
+    [saveActiveCommentVal]
+  );
 
   return (
     <TextArea

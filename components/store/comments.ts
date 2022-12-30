@@ -16,71 +16,99 @@ export type IComment = {
   timestamp: number;
 };
 interface CommentsState {
-  publishedCommentIds: string[];
+  publishedComments: IComment[];
   savedComments: Record<string, IComment[]>;
-  draftCommentPerChange: Record<string, IComment>;
+  draftCommentPerChange: Record<string, IComment & { isEditing: boolean }>;
   hasDataToPublish: () => boolean;
   deleteComment: (commentId: string) => void;
+  editComment: (commentId: string) => void;
   saveActiveCommentVal: (val: string) => Promise<void>;
   storeCommentsFromServer: (comments: IComment[]) => void;
-  createNewComment: () => void;
+  saveComment: () => void;
   publishComments: () => Promise<{ success: boolean; error?: string }>;
 }
 
 export const useCommentsStore = create<CommentsState>((set, get) => ({
-  publishedCommentIds: [],
+  publishedComments: [],
   savedComments: {},
   draftCommentPerChange: {},
+  activeCommentIdPerChange: {},
   hasDataToPublish: () => {
-    const savedCommentsIds = Object.entries(get().savedComments)
-      .map(([, changeComments]) => {
-        return changeComments.map((comment) => comment.commentId);
-      })
-      .flat();
+    const savedComments = Object.values(get().savedComments).flat();
 
     const draftComments = Object.values(get().draftCommentPerChange).filter(
       (change) => change.commentBody !== ''
     );
 
-    const commentsToPush = savedCommentsIds.filter(
-      (commentId) => !get().publishedCommentIds.includes(commentId)
+    const commentsToPush = savedComments.filter(
+      (comment) => !containsComment(get().publishedComments, comment)
     );
 
-    const commentIdsToDelete = get().publishedCommentIds.filter((id) => {
-      return !savedCommentsIds.includes(id);
+    const commentsToDelete = get().publishedComments.filter((comment) => {
+      return !containsComment(savedComments, comment);
     });
 
     return (
       draftComments.length > 0 ||
       commentsToPush.length > 0 ||
-      commentIdsToDelete.length > 0
+      commentsToDelete.length > 0
     );
+  },
+
+  editComment: (commentId: string) => {
+    const { savedComments } = get();
+
+    const commentToEdit = Object.values(savedComments)
+      .flat()
+      .find((comment) => comment.commentId === commentId);
+
+    if (!commentToEdit) {
+      throw new Error('cant find comment to edit');
+    }
+
+    set({
+      draftCommentPerChange: produce(
+        get().draftCommentPerChange,
+        (draftObj) => {
+          draftObj[commentToEdit.changeId] = {
+            ...commentToEdit,
+            isEditing: true,
+          };
+        }
+      ),
+    });
   },
 
   saveActiveCommentVal: async (val: string) => {
     const activeChangeId = useChangesStore.getState().activeChangeId;
+    const { draftCommentPerChange } = get();
 
     if (!activeChangeId) {
       throw new Error('cant save note, invalid activeChangeId');
     }
 
-    const session = await useUserStore.getState().getUserSession();
+    const commentToEdit = draftCommentPerChange[activeChangeId]?.isEditing
+      ? draftCommentPerChange[activeChangeId]
+      : undefined;
 
-    const draftCommentPerChange = produce(
+    const session = useUserStore.getState().userSession;
+
+    const newDraftCommentPerChange = produce(
       get().draftCommentPerChange,
       (draftObj) => {
         draftObj[activeChangeId] = {
+          isEditing: Boolean(commentToEdit),
           isMine: true,
           githubUserId: session?.user?.id || '',
           commentBody: val,
-          commentId: ulid(),
+          commentId: commentToEdit ? commentToEdit.commentId : ulid(),
           changeId: activeChangeId,
           timestamp: Date.now(),
         };
       }
     );
 
-    set({ draftCommentPerChange });
+    set({ draftCommentPerChange: newDraftCommentPerChange });
   },
 
   deleteComment: (commentId: string) => {
@@ -97,7 +125,7 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
     set({ savedComments: newSavedComments });
   },
 
-  createNewComment: () => {
+  saveComment: () => {
     const activeChangeId = useChangesStore.getState().activeChangeId;
     const { savedComments, draftCommentPerChange } = get();
 
@@ -108,27 +136,41 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
       throw new Error('comment is empty');
     }
 
-    const newSavedComments = produce(savedComments, (draftObj) => {
-      draftObj[activeChangeId] = [
-        ...(draftObj[activeChangeId] || []),
-        draftCommentPerChange[activeChangeId],
-      ];
-    });
-    const newDraftCommentPerChange = produce(
-      draftCommentPerChange,
-      (draftObj) => {
-        delete draftObj[activeChangeId];
+    const commentToEdit = draftCommentPerChange[activeChangeId]?.isEditing
+      ? draftCommentPerChange[activeChangeId]
+      : undefined;
+
+    const newSavedComments = produce(savedComments, (savedCommentsTemp) => {
+      const newComment = draftCommentPerChange[activeChangeId];
+
+      if (commentToEdit) {
+        // edit existing comment
+        const commentIndexToEdit = savedCommentsTemp[activeChangeId].findIndex(
+          (c) => c.commentId === commentToEdit.commentId
+        );
+
+        if (commentIndexToEdit !== -1) {
+          savedCommentsTemp[activeChangeId][commentIndexToEdit] = newComment;
+        }
+      } else {
+        // add new comment
+        savedCommentsTemp[activeChangeId] = [
+          ...(savedCommentsTemp[activeChangeId] || []),
+          newComment,
+        ];
       }
-    );
+    });
 
     set({
-      draftCommentPerChange: newDraftCommentPerChange,
       savedComments: newSavedComments,
+      draftCommentPerChange: produce(draftCommentPerChange, (draftObj) => {
+        delete draftObj[activeChangeId];
+      }),
     });
   },
 
   publishComments: async () => {
-    const { savedComments, draftCommentPerChange } = get();
+    const { savedComments, draftCommentPerChange, publishedComments } = get();
 
     // undraft all comments
     for (const changeId of Object.keys(useChangesStore.getState().changes)) {
@@ -158,12 +200,14 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
     const savedCommentsArr = Object.values(get().savedComments).flat();
 
     const commentsToPush = savedCommentsArr.filter(
-      (comment) => !get().publishedCommentIds.includes(comment.commentId)
+      (comment) => !containsComment(publishedComments, comment)
     );
 
-    const commentIdsToDelete = get().publishedCommentIds.filter((id) => {
-      return !savedCommentsArr.map((c) => c.commentId).includes(id);
-    });
+    const commentIdsToDelete = publishedComments
+      .filter((comment) => {
+        return !containsComment(savedCommentsArr, comment);
+      })
+      .map((c) => c.commentId);
 
     const guideId = useGuideStore.getState().id;
 
@@ -175,10 +219,10 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ commentIds: commentIdsToDelete }),
-        }).then((deleted: string[]) => {
+        }).then((deletedIds: string[]) => {
           set({
-            publishedCommentIds: get().publishedCommentIds.filter(
-              (id) => !deleted.includes(id)
+            publishedComments: get().publishedComments.filter(
+              (comment) => !deletedIds.includes(comment.commentId)
             ),
           });
         });
@@ -198,9 +242,14 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
         body: JSON.stringify({
           comments: commentsToPush.slice(0, 25),
         }),
-      }).then((pushed: string[]) => {
+      }).then((savedCommentIds: string[]) => {
+        const savedComments = savedCommentIds.map(
+          (commentId) =>
+            savedCommentsArr.find((c) => c.commentId === commentId)!
+        );
+
         set({
-          publishedCommentIds: [...get().publishedCommentIds, ...pushed],
+          publishedComments: [...get().publishedComments, ...savedComments],
         });
 
         // If there are more changes to save, send another request
@@ -226,7 +275,7 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
   },
 
   storeCommentsFromServer: (comments: IComment[]) => {
-    const newSavedComments = produce(get().savedComments, (draftObj) => {
+    const commentsPerChange = produce(get().savedComments, (draftObj) => {
       for (const comment of comments) {
         if (!draftObj[comment.changeId]) {
           draftObj[comment.changeId] = [];
@@ -240,8 +289,15 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
     });
 
     set({
-      savedComments: newSavedComments,
-      publishedCommentIds: comments.map((comment) => comment.commentId),
+      savedComments: commentsPerChange,
+      publishedComments: comments,
     });
   },
 }));
+
+function containsComment(comments: IComment[], checkComment: IComment) {
+  const getCommentHash = (comment: IComment) =>
+    `${comment.commentId}:${comment.timestamp}`;
+
+  return comments.map(getCommentHash).includes(getCommentHash(checkComment));
+}

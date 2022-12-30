@@ -4,22 +4,22 @@ import { Octokit } from 'octokit';
 import create from 'zustand';
 
 type UserStore = {
-  _userSession: Session | null;
+  userSession: Session | null;
   _octokit: Octokit | null;
   getOctokit: () => Promise<Octokit>;
   getUserSession: () => Promise<Session | null>;
 };
 
 export const useUserStore = create<UserStore>((set, get) => ({
-  _userSession: null,
+  userSession: null,
   _octokit: null,
   getUserSession: async () => {
-    if (get()._userSession) {
-      return get()._userSession;
+    if (get().userSession) {
+      return get().userSession;
     }
     const session = await getSession().catch((err) => null);
 
-    set({ _userSession: session });
+    set({ userSession: session });
     return session;
   },
   getOctokit: async () => {
