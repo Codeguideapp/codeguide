@@ -1,14 +1,16 @@
-import { Avatar, Comment } from 'antd';
+import { Avatar, Comment, Popconfirm } from 'antd';
 import ReactMarkdown from 'react-markdown';
 import Moment from 'react-moment';
 import rehypeHighlight from 'rehype-highlight';
 import remarkGfm from 'remark-gfm';
 import useSWRImmutable from 'swr/immutable';
 
-import type { IComment } from '../store/comments';
+import { isEditing } from '../store/atoms';
+import { IComment, useCommentsStore } from '../store/comments';
 import { useUserStore } from '../store/user';
 
 export function PreviewComment({ comment }: { comment: IComment }) {
+  const deleteComment = useCommentsStore((s) => s.deleteComment);
   const getOctokit = useUserStore((s) => s.getOctokit);
   const author = useSWRImmutable(
     comment.githubUserId
@@ -22,6 +24,21 @@ export function PreviewComment({ comment }: { comment: IComment }) {
   return (
     <Comment
       author={name}
+      actions={
+        isEditing() && comment.isMine
+          ? [
+              <Popconfirm
+                key="comment-delete"
+                title="Are you sure to delete this comment?"
+                onConfirm={() => deleteComment(comment.commentId)}
+                okText="Yes"
+                cancelText="No"
+              >
+                <span>Delete</span>
+              </Popconfirm>,
+            ]
+          : []
+      }
       avatar={
         <Avatar
           src={

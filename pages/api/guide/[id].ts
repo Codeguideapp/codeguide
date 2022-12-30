@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { getChanges } from '../../../server/getChanges';
 import { getComments } from '../../../server/getComments';
 import { getGuide } from '../../../server/getGuide';
+import { getUserSession } from '../../../server/getUserSession';
 
 export default async function handler(
   req: NextApiRequest,
@@ -20,9 +21,10 @@ export default async function handler(
       throw new Error('Invalid id');
     }
 
+    const user = await getUserSession(req, res).catch(() => null);
     const guide = await getGuide(guideId);
     const changes = await getChanges(guideId);
-    const comments = await getComments(guideId);
+    const comments = await getComments(guideId, user?.id);
 
     if (!guide) {
       return res.status(404).json({});

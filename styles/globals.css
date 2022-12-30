@@ -153,6 +153,10 @@ body {
   cursor: default;
 }
 
+.ant-comment .ant-comment-avatar {
+  cursor: default;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;

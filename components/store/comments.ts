@@ -8,6 +8,7 @@ import { useGuideStore } from './guide';
 import { useUserStore } from './user';
 
 export type IComment = {
+  isMine: boolean;
   githubUserId: string;
   commentId: string;
   changeId: string;
@@ -19,6 +20,7 @@ interface CommentsState {
   savedComments: Record<string, IComment[]>;
   draftCommentPerChange: Record<string, IComment>;
   hasDataToPublish: () => boolean;
+  deleteComment: (commentId: string) => void;
   saveActiveCommentVal: (val: string) => Promise<void>;
   storeCommentsFromServer: (comments: IComment[]) => void;
   createNewComment: () => void;
@@ -45,7 +47,7 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
     );
 
     const commentIdsToDelete = get().publishedCommentIds.filter((id) => {
-      !savedCommentsIds.includes(id);
+      return !savedCommentsIds.includes(id);
     });
 
     return (
@@ -54,6 +56,7 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
       commentIdsToDelete.length > 0
     );
   },
+
   saveActiveCommentVal: async (val: string) => {
     const activeChangeId = useChangesStore.getState().activeChangeId;
 
@@ -67,6 +70,7 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
       get().draftCommentPerChange,
       (draftObj) => {
         draftObj[activeChangeId] = {
+          isMine: true,
           githubUserId: session?.user?.id || '',
           commentBody: val,
           commentId: ulid(),
@@ -77,6 +81,20 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
     );
 
     set({ draftCommentPerChange });
+  },
+
+  deleteComment: (commentId: string) => {
+    const { savedComments } = get();
+
+    const newSavedComments = produce(savedComments, (draftObj) => {
+      for (const changeId of Object.keys(draftObj)) {
+        draftObj[changeId] = draftObj[changeId].filter(
+          (comment) => comment.commentId !== commentId
+        );
+      }
+    });
+
+    set({ savedComments: newSavedComments });
   },
 
   createNewComment: () => {
@@ -144,7 +162,7 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
     );
 
     const commentIdsToDelete = get().publishedCommentIds.filter((id) => {
-      !savedCommentsArr.map((c) => c.commentId).includes(id);
+      return !savedCommentsArr.map((c) => c.commentId).includes(id);
     });
 
     const guideId = useGuideStore.getState().id;
@@ -206,6 +224,7 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
       };
     }
   },
+
   storeCommentsFromServer: (comments: IComment[]) => {
     const newSavedComments = produce(get().savedComments, (draftObj) => {
       for (const comment of comments) {

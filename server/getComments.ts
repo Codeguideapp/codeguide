@@ -10,7 +10,10 @@ const dynamoDb = new DynamoDB.DocumentClient({
   },
 });
 
-export function getComments(guideId: string): Promise<IComment[]> {
+export function getComments(
+  guideId: string,
+  currentUserId?: string
+): Promise<IComment[]> {
   return dynamoDb
     .query({
       TableName: process.env.DYNAMODB_COMMENTS_TABLE,
@@ -20,5 +23,13 @@ export function getComments(guideId: string): Promise<IComment[]> {
       },
     })
     .promise()
-    .then((res) => res.Items as any[]);
+    .then((res) => res.Items as IComment[])
+    .then((comments) =>
+      comments.map((comment) => {
+        return {
+          ...comment,
+          isMine: currentUserId === comment.githubUserId,
+        };
+      })
+    );
 }
