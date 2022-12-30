@@ -311,7 +311,7 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
         changesDraft[id].previewOpened = false;
       }
     });
-    set({ changes: newChanges, activeChangeId: null });
+    set({ changes: newChanges });
 
     const changesToSave = Object.values(get().changes)
       .filter((change) => !change.isFileDepChange)

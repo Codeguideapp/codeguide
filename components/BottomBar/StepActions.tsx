@@ -19,7 +19,9 @@ export function StepActions() {
   const undraftChange = useChangesStore((s) => s.undraftChange);
   const deleteChange = useChangesStore((s) => s.deleteChange);
   const [submitting, setSubmitting] = useState(false);
-  const savedComments = useCommentsStore((s) => s.savedComments);
+  const draftCommentPerChange = useCommentsStore(
+    (s) => s.draftCommentPerChange
+  );
   const createNewComment = useCommentsStore((s) => s.createNewComment);
 
   const handleSaveStep = () => {
@@ -30,7 +32,7 @@ export function StepActions() {
       throw new Error('change is not a draft');
     }
 
-    if (savedComments[activeChange.id]) {
+    if (draftCommentPerChange[activeChange.id]) {
       createNewComment();
     }
 
