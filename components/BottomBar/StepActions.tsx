@@ -48,11 +48,6 @@ export function StepActions() {
     }, 100);
   };
 
-  const handleAddComment = () => {
-    saveComment();
-    // todo: scroll to bottom
-  };
-
   return (
     <div className="flex gap-3 items-center">
       {activeChange?.isDraft && activeChange.previewOpened === false && (
@@ -125,7 +120,7 @@ export function StepActions() {
           disabled={!activeDraftComment?.commentBody}
           htmlType="submit"
           loading={submitting}
-          onClick={handleAddComment}
+          onClick={saveComment}
           type="primary"
         >
           {activeDraftComment?.isEditing ? 'Edit Comment' : 'Add Comment'}
