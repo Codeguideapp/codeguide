@@ -4,12 +4,14 @@ export default function Document() {
   return (
     <Html>
       <Head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@400&display=swap"
-          rel="stylesheet"
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="crossorigin"
         />
         <link
-          href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Catamaran:wght@700&family=Inconsolata&family=Roboto:wght@400;700&display=swap"
           rel="stylesheet"
         />
       </Head>
