@@ -24,9 +24,8 @@ export default function Page() {
               Step-by-step code walkthroughs
             </h1>
             <p className="px-0 mb-8 text-lg text-white md:text-xl lg:px-24">
-              Open-source online tool for onboarding and re-boarding,
-              understanding the context of a code review or making code
-              presentations
+              Open-source tool for creating and viewing code guides. For
+              onboarding, explaining the context of a code review, and more.
             </p>
             <div className="mb-4 flex md:block flex-col items-center space-y-2 space-x-0 md:space-x-2 md:mb-8 ">
               <Link
@@ -73,14 +72,15 @@ export default function Page() {
             <div className=" py-4">
               <div className="flex items-center">
                 <h2 className="text-xl font-bold text-black">
-                  Onboard new team members faster
+                  Onboard (or re-board) to a new project or feature
                 </h2>
               </div>
 
               <p className="text-lg mt-4 leading-relaxed text-gray-700">
-                With Codeguide, you can easily create step-by-step code
-                walkthroughs, helping new team members understand the codebase
-                and get up to speed quickly.
+                With code guides you can help new team members understand the
+                codebase and get up to speed quickly. Also, it&apos;s a great
+                way to re-board yourself to a project or feature area you
+                haven&apos;t worked on for a while.
               </p>
             </div>
 
@@ -101,12 +101,25 @@ export default function Page() {
             <div className="py-4">
               <div className="flex items-center">
                 <h2 className="text-xl font-bold text-black">
+                  Make code presentations
+                </h2>
+              </div>
+
+              <p className="text-lg mt-4 leading-relaxed text-gray-700">
+                You can also use Codeguide for creating code presentations,
+                whether it&apos;s for a conference talk or a training session.
+              </p>
+            </div>
+
+            <div className="py-4">
+              <div className="flex items-center">
+                <h2 className="text-xl font-bold text-black">
                   Transparent and fully open source software
                 </h2>
               </div>
 
               <p className="text-lg mt-4 leading-relaxed text-gray-700">
-                The{' '}
+                Codeguide&apos;s{' '}
                 <a
                   className="font-bold"
                   href="https://github.com/codeguideapp/codeguide"
@@ -383,22 +396,21 @@ export default function Page() {
             </div>
 
             <p className="text-lg mt-4 leading-relaxed text-gray-700">
-              Guides are linked to specific commit, so when a guide is opened,
+              Guides are linked to a specific commit, so when a guide is opened,
               it will display the code as it existed at that point in time.
             </p>
 
             <p className="text-lg mt-4 leading-relaxed text-gray-700">
-              In the case of code reviews, updating a guide is generally not
-              necessary because code review guides are meant to help reviewers
-              focus on imporant parts of the PR. By the time the code changes,
-              the reviewer should already be familiar with it.
+              In the case of code review guides, code changes are usually not a
+              problem because these guides are meant to help reviewers focus on
+              important parts of the PR. By the time the code changes, the
+              reviewer should already be familiar with it.
             </p>
 
             <p className="text-lg mt-4 leading-relaxed text-gray-700">
-              For onboarding, most of the time, this is not a problem because an
-              outdated guide can still provide valuable context and background
-              information. But, if the code change is too significant, you will
-              have to create a new guide.
+              For onboarding guides, outdated content can still provide valuable
+              context and background information. But, if the code change is too
+              significant, you will have to create a new guide.
             </p>
 
             <p className="text-lg mt-4 leading-relaxed text-gray-700">
@@ -421,8 +433,8 @@ export default function Page() {
                 href="https://marketplace.visualstudio.com/items?itemName=vsls-contrib.codetour"
               >
                 CodeTour
-              </Link>
-              .
+              </Link>{' '}
+              for VS Code.
             </p>
             <p className="text-lg mt-4 leading-relaxed text-gray-700">
               However, CodeTour does not offer code generation as you progress

@@ -23,13 +23,21 @@ export function Footer() {
                   Terms of Service
                 </Link>
               </li>
+              <li>
+                <Link
+                  href="/contact"
+                  className="text-gray-500 transition hover:opacity-75"
+                >
+                  Contact
+                </Link>
+              </li>
             </ul>
           </nav>
 
           <ul className="flex justify-center gap-6 mt-8 sm:mt-0 lg:justify-end">
             <li>
-              <a
-                href="/"
+              <Link
+                href="https://github.com/Codeguideapp/codeguide"
                 rel="noreferrer"
                 target="_blank"
                 className="text-gray-700 transition hover:opacity-75"
@@ -48,7 +56,7 @@ export function Footer() {
                     clip-rule="evenodd"
                   />
                 </svg>
-              </a>
+              </Link>
             </li>
           </ul>
         </div>

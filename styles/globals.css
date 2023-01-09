@@ -23,6 +23,10 @@ body {
   --zinc-900: #18181b;
 }
 
+.hiddenmailto:after {
+  content: attr(data-name) '@' attr(data-domain) '.' attr(data-tld);
+}
+
 .top-bar {
   height: 40px;
   border-bottom: 1px solid var(--zinc-900);

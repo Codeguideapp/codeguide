@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import { Footer } from '../components/LandingPage/Footer';
 import { Header } from '../components/LandingPage/Header';
 
@@ -373,7 +375,7 @@ export default function Page() {
             <p className="text-lg mt-4 leading-relaxed text-gray-700">
               <span>
                 If you have a question about any of the Terms of Service, please
-                contact us.
+                <Link href="/contact"> contact us</Link>.
               </span>
             </p>
             <p className="text-lg mt-4 leading-relaxed text-gray-700">
