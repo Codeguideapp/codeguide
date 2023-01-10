@@ -354,7 +354,7 @@ export default function Page() {
               </li>
               <li className="mb-3 flex items-center">
                 <svg
-                  className="w-4 min-w-min self-start h-4 mr-2 mt-2"
+                  className="w-[28px] h-[28px] mr-2"
                   fill="#fff"
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 512 512"
