@@ -27,26 +27,55 @@ export default function Page() {
               Open-source tool for creating and viewing code guides. For
               onboarding, explaining the context of a code review, and more.
             </p>
-            <div className="mb-4 flex md:block flex-col items-center space-y-2 space-x-0 md:space-x-2 md:mb-8 ">
-              <Link
-                className="inline-block rounded-full border border-white bg-white px-6 py-3 text-sm font-medium text-black focus:outline-none focus:ring"
-                href="/download"
+            <div className="my-6 mb-6 flex items-center gap-2 justify-center flex-wrap">
+              <input
+                autoFocus={true}
+                className="px-4 py-3 grow max-w-xs rounded-lg bg-transparent placeholder-white placeholder-opacity-50 text-white text-sm font-medium border border-white border-opacity-50 focus:border-opacity-100 outline-none"
+                placeholder="Paste a GitHub link (repo or PR)"
+              />
+
+              <span
+                className="cursor-pointer gap-2 flex items-center justify-center  rounded-lg border border-white bg-white px-6 py-3 text-sm font-medium text-black focus:outline-none"
+                onClick={() => {}}
               >
-                Create guide
-              </Link>
+                <span>Create guide</span>
+              </span>
+            </div>
+            <div className="flex justify-center">
               <Link
-                className="inline-block rounded-full border border-white px-4 py-3 text-sm font-medium text-white hover:bg-white hover:text-black focus:outline-none focus:ring"
-                href="/download"
+                href="/example"
+                className="gap-2 flex items-center opacity-60 hover:opacity-100 text-white hover:text-white"
               >
-                Try example
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 512 512"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <g clip-path="url(#clip0_1_5)">
+                    <path
+                      d="M243.8 339.8C232.9 350.7 215.1 350.7 204.2 339.8L140.2 275.8C129.3 264.9 129.3 247.1 140.2 236.2C151.1 225.3 168.9 225.3 179.8 236.2L224 280.4L332.2 172.2C343.1 161.3 360.9 161.3 371.8 172.2C382.7 183.1 382.7 200.9 371.8 211.8L243.8 339.8ZM512 256C512 397.4 397.4 512 256 512C114.6 512 0 397.4 0 256C0 114.6 114.6 0 256 0C397.4 0 512 114.6 512 256ZM256 48C141.1 48 48 141.1 48 256C48 370.9 141.1 464 256 464C370.9 464 464 370.9 464 256C464 141.1 370.9 48 256 48Z"
+                      fill="white"
+                    />
+                  </g>
+                  <defs>
+                    <clipPath id="clip0_1_5">
+                      <rect width="512" height="512" fill="white" />
+                    </clipPath>
+                  </defs>
+                </svg>
+
+                <span>try example guide</span>
               </Link>
             </div>
-            <div></div>
           </div>
-          <div className="w-full mx-auto mt-14 text-center md:w-4/6">
-            <div className="relative z-0 w-full mt-8 mb-8">
+          <div className="w-full mx-auto text-center md:w-4/6">
+            <div
+              style={{ boxShadow: '0 8px 16px #0005' }}
+              className="relative z-0 w-full my-8"
+            >
               <Image
-                style={{ boxShadow: '0 8px 16px #0005' }}
                 width={2200}
                 height={1462}
                 src="/landing/hero.png"
@@ -55,6 +84,7 @@ export default function Page() {
             </div>
           </div>
         </div>
+
         <div>
           <svg viewBox="0 0 1695 57" preserveAspectRatio="none">
             <path
@@ -106,8 +136,8 @@ export default function Page() {
               </div>
 
               <p className="text-lg mt-4 leading-relaxed text-gray-700">
-                You can also use Codeguide for creating code presentations,
-                whether it&apos;s for a conference talk or a training session.
+                You can use Codeguide for creating code presentations, whether
+                it&apos;s for a conference talk or a training session.
               </p>
             </div>
 
@@ -128,8 +158,7 @@ export default function Page() {
                 >
                   source code
                 </a>{' '}
-                is available on GitHub so anyone can read it, inspect it and
-                review it. If you&apos;re happy to manage your own
+                is available on GitHub. If you&apos;re happy to manage your own
                 infrastructure, you can self-host it. It is licenced under the
                 GNU Affero General Public License Version 3 (AGPLv3).
               </p>
