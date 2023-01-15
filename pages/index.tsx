@@ -1,13 +1,34 @@
 import { Switch } from 'antd';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { signIn, useSession } from 'next-auth/react';
 import { useState } from 'react';
 
 import { Footer } from '../components/LandingPage/Footer';
 import { Header } from '../components/LandingPage/Header';
+import { LogoIcon } from '../components/svgIcons/LogoIcon';
 
 export default function Page() {
   const [pricing, setPricing] = useState<'monthly' | 'yearly'>('yearly');
+  const { push } = useRouter();
+  const { data: session } = useSession();
+
+  const handleSubmit = (e: React.SyntheticEvent) => {
+    e.preventDefault();
+
+    const target = e.target as typeof e.target & {
+      url: { value: string };
+    };
+
+    if (!session) {
+      signIn('github', {
+        callbackUrl: '/api/create?url=' + target.url.value,
+      });
+    } else {
+      push('/api/create?url=' + target.url.value);
+    }
+  };
 
   return (
     <div>
@@ -27,44 +48,33 @@ export default function Page() {
               Open-source tool for creating and viewing code guides. For
               onboarding, explaining the context of a code review, and more.
             </p>
-            <div className="my-6 mb-6 flex items-center gap-2 justify-center flex-wrap">
+            <form
+              className="my-6 mb-6 flex items-center gap-2 justify-center flex-wrap"
+              onSubmit={handleSubmit}
+            >
               <input
+                required
+                name="url"
+                pattern="(https?:\/\/)?(www\.)?(github\.com|#)[\/]?([A-Za-z0-9-_]+\/[A-Za-z0-9-_]+(\/(pull\/\d+)?)?)"
+                title="Please enter a valid GitHub link (repo or pull request)"
                 autoFocus={true}
                 className="px-4 py-3 grow max-w-xs rounded-lg bg-transparent placeholder-white placeholder-opacity-50 text-white text-sm font-medium border border-white border-opacity-50 focus:border-opacity-100 outline-none"
                 placeholder="Paste a GitHub link (repo or PR)"
               />
 
-              <span
+              <button
+                type="submit"
                 className="cursor-pointer gap-2 flex items-center justify-center  rounded-lg border border-white bg-white px-6 py-3 text-sm font-medium text-black focus:outline-none"
-                onClick={() => {}}
               >
                 <span>Create guide</span>
-              </span>
-            </div>
+              </button>
+            </form>
             <div className="flex justify-center">
               <Link
                 href="/example"
                 className="gap-2 flex items-center opacity-60 hover:opacity-100 text-white hover:text-white"
               >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 512 512"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <g clip-path="url(#clip0_1_5)">
-                    <path
-                      d="M243.8 339.8C232.9 350.7 215.1 350.7 204.2 339.8L140.2 275.8C129.3 264.9 129.3 247.1 140.2 236.2C151.1 225.3 168.9 225.3 179.8 236.2L224 280.4L332.2 172.2C343.1 161.3 360.9 161.3 371.8 172.2C382.7 183.1 382.7 200.9 371.8 211.8L243.8 339.8ZM512 256C512 397.4 397.4 512 256 512C114.6 512 0 397.4 0 256C0 114.6 114.6 0 256 0C397.4 0 512 114.6 512 256ZM256 48C141.1 48 48 141.1 48 256C48 370.9 141.1 464 256 464C370.9 464 464 370.9 464 256C464 141.1 370.9 48 256 48Z"
-                      fill="white"
-                    />
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_1_5">
-                      <rect width="512" height="512" fill="white" />
-                    </clipPath>
-                  </defs>
-                </svg>
+                <LogoIcon />
 
                 <span>try example guide</span>
               </Link>
@@ -390,7 +400,7 @@ export default function Page() {
                 >
                   <path d="M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" />
                 </svg>
-                Host on your servers (support/development)
+                Self-host if needed (support / development)
               </li>
             </ul>
             <div className="flex justify-center">

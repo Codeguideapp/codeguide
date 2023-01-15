@@ -58,15 +58,17 @@ export async function init(): Promise<RepoApiStatus> {
 
     useFilesStore.getState().setAllRepoFileRefs(repoFiles.data.tree);
 
-    const apiFiles = await getFilesDiff(guide, octokit);
+    if (guide.type === 'diff') {
+      const apiFiles = await getFilesDiff(guide, octokit);
 
-    useFilesStore.getState().setFileNodes(
-      apiFiles.map((file) => ({
-        ...file,
-        isFileDiff: true,
-        isFetching: false,
-      }))
-    );
+      useFilesStore.getState().setFileNodes(
+        apiFiles.map((file) => ({
+          ...file,
+          isFileDiff: true,
+          isFetching: false,
+        }))
+      );
+    }
 
     await useChangesStore.getState().storeChangesFromServer(initChanges);
     useCommentsStore.getState().storeCommentsFromServer(initComments);

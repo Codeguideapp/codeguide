@@ -4,6 +4,7 @@ export default function Document() {
   return (
     <Html>
       <Head>
+        <title>CodeGuide</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"

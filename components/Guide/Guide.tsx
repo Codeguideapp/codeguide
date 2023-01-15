@@ -77,7 +77,7 @@ export function Guide() {
   }, [activeChangeId, getChangeIndex]);
 
   if (changesForGuide.length === 0) {
-    return <div className="guide"></div>;
+    return <div className="guide p-4 opacity-70">No steps saved...</div>;
   }
 
   const lastChange = changesForGuide[changesForGuide.length - 1];

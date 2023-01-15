@@ -321,7 +321,7 @@ code {
 }
 .editor-top .filename {
   font-family: 'Roboto';
-  padding: 0 15px 0 25px;
+  padding: 0 25px;
   background: var(--zinc-900);
   height: 30px;
   line-height: 30px;
