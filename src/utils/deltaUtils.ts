@@ -38,7 +38,7 @@ export function getFileContent({
     pathFilteredIds.indexOf(change.id) + (excludeChange ? 0 : 1)
   );
 
-  return deltaToString(changesIdsToApply.map((id) => changes[id].delta!));
+  return deltaToString(changesIdsToApply.map((id) => changes[id].delta));
 }
 
 export function calcStat(delta: Delta): [number, number] {

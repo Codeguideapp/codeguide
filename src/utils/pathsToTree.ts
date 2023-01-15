@@ -16,7 +16,7 @@ type TreeItem = {
 const ROOT = Symbol('root');
 
 export function pathsToTreeStructure(data: RepoFileRef[]): TreeItem[] {
-  let references: Record<string | symbol, TreeItem> = {};
+  const references: Record<string | symbol, TreeItem> = {};
 
   references[ROOT] = {
     key: '',
@@ -48,12 +48,12 @@ export function pathsToTreeStructure(data: RepoFileRef[]): TreeItem[] {
       if (!references[parentPath].children) {
         references[parentPath].children = [];
       }
-      references[parentPath].children!.push(references[file.path]);
-      references[parentPath].children!.sort((a, b) =>
+      references[parentPath].children?.push(references[file.path]);
+      references[parentPath].children?.sort((a, b) =>
         a.isLeaf && !b.isLeaf ? 1 : !a.isLeaf && b.isLeaf ? -1 : 0
       );
     }
   }
 
-  return references[ROOT].children!;
+  return references[ROOT].children || [];
 }

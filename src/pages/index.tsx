@@ -22,11 +22,11 @@ export default function Page() {
     };
 
     if (!session) {
-      signIn('github', {
+      void signIn('github', {
         callbackUrl: '/api/create?url=' + target.url.value,
       });
     } else {
-      push('/api/create?url=' + target.url.value);
+      void push('/api/create?url=' + target.url.value);
     }
   };
 
