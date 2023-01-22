@@ -11,6 +11,7 @@ import { useShallowChanges } from '../hooks/useShallowChanges';
 import { isEditing, stepControlHeightAtom } from '../store/atoms';
 import { Change, useChangesStore } from '../store/changes';
 import { FileNode, useFilesStore } from '../store/files';
+import { LoadingIcon } from '../svgIcons/LoadingIcon';
 import { EditorEditDiff } from './EditorEditDiff';
 import { EditorHighlightChange } from './EditorHighlightChange';
 import { EditorPreviewFile } from './EditorPreviewFile';
@@ -25,6 +26,15 @@ function GetEditorComponent({
   activeChange?: Change | null;
 }) {
   if (!activeFile) return <Welcome />;
+
+  if (activeFile.isFetching)
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-zinc-900">
+        <div className="-mt-20">
+          <LoadingIcon />
+        </div>
+      </div>
+    );
 
   if (activeChange && activeChange.path !== activeFile.path) {
     return (
