@@ -75,19 +75,20 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
     const noInserts = currentChange.stat[0] === 0;
     const noDeletes = currentChange.stat[1] === 0;
 
-    const highlightDecorations = currentChange.highlight.map((h) => {
-      return {
-        range: getRange(modelCurrent, h.offset, h.length),
-        options: {
-          className: 'select-highlight',
-          overviewRuler: {
-            color: '#3c5177',
-            position: monaco.editor.OverviewRulerLane.Right,
+    const highlightDecorations = (model: monaco.editor.ITextModel) =>
+      currentChange.highlight.map((h) => {
+        return {
+          range: getRange(model, h.offset, h.length),
+          options: {
+            className: 'select-highlight',
+            overviewRuler: {
+              color: '#3c5177',
+              position: monaco.editor.OverviewRulerLane.Right,
+            },
+            minimap: { position: 1, color: '#3c5177' },
           },
-          minimap: { position: 1, color: '#3c5177' },
-        },
-      };
-    });
+        };
+      });
 
     if (prevValue === undefined || noInserts || noDeletes) {
       standaloneEditor.current = monaco.editor.create(monacoDom.current, {
@@ -106,10 +107,10 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
         modelCurrent.setValue(currValue);
 
         standaloneEditor.current.createDecorationsCollection(
-          highlightDecorations
+          highlightDecorations(modelCurrent)
         );
         standaloneEditor.current.revealRangeInCenterIfOutsideViewport(
-          highlightDecorations[0].range
+          highlightDecorations(modelCurrent)[0].range
         );
       } else if (noDeletes) {
         // only inserts
@@ -131,7 +132,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
 
         standaloneEditor.current.createDecorationsCollection([
           ...decorations,
-          ...highlightDecorations,
+          ...highlightDecorations(modelCurrent),
         ]);
         standaloneEditor.current.revealRangeInCenterIfOutsideViewport(
           decorations[0].range
@@ -156,7 +157,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
 
         standaloneEditor.current.createDecorationsCollection([
           ...decorations,
-          ...highlightDecorations,
+          ...highlightDecorations(modelCurrent),
         ]);
         standaloneEditor.current.revealRangeInCenterIfOutsideViewport(
           decorations[0].range
@@ -191,7 +192,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
 
         diffEditor.current
           .getModifiedEditor()
-          .createDecorationsCollection(highlightDecorations);
+          .createDecorationsCollection(highlightDecorations(modelCurrent));
       }
     }
 

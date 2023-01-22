@@ -1,4 +1,5 @@
 import { Avatar, Comment, Popconfirm } from 'antd';
+import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import Moment from 'react-moment';
 import rehypeHighlight from 'rehype-highlight';
@@ -21,10 +22,23 @@ export function PreviewComment({ comment }: { comment: IComment }) {
   );
 
   const name = author.data?.data?.name || '';
+  const url = author.data?.data?.html_url;
 
   return (
     <Comment
-      author={name}
+      author={
+        url ? (
+          <Link
+            href={author.data?.data?.html_url}
+            target="_blank"
+            className=" font-bold text-white"
+          >
+            {name}
+          </Link>
+        ) : (
+          <span className=" font-bold text-white">{name}</span>
+        )
+      }
       actions={
         isEditing() && comment.isMine
           ? [
@@ -64,7 +78,11 @@ export function PreviewComment({ comment }: { comment: IComment }) {
           {comment.commentBody}
         </ReactMarkdown>
       }
-      datetime={<Moment fromNow date={new Date(comment.timestamp)} />}
+      datetime={
+        <span className="">
+          <Moment fromNow date={new Date(comment.timestamp)} />
+        </span>
+      }
     />
   );
 }

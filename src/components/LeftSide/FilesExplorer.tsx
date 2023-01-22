@@ -8,35 +8,27 @@ import { AntdTreeNodeAttribute } from 'antd/lib/tree';
 import ForwardDirectoryTree from 'antd/lib/tree/DirectoryTree';
 import { useAtom } from 'jotai';
 import { uniq } from 'lodash';
-import { useSession } from 'next-auth/react';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useResizeDetector } from 'react-resize-detector';
 
-import { fetchWithThrow } from '../../utils/fetchWithThrow';
 import { pathsToTreeStructure } from '../../utils/pathsToTree';
 import { expandedFilesAtom } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
-import { FileNode, useFilesStore } from '../store/files';
+import { useFilesStore } from '../store/files';
+import { useGuideStore } from '../store/guide';
 
 export function FilesExplorer() {
   const treeRef = React.useRef<any>();
   const highlightChange = useChangesStore((s) =>
     s.activeChangeId ? s.changes[s.activeChangeId] : null
   );
-  const fileNodes = useFilesStore((s) => s.fileNodes);
-  const setFileNodes = useFilesStore((s) => s.setFileNodes);
-  const allRepoFileRefs = useFilesStore((s) => s.allRepoFileRefs);
+  const fileRefs = useGuideStore((s) => s.fileRefs);
   const activeFile = useFilesStore((s) => s.activeFile);
-  const setActiveFile = useFilesStore((s) => s.setActiveFile);
-  const loadFile = useFilesStore((s) => s.loadFile);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const [expanded, setExpanded] = useAtom(expandedFilesAtom);
   const [wrapperHeight, setWrapperHeight] = useState(400);
 
-  const treeData = useMemo(
-    () => pathsToTreeStructure(allRepoFileRefs),
-    [allRepoFileRefs]
-  );
+  const treeData = useMemo(() => pathsToTreeStructure(fileRefs), [fileRefs]);
 
   const { ref } = useResizeDetector({
     onResize(_, height) {
@@ -50,10 +42,11 @@ export function FilesExplorer() {
     if (!highlightChange) return;
 
     const pathArr = highlightChange.path.split('/');
-    const toExpland = pathArr.reduce((acc: string[], curr: string) => {
-      const nextPath = [...acc, curr].join('/');
-      return [...acc, nextPath];
-    }, []);
+    const toExpland: string[] = [];
+    for (let i = 0; i < pathArr.length; i++) {
+      const nextPath = [...pathArr.slice(0, i + 1)].join('/');
+      toExpland.push(nextPath);
+    }
 
     setExpanded((prevVal) => uniq([...prevVal, ...toExpland]));
 
@@ -93,34 +86,7 @@ export function FilesExplorer() {
           }
 
           if (node.type === 'blob') {
-            if (fileNodes.find((f) => f.path === node.key)) {
-              setActiveFileByPath(node.key);
-            } else {
-              // make "loading file"
-              setActiveFile({
-                isFileDiff: false,
-                oldVal: '',
-                newVal: '',
-                path: node.file.path,
-                status: 'modified',
-                isFetching: true,
-              });
-
-              loadFile(node.file.path)
-                .then(() => setActiveFileByPath(node.file.path))
-                .catch(() => {
-                  // make "error file"
-                  setActiveFile({
-                    isFileDiff: false,
-                    oldVal: '',
-                    newVal: '',
-                    path: node.file.path,
-                    status: 'modified',
-                    isFetching: false,
-                    fetchError: 'error fetching file',
-                  });
-                });
-            }
+            setActiveFileByPath(node.key);
           }
         }}
       />

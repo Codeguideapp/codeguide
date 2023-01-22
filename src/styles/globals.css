@@ -242,10 +242,6 @@ code {
   background: #2f2f2f;
 }
 
-.split-editor .gutter {
-  margin-top: 30px;
-}
-
 .timeline {
   background: var(--zinc-800);
 }
@@ -311,9 +307,9 @@ code {
 }
 
 .editor-top {
+  background: var(--zinc-900);
   height: 30px;
   width: 100%;
-  background: var(--zinc-custom-850);
   text-align: left;
   display: flex;
   align-items: center;
@@ -321,7 +317,7 @@ code {
 }
 .editor-top .filename {
   font-family: 'Roboto';
-  padding: 0 25px;
+  padding: 0 10px;
   background: var(--zinc-900);
   height: 30px;
   line-height: 30px;
@@ -329,6 +325,8 @@ code {
   font-size: 13px;
   display: flex;
   align-items: center;
+  font-weight: bold;
+  margin-top: 10px;
 }
 .editor-top .filename .unsaved {
   background: #ccc;

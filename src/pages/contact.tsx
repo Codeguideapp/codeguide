@@ -5,8 +5,6 @@ import { Footer } from '../components/LandingPage/Footer';
 import { Header } from '../components/LandingPage/Header';
 
 export default function Page() {
-  useEffect(() => {});
-
   return (
     <div>
       <section
@@ -16,20 +14,20 @@ export default function Page() {
       >
         <Header />
 
-        <div className="px-12 mx-auto max-w-7xl">
-          <div className="w-full py-6 mx-auto text-left md:w-11/12 xl:w-9/12 md:text-center">
-            <h1 className="font-catamaran mb-8 text-3xl font-extrabold leading-none tracking-normal text-white md:text-5xl md:tracking-tight">
+        <div className="mx-auto max-w-7xl px-12">
+          <div className="mx-auto w-full py-6 text-left md:w-11/12 md:text-center xl:w-9/12">
+            <h1 className="mb-8 font-catamaran text-3xl font-extrabold leading-none tracking-normal text-white md:text-5xl md:tracking-tight">
               Contact us
             </h1>
           </div>
-          <div className="w-full mx-auto mt-14 text-center md:w-4/6"></div>
+          <div className="mx-auto mt-14 w-full text-center md:w-4/6"></div>
         </div>
       </section>
 
       <section>
-        <div className="flow-root max-w-3xl m-auto px-8">
+        <div className="m-auto flow-root max-w-3xl px-8">
           <div className="py-4">
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               For bug reports, please use{' '}
               <Link
                 className=" text-blue-500"
@@ -40,7 +38,7 @@ export default function Page() {
               </Link>
               .
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               For other inquiries, email us at{' '}
               <span
                 className="hiddenmailto cursor-pointer text-blue-500"

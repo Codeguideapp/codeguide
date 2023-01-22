@@ -19,9 +19,9 @@ export const getFilesDiff = async (
 
   const files: FileDiff[] = [];
 
-  let owner = guide.owner;
-  let repo = guide.repository;
-  let pull_number = 1;
+  const owner = guide.owner;
+  const repo = guide.repository;
+  const pull_number = guide.prNum as number;
 
   // const prReq = await octokit.request(
   //   `GET /repos/{owner}/{repo}/pulls/{pull_number}`,
@@ -34,6 +34,19 @@ export const getFilesDiff = async (
   // const baseSha = prReq.data.base.sha;
   // console.log({ prReq });
 
+  const getFile = (path: string, sha?: string) => {
+    return octokit
+      .request('GET /repos/{owner}/{repo}/contents/{path}?ref={sha}', {
+        owner,
+        repo,
+        path,
+        sha,
+      })
+      .then((res) => {
+        return atob(res.data.content);
+      });
+  };
+
   const filesReq = await octokit.request(
     `GET /repos/{owner}/{repo}/pulls/{pull_number}/files`,
     {
@@ -44,30 +57,15 @@ export const getFilesDiff = async (
   );
 
   for (const file of filesReq.data) {
-    const oldVal = await octokit
-      .request('GET /repos/{owner}/{repo}/contents/{path}?ref={baseSha}', {
-        owner,
-        repo,
-        path: file.filename,
-        baseSha: guide.baseSha,
-      })
-      .then((res) => {
-        return atob(res.data.content);
-      });
+    const oldVal =
+      file.status === 'added'
+        ? ''
+        : await getFile(file.filename, guide.baseSha);
 
-    const newVal = await octokit
-      .request(
-        'GET /repos/{owner}/{repo}/contents/{path}?ref={mergeCommitSha}',
-        {
-          owner,
-          repo,
-          path: file.filename,
-          mergeCommitSha: guide.mergeCommitSha,
-        }
-      )
-      .then((res) => {
-        return atob(res.data.content);
-      });
+    const newVal =
+      file.status === 'removed'
+        ? ''
+        : await getFile(file.filename, guide.mergeCommitSha);
 
     const status =
       file.status === 'added'

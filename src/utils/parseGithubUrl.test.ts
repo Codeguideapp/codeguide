@@ -22,12 +22,6 @@ describe('parseGithubUrl', () => {
       pullRequest: null,
     });
 
-    expect(parseGithubUrl('#/codeguideapp/codeguide/')).toEqual({
-      owner: 'codeguideapp',
-      repository: 'codeguide',
-      pullRequest: null,
-    });
-
     expect(
       parseGithubUrl('https://github.com/codeguideapp/codeguide/pull/4')
     ).toEqual({
@@ -43,12 +37,6 @@ describe('parseGithubUrl', () => {
     });
 
     expect(parseGithubUrl('github.com/codeguideapp/codeguide/pull/4')).toEqual({
-      owner: 'codeguideapp',
-      repository: 'codeguide',
-      pullRequest: 4,
-    });
-
-    expect(parseGithubUrl('#codeguideapp/codeguide/pull/4')).toEqual({
       owner: 'codeguideapp',
       repository: 'codeguide',
       pullRequest: 4,

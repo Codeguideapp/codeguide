@@ -3,6 +3,7 @@ import { ulid } from 'ulid';
 import create from 'zustand';
 
 import { fetchWithThrow } from '../../utils/fetchWithThrow';
+import { generateId } from '../../utils/generateId';
 import { useChangesStore } from './changes';
 import { useGuideStore } from './guide';
 import { useUserStore } from './user';
@@ -101,7 +102,7 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
           isMine: true,
           githubUserId: session?.user?.id || '',
           commentBody: val,
-          commentId: commentToEdit ? commentToEdit.commentId : ulid(),
+          commentId: commentToEdit ? commentToEdit.commentId : generateId(),
           changeId: activeChangeId,
           timestamp: Date.now(),
         };

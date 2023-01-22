@@ -3,6 +3,7 @@ import { faSave } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { message } from 'antd';
 import classNames from 'classnames';
+import Link from 'next/link';
 import { signOut } from 'next-auth/react';
 import { useState } from 'react';
 import Split from 'react-split';
@@ -10,11 +11,13 @@ import Split from 'react-split';
 import { Editor } from './Editor/Editor';
 import { LeftSide } from './LeftSide/LeftSide';
 import { PrevNextControls } from './PrevNextControls';
+import { isEditing } from './store/atoms';
 import { useChangesStore } from './store/changes';
 import { useCommentsStore } from './store/comments';
 import { useGuideStore } from './store/guide';
 
 export function App() {
+  const guideId = useGuideStore((s) => s.id);
   const repository = useGuideStore((s) => s.repository);
   const owner = useGuideStore((s) => s.owner);
   const publishComments = useCommentsStore((s) => s.publishComments);
@@ -51,18 +54,26 @@ export function App() {
           </div>
         </div>
 
-        <div className="action">
-          {isSaving ? (
-            <span>saving...</span>
+        <div className="action flex gap-2">
+          {isEditing() &&
+            (isSaving ? (
+              <span>saving...</span>
+            ) : (
+              <div
+                onClick={shouldPublish ? handlePublish : undefined}
+                className={shouldPublish ? '' : 'opacity-30'}
+              >
+                <FontAwesomeIcon icon={faSave} />
+                <span>Save</span>
+              </div>
+            ))}
+
+          {isEditing() ? (
+            <Link href={`/${guideId}`}>preview</Link>
           ) : (
-            <div
-              onClick={shouldPublish ? handlePublish : undefined}
-              className={shouldPublish ? '' : 'opacity-30'}
-            >
-              <FontAwesomeIcon icon={faSave} />
-              <span>Save</span>
-            </div>
+            <Link href={`/${guideId}/edit`}>edit</Link>
           )}
+
           <span onClick={() => signOut()}>logout</span>
         </div>
       </div>

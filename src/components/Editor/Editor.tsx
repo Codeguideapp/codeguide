@@ -3,7 +3,8 @@ import { useAtom } from 'jotai';
 import { useMemo, useState } from 'react';
 import Split from 'react-split';
 
-import { BottomBar } from '../BottomBar/BottomBar';
+import { BottomBarEdit } from '../BottomBar/BottomBar';
+import { Comments } from '../Comments/Comments';
 import { Guide } from '../Guide/Guide';
 import { useActiveChange } from '../hooks/useActiveChange';
 import { useShallowChanges } from '../hooks/useShallowChanges';
@@ -71,43 +72,45 @@ export function Editor() {
             position: 'relative',
           }}
         >
-          <div
-            style={{
-              height: `calc(100% - ${stepControlHeight}px)`,
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <div className="editor-top">
+          <div className="editor-top">
+            <div
+              className={classNames({
+                filename: true,
+                'in-past': Boolean(activeChange),
+              })}
+            >
+              {activeFile ? activeFile?.path.split('/').pop() : 'Welcome'}
+              {activeChange
+                ? `  (step ${getChangeIndex(activeChange.id)})`
+                : ''}
               <div
                 className={classNames({
-                  filename: true,
-                  'in-past': Boolean(activeChange),
+                  unsaved: true,
+                  hidden: activeFile?.path
+                    ? !unsavedFilePaths.includes(activeFile.path)
+                    : true,
                 })}
-              >
-                {activeFile ? activeFile?.path.split('/').pop() : 'Welcome'}
-                {activeChange
-                  ? `  (step ${getChangeIndex(activeChange.id)})`
-                  : ''}
-                <div
-                  className={classNames({
-                    unsaved: true,
-                    hidden: activeFile?.path
-                      ? !unsavedFilePaths.includes(activeFile.path)
-                      : true,
-                  })}
-                ></div>
-              </div>
-              <EditorToolbar />
+              ></div>
             </div>
-            <div style={{ width: '100%', flexGrow: 1 }}>
+            <EditorToolbar />
+          </div>
+
+          <Comments />
+          <div
+            className="flex flex-col bg-zinc-900"
+            style={{
+              marginTop: stepControlHeight,
+              height: `calc(100% - ${stepControlHeight}px)`,
+            }}
+          >
+            <div className="mt-2 w-full grow">
               <GetEditorComponent
                 activeFile={activeFile}
                 activeChange={activeChange}
               />
             </div>
           </div>
-          <BottomBar />
+          {isEditing() && <BottomBarEdit />}
         </div>
 
         <Guide />

@@ -61,7 +61,7 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
         const domNode = document.createElement('div');
         domNode.className = 'diff-header';
         domNode.innerHTML = `
-        <h2>Reference File</h2>
+        <h2>End result</h2>
         <p>The final version of the file</p>
       `;
         changeAccessor.addZone({
@@ -77,8 +77,8 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
         const domNode = document.createElement('div');
         domNode.className = 'diff-header';
         domNode.innerHTML = `
-          <h2>Working Copy</h2>
-          <p>The version of the file currently being edited</p>
+          <h2>Current version</h2>
+          <p>Working copy of a file used for steps</p>
         `;
         changeAccessor.addZone({
           afterLineNumber: 0,

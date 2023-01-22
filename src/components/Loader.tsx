@@ -10,27 +10,39 @@ import React, { useEffect, useState } from 'react';
 
 import { darkTheme, darkThemeInvertedDif } from './Editor/monaco-themes/dark';
 import { App } from './App';
-import { init } from '../utils/init';
 import { AccessDenied } from './indexAccessDenied';
 import { GuideNotFound } from './indexGuideNotFound';
 import { Loading } from './indexLoading';
 import { InternalError } from './indexInternalError';
 import { useFilesStore } from './store/files';
+import { api } from '../utils/api';
+import { useGuideStore } from './store/guide';
+import { useChangesStore } from './store/changes';
+import { useCommentsStore } from './store/comments';
 
 monaco.editor.defineTheme('darkInvertedDiff', darkThemeInvertedDif);
 monaco.editor.defineTheme('darkTheme', darkTheme);
 
 export default function Loader() {
+  const res = api.guide.getGuide.useQuery(
+    {
+      guideId: document.location.pathname.split('/')[1],
+    },
+    {
+      refetchOnWindowFocus: false,
+      retry: false,
+    }
+  );
+
   const undraftActiveFile = useFilesStore((s) => s.undraftActiveFile);
-  const [repoApiStatus, setRepoApiStatus] = useState({
-    isLoading: true,
-    shouldTryLogin: false,
-    errorStatus: 0,
-  });
 
   useEffect(() => {
-    init().then((res) => setRepoApiStatus(res));
-  }, []);
+    if (res.data && !useGuideStore.getState().id) {
+      useGuideStore.getState().setGuide(res.data.guide);
+      useChangesStore.getState().storeChangesFromServer(res.data.changes);
+      useCommentsStore.getState().storeCommentsFromServer(res.data.comments);
+    }
+  }, [res.data]);
 
   useEffect(() => {
     Mousetrap.bindGlobal(['command+s', 'ctrl+s'], function (e) {
@@ -40,11 +52,10 @@ export default function Loader() {
     });
   }, [undraftActiveFile]);
 
-  if (repoApiStatus.isLoading) return <Loading />;
-  if (repoApiStatus.shouldTryLogin) return <AccessDenied />;
-  if (repoApiStatus.errorStatus === 404) return <GuideNotFound />;
-  if (repoApiStatus.errorStatus !== 0 && repoApiStatus.errorStatus !== 404)
-    return <InternalError />;
+  if (res.isFetching) return <Loading />;
+  if (res.error?.data?.code === 'FORBIDDEN') return <AccessDenied />;
+  if (res.error?.data?.code === 'NOT_FOUND') return <GuideNotFound />;
+  if (res.error) return <InternalError />;
 
   return <App />;
 }

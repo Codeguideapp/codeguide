@@ -28,7 +28,9 @@ export function getComments(
       comments.map((comment) => {
         return {
           ...comment,
-          isMine: currentUserId === comment.githubUserId,
+          isMine:
+            currentUserId !== undefined &&
+            currentUserId === comment.githubUserId,
         };
       })
     );

@@ -58,6 +58,8 @@ export async function saveChanges({
 
     const changes = Changes.parse(changesBody);
 
+    console.log('Saving changes', changes);
+
     await dynamoDb
       .batchWrite({
         RequestItems: {

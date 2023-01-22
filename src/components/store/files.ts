@@ -2,6 +2,7 @@ import create from 'zustand';
 
 import { fetchWithThrow } from '../../utils/fetchWithThrow';
 import { useChangesStore } from './changes';
+import { useGuideStore } from './guide';
 import { useUserStore } from './user';
 
 export type FileNode = {
@@ -22,28 +23,31 @@ export type RepoFileRef = {
 };
 
 interface FilesState {
-  allRepoFileRefs: RepoFileRef[];
   fileNodes: FileNode[];
   activeFile?: FileNode;
   undraftActiveFile: () => void;
-  setActiveFileByPath: (path: string | undefined) => void;
+  setActiveFileByPath: (path: string | undefined) => Promise<void>;
   setActiveFile: (file: FileNode) => void;
   setFileNodes: (refs: FileNode[]) => void;
-  setAllRepoFileRefs: (refs: RepoFileRef[]) => void;
+  storeFile: ({
+    newVal,
+    oldVal,
+    path,
+  }: {
+    newVal: string;
+    oldVal: string;
+    path: string;
+  }) => void;
   loadFile: (path: string) => Promise<FileNode>;
 }
 
 export const useFilesStore = create<FilesState>((set, get) => ({
-  allRepoFileRefs: [],
   fileNodes: [],
   setActiveFile: (activeFile: FileNode) => {
     set({ activeFile });
   },
   setFileNodes: (fileNodes: FileNode[]) => {
     set({ fileNodes });
-  },
-  setAllRepoFileRefs: (allRepoFileRefs: RepoFileRef[]) => {
-    set({ allRepoFileRefs });
   },
   undraftActiveFile: () => {
     const activeFile = get().activeFile;
@@ -60,48 +64,142 @@ export const useFilesStore = create<FilesState>((set, get) => ({
 
     useChangesStore.getState().undraftChange(draftChange.id);
   },
-  setActiveFileByPath: (path: string | undefined) => {
+  setActiveFileByPath: async (path: string | undefined) => {
+    if (!path) {
+      set({ activeFile: undefined });
+      return;
+    }
+
     const fileNodes = get().fileNodes;
 
     const file = fileNodes.find((f) => f.path === path);
 
     set({ activeFile: file });
 
-    if (!file) return;
+    if (!file) {
+      // make "loading file"
+      set({
+        activeFile: {
+          isFileDiff: false,
+          oldVal: '',
+          newVal: '',
+          path: path,
+          status: 'modified',
+          isFetching: true,
+        },
+      });
+
+      try {
+        const newFile = await get().loadFile(path);
+        set({ activeFile: newFile });
+      } catch (e) {
+        set({
+          activeFile: {
+            isFileDiff: false,
+            oldVal: '',
+            newVal: '',
+            path,
+            status: 'modified',
+            isFetching: false,
+            fetchError: 'error fetching file',
+          },
+        });
+      }
+    }
 
     // save new change filenode
     const activeChange = useChangesStore.getState().getActiveChange();
-    if (!activeChange || activeChange.path !== file.path) {
-      useChangesStore.getState().saveFileNode(file.path);
+    if (!activeChange || activeChange.path !== path) {
+      useChangesStore.getState().saveFileNode(path);
     }
   },
+  storeFile: ({ newVal, oldVal, path }) => {
+    const newFile: FileNode = {
+      isFileDiff: false,
+      oldVal,
+      newVal,
+      path,
+      status: 'modified',
+      isFetching: false,
+    };
+    get().setFileNodes([...get().fileNodes, newFile]);
+  },
   loadFile: async (path: string): Promise<FileNode> => {
-    const repoFileRef = get().allRepoFileRefs.find((f) => f.path === path);
+    const repoFileRef = useGuideStore
+      .getState()
+      .fileRefs.find((f) => f.path === path);
 
-    if (!repoFileRef) {
+    const changedFileRef = useGuideStore
+      .getState()
+      .changedFileRefs.find((f) => f.path === path);
+
+    if (!repoFileRef && !changedFileRef) {
       throw new Error('File not found');
     }
 
     const session = await useUserStore.getState().getUserSession();
-    return fetchWithThrow(repoFileRef.url, {
-      headers: session
-        ? {
-            Authorization: 'Bearer ' + session.user.accessToken,
-          }
-        : {},
-    }).then((res) => {
-      const content = atob(res.content);
+
+    if (changedFileRef) {
+      const octokit = await useUserStore.getState().getOctokit();
+      const getFile = (path: string, sha?: string) => {
+        return octokit
+          .request('GET /repos/{owner}/{repo}/contents/{path}?ref={sha}', {
+            owner: guide.owner,
+            repo: guide.repository,
+            path,
+            sha,
+          })
+          .then((res) => {
+            return atob(res.data.content);
+          });
+      };
+
+      const guide = useGuideStore.getState();
+
+      const oldVal =
+        changedFileRef.status === 'added'
+          ? ''
+          : await getFile(changedFileRef.path, guide.baseSha);
+
+      const newVal =
+        changedFileRef.status === 'deleted'
+          ? ''
+          : await getFile(changedFileRef.path, guide.mergeCommitSha);
+
       const newFile: FileNode = {
-        isFileDiff: false,
-        oldVal: content,
-        newVal: content,
-        path: repoFileRef.path,
-        status: 'modified',
+        isFileDiff: true,
+        oldVal,
+        newVal,
+        path: changedFileRef.path,
+        status: changedFileRef.status,
         isFetching: false,
       };
       get().setFileNodes([...get().fileNodes, newFile]);
 
       return newFile;
-    });
+    } else if (repoFileRef) {
+      return fetchWithThrow(repoFileRef.url, {
+        headers: session
+          ? {
+              Authorization: 'Bearer ' + session.user.accessToken,
+            }
+          : {},
+      }).then((res) => {
+        const content = atob(res.content);
+        const newFile: FileNode = {
+          isFileDiff: false,
+          oldVal: content,
+          newVal: content,
+          path: repoFileRef.path,
+          status: 'modified',
+          isFetching: false,
+        };
+        get().setFileNodes([...get().fileNodes, newFile]);
+
+        return newFile;
+      });
+    } else {
+      throw new Error('File not found');
+    }
   },
 }));

@@ -37,7 +37,7 @@ export function Guide() {
     return changesOrder
       .filter((id) => !changes[id].isFileDepChange)
       .map((id) => changes[id])
-      .map((change, i, arr) => {
+      .map((change) => {
         const preview = getStepPreview({
           delta: change.delta,
           before: getFileContent({
@@ -111,7 +111,7 @@ export function Guide() {
                 }}
               >
                 <div className="step-line-v"></div>
-                <div className="flex items-center relative">
+                <div className="relative flex items-center">
                   <div className="step-circle">
                     <span
                       style={{ display: change.isDraft ? 'none' : 'block' }}
@@ -143,7 +143,7 @@ export function Guide() {
                     >
                       <div
                         className={
-                          'text-zinc-400 h-full flex items-center ' +
+                          'flex h-full items-center text-zinc-400 ' +
                           (isBeforeActive ? 'opacity-60' : 'opacity-30')
                         }
                       >

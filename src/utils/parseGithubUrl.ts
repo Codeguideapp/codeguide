@@ -1,5 +1,5 @@
 const githubUrlRegex =
-  /(https?:\/\/)?(www\.)?(github\.com|#)[\/]?([A-Za-z0-9-_.]+\/[A-Za-z0-9-_.]+(\/(pull\/\d+)?)?)/;
+  /(https?:\/\/)?(www\.)?(github\.com)[\/]?([A-Za-z0-9-_.]+\/[A-Za-z0-9-_.]+(\/(pull\/\d+)?)?)/;
 
 export function parseGithubUrl(url: string): {
   owner: string;

@@ -1,11 +1,11 @@
 import produce from 'immer';
 import { last } from 'lodash';
 import Delta from 'quill-delta';
-import { decodeTime, ulid } from 'ulid';
 import create from 'zustand';
 
 import { calcStat, composeDeltas, deltaToString } from '../../utils/deltaUtils';
 import { fetchWithThrow } from '../../utils/fetchWithThrow';
+import { generateId } from '../../utils/generateId';
 import { useCommentsStore } from './comments';
 import { FileNode, useFilesStore } from './files';
 import { useGuideStore } from './guide';
@@ -30,7 +30,6 @@ export type Change = {
 };
 
 interface SaveDeltaParams {
-  id?: string;
   delta: Delta;
   highlight: Change['highlight'];
   file: FileNode;
@@ -107,13 +106,13 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
     set({ changes: newChanges });
   },
   saveDelta: (params: SaveDeltaParams) => {
-    const { delta, file, highlight, isFileDepChange, id } = params;
+    const { delta, file, highlight, isFileDepChange } = params;
     const changes = get().changes;
     const changesOrder = Object.keys(changes).sort();
 
     const fileChanges = changesOrder
       .filter((id) => changes[id].path === file.path && changes[id].delta)
-      .map((id) => changes[id].delta!);
+      .map((id) => changes[id].delta);
 
     const before = deltaToString(fileChanges);
     const after = deltaToString([...fileChanges, delta]);
@@ -137,12 +136,12 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
       changes[lastChangeId].isDraft &&
       changes[lastChangeId].path === file.path
     ) {
-      const newDelta = changes[lastChangeId].delta!.compose(delta);
+      const newDelta = changes[lastChangeId].delta.compose(delta);
 
       const fileChanges = changesOrder
         .slice(0, changesOrder.length - 1)
         .filter((id) => changes[id].path === file.path && changes[id].delta)
-        .map((id) => changes[id].delta!);
+        .map((id) => changes[id].delta);
 
       const before = deltaToString(fileChanges);
       const after = deltaToString([...fileChanges, newDelta]);
@@ -176,7 +175,7 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
         return;
       }
 
-      const newChangeId = id || ulid();
+      const newChangeId = generateId();
 
       const newChanges = produce(changes, (changesDraft) => {
         if (!isFileDepChange) {
@@ -255,7 +254,7 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
         set({ changes: newChanges });
       }
     } else if (!lastChange || lastChange.path !== path) {
-      const newChangeId = ulid();
+      const newChangeId = generateId();
 
       const newChanges = produce(changes, (changesDraft) => {
         changesDraft[newChangeId] = {
@@ -313,9 +312,9 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
     });
     set({ changes: newChanges });
 
-    const changesToSave = Object.values(get().changes)
-      .filter((change) => !change.isFileDepChange)
-      .filter((change) => !get().publishedChangeIds.includes(change.id));
+    const changesToSave = Object.values(get().changes).filter(
+      (change) => !get().publishedChangeIds.includes(change.id)
+    );
 
     const guideId = useGuideStore.getState().id;
 
@@ -378,39 +377,18 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
     }
   },
   storeChangesFromServer: async (changesToSave: Change[]) => {
-    const getFile = async (change: Change) => {
-      const file = useFilesStore
+    for (const change of changesToSave) {
+      const fileNode = useFilesStore
         .getState()
         .fileNodes.find((f) => f.path === change.path);
 
-      if (file) {
-        return file;
-      }
+      if (!fileNode) {
+        const content = deltaToString([change.delta]);
 
-      // file not in store, fetch it
-      return useFilesStore.getState().loadFile(change.path);
-    };
-
-    for (const change of changesToSave) {
-      const file = await getFile(change);
-
-      if (!file) {
-        throw new Error("Couldn't fetch file");
-      }
-
-      if (
-        file.status !== 'added' &&
-        !Object.values(get().changes).find(
-          (change) => change.path === file.path
-        )
-      ) {
-        // this is first time change is saved for a file
-        get().saveDelta({
-          id: ulid(decodeTime(changesToSave[0].id) - 1), // make sure this change is before the first change
-          file,
-          isFileDepChange: true,
-          delta: new Delta().insert(file.oldVal),
-          highlight: [],
+        useFilesStore.getState().storeFile({
+          oldVal: content,
+          newVal: content,
+          path: change.path,
         });
       }
     }
@@ -426,7 +404,9 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
       publishedChangeIds: changesToSave.map((c) => c.id),
     });
 
-    const firstDeltaChange = changesToSave.find((c) => !c.isFileNode);
+    const firstDeltaChange = changesToSave.find(
+      (c) => !c.isFileNode && !c.isFileDepChange
+    );
     if (firstDeltaChange) {
       useFilesStore.getState().setActiveFileByPath(firstDeltaChange.path);
       get().setActiveChangeId(firstDeltaChange.id);

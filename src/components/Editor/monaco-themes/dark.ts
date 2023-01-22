@@ -29,5 +29,6 @@ export const darkTheme: monaco.editor.IStandaloneThemeData = {
   ],
   colors: {
     'editor.background': `#18181b`,
+    'editor.lineHighlightBackground': '#18181b',
   },
 };

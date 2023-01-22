@@ -2,7 +2,9 @@ import create from 'zustand';
 
 import { IGuide } from '../../types/Guide';
 
-export const useGuideStore = create<IGuide>((set, get) => ({
+export const useGuideStore = create<
+  IGuide & { setGuide: (guide: IGuide) => void }
+>((set, get) => ({
   id: '',
   owner: '',
   createdBy: '',
@@ -10,4 +12,7 @@ export const useGuideStore = create<IGuide>((set, get) => ({
   baseSha: '',
   type: 'diff',
   canEdit: [],
+  changedFileRefs: [],
+  fileRefs: [],
+  setGuide: (guide) => set(guide),
 }));
