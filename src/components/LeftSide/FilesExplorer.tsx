@@ -10,6 +10,7 @@ import { useAtom } from 'jotai';
 import { uniq } from 'lodash';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useResizeDetector } from 'react-resize-detector';
+import { decodeTime } from 'ulid';
 
 import { pathsToTreeStructure } from '../../utils/pathsToTree';
 import { expandedFilesAtom } from '../store/atoms';
@@ -22,13 +23,33 @@ export function FilesExplorer() {
   const highlightChange = useChangesStore((s) =>
     s.activeChangeId ? s.changes[s.activeChangeId] : null
   );
+  const appliedPaths = useChangesStore((s) => {
+    const changeIds = Object.keys(s.changes).sort();
+    const activeChangeId = s.activeChangeId;
+    return uniq(
+      changeIds
+        .filter((id) =>
+          !activeChangeId ? false : decodeTime(id) <= decodeTime(activeChangeId)
+        )
+        .map((id) => s.changes[id].path)
+    );
+  });
   const fileRefs = useGuideStore((s) => s.fileRefs);
   const activeFile = useFilesStore((s) => s.activeFile);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const [expanded, setExpanded] = useAtom(expandedFilesAtom);
   const [wrapperHeight, setWrapperHeight] = useState(400);
 
-  const treeData = useMemo(() => pathsToTreeStructure(fileRefs), [fileRefs]);
+  const treeData = useMemo(() => {
+    const fromFileRefs: { path: string; type: string }[] = fileRefs;
+    const fromApplied = appliedPaths
+      .map((path) => ({ path, type: 'blob' }))
+      .filter((item) => {
+        return !fromFileRefs.find((fileRef) => fileRef.path === item.path);
+      });
+
+    return pathsToTreeStructure([...fromFileRefs, ...fromApplied]);
+  }, [fileRefs, appliedPaths]);
 
   const { ref } = useResizeDetector({
     onResize(_, height) {
@@ -68,7 +89,6 @@ export function FilesExplorer() {
         treeData={treeData}
         switcherIcon={<span></span>}
         icon={getIcon}
-        activeKey={activeFile?.path}
         selectedKeys={[activeFile?.path || '']}
         expandedKeys={expanded}
         height={wrapperHeight - 40}

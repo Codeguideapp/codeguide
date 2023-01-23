@@ -310,7 +310,7 @@ export default function Page() {
             <div className="w-56 rounded-2xl border border-neutral-600 bg-neutral-900 p-4 shadow-sm shadow-gray-500/10">
               <p className="mb-4 text-xl font-medium text-gray-50">Pro</p>
               <p className="text-3xl font-bold text-white">
-                {pricing === 'monthly' ? '$40' : '$35'}
+                {pricing === 'monthly' ? '$45' : '$39'}
                 <span className="text-sm text-gray-300">/ month</span>
               </p>
               <ul className="mt-6 mb-6 w-full text-sm text-gray-100">

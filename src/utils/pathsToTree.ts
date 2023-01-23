@@ -8,14 +8,17 @@ type TreeItem = {
   isLeaf: boolean;
   type: string;
   icon?: ReactElement | null;
-  url: string;
   children?: TreeItem[];
-  file?: RepoFileRef;
 };
 
 const ROOT = Symbol('root');
 
-export function pathsToTreeStructure(data: RepoFileRef[]): TreeItem[] {
+export function pathsToTreeStructure(
+  data: {
+    path: string;
+    type: string;
+  }[]
+): TreeItem[] {
   const references: Record<string | symbol, TreeItem> = {};
 
   references[ROOT] = {
@@ -23,7 +26,6 @@ export function pathsToTreeStructure(data: RepoFileRef[]): TreeItem[] {
     title: '',
     type: '',
     isLeaf: false,
-    url: '',
     children: [],
   };
 
@@ -35,9 +37,7 @@ export function pathsToTreeStructure(data: RepoFileRef[]): TreeItem[] {
       type: file.type,
       icon: null,
       key: file.path,
-      url: file.url,
       title: splittedPath[splittedPath.length - 1],
-      file,
     };
 
     // add item to parent cildren
