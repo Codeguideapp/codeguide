@@ -109,7 +109,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
         standaloneEditor.current.createDecorationsCollection(
           highlightDecorations(modelCurrent)
         );
-        standaloneEditor.current.revealRangeInCenterIfOutsideViewport(
+        standaloneEditor.current.revealRangeNearTop(
           highlightDecorations(modelCurrent)[0].range
         );
       } else if (noDeletes) {
@@ -134,9 +134,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
           ...decorations,
           ...highlightDecorations(modelCurrent),
         ]);
-        standaloneEditor.current.revealRangeInCenterIfOutsideViewport(
-          decorations[0].range
-        );
+        standaloneEditor.current.revealRangeNearTop(decorations[0].range);
       } else if (noInserts && prevValue) {
         // only deletes
         modelCurrent.setValue(prevValue);
@@ -159,9 +157,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
           ...decorations,
           ...highlightDecorations(modelCurrent),
         ]);
-        standaloneEditor.current.revealRangeInCenterIfOutsideViewport(
-          decorations[0].range
-        );
+        standaloneEditor.current.revealRangeNearTop(decorations[0].range);
       }
     } else {
       modelCurrent.setValue(currValue);
