@@ -1,14 +1,12 @@
 import classNames from 'classnames';
-import { useAtom } from 'jotai';
-import { useMemo, useState } from 'react';
-import Split from 'react-split';
+import { useMemo } from 'react';
 
 import { BottomBarEdit } from '../BottomBar/BottomBar';
 import { Comments } from '../Comments/Comments';
 import { Guide } from '../Guide/Guide';
 import { useActiveChange } from '../hooks/useActiveChange';
 import { useShallowChanges } from '../hooks/useShallowChanges';
-import { isEditing, stepControlHeightAtom } from '../store/atoms';
+import { isEditing } from '../store/atoms';
 import { Change, useChangesStore } from '../store/changes';
 import { FileNode, useFilesStore } from '../store/files';
 import { LoadingIcon } from '../svgIcons/LoadingIcon';
@@ -61,27 +59,11 @@ export function Editor() {
   const activeFile = useFilesStore((s) => s.activeFile);
   const unsavedFilePaths = useUnsavedFilePaths();
   const getChangeIndex = useChangesStore((s) => s.getChangeIndex);
-  const [stepControlHeight] = useAtom(stepControlHeightAtom);
-  const [isDragging, setDragging] = useState(false);
 
   return (
     <div className="main-right">
-      <Split
-        className={classNames({ 'split-editor': true, dragging: isDragging })}
-        direction="horizontal"
-        sizes={[75, 25]}
-        minSize={250}
-        gutterSize={5}
-        onDragStart={() => setDragging(true)}
-        onDragEnd={() => setDragging(false)}
-      >
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            position: 'relative',
-          }}
-        >
+      <div className="flex h-full">
+        <div className="relative flex w-[calc(100%_-_18rem)] flex-col">
           <div className="editor-top">
             <div
               className={classNames({
@@ -105,26 +87,25 @@ export function Editor() {
             <EditorToolbar />
           </div>
 
-          <Comments />
-          <div
-            className="flex flex-col bg-zinc-900"
-            style={{
-              marginTop: stepControlHeight,
-              height: `calc(100% - ${stepControlHeight}px)`,
-            }}
-          >
-            <div className="mt-2 w-full grow">
-              <GetEditorComponent
-                activeFile={activeFile}
-                activeChange={activeChange}
-              />
+          <div className="flex h-full flex-col">
+            <Comments />
+            <div className="flex h-full grow flex-col bg-zinc-900">
+              <div className="mt-2 w-full grow">
+                <GetEditorComponent
+                  activeFile={activeFile}
+                  activeChange={activeChange}
+                />
+              </div>
             </div>
           </div>
+
           {isEditing() && <BottomBarEdit />}
         </div>
 
-        <Guide />
-      </Split>
+        <div className="h-full w-72">
+          <Guide />
+        </div>
+      </div>
     </div>
   );
 }

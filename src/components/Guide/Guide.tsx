@@ -87,7 +87,7 @@ export function Guide() {
   }
 
   return (
-    <div className="guide">
+    <div className="guide h-full overflow-auto">
       <div className="body">
         {changesForGuide.map(
           ({ change, isBeforeActive, isAfterActive, active, preview }) => {
