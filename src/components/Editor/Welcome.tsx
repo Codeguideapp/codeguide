@@ -9,15 +9,18 @@ export function Welcome() {
   const stepsNum = useChangesStore((s) => Object.keys(s.changes).length);
 
   return (
-    <div className="h-full overflow-auto p-5 bg-zinc-900">
+    <div className="h-full overflow-auto bg-zinc-900 p-5">
       {stepsNum === 0 && !isEditing() ? (
         <div>
           <p className="mb-2">
             It looks like there aren&apos;t any guide steps saved at the moment
           </p>
           <p>
-            If you are the author of the guide, you can edit it{' '}
-            <Link href={`${guideId}/edit`}>here</Link>.
+            If you are the author of the guide, you can add steps in the{' '}
+            <Link className="font-bold" href={`${guideId}/edit`}>
+              edit mode
+            </Link>
+            .
           </p>
         </div>
       ) : null}

@@ -8,6 +8,7 @@ import { useGuideStore } from '../store/guide';
 const { DirectoryTree } = Tree;
 
 export function ChangedFiles() {
+  const type = useGuideStore((s) => s.type);
   const changedFileRefs = useGuideStore((s) => s.changedFileRefs);
   const activeFile = useFilesStore((s) => s.activeFile);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
@@ -27,6 +28,14 @@ export function ChangedFiles() {
 
     return treeData;
   }, [changedFileRefs]);
+
+  if (type === 'browse') {
+    return (
+      <div className="file-tree p-4">
+        File changes are available only in code review guides.
+      </div>
+    );
+  }
 
   if (!changedFileRefs || changedFileRefs.length === 0) {
     return <div className="file-tree">loading...</div>;

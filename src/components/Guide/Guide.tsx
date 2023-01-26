@@ -7,6 +7,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classNames from 'classnames';
+import Link from 'next/link';
 import { useEffect, useMemo, useRef } from 'react';
 import scrollIntoView from 'scroll-into-view-if-needed';
 
@@ -76,8 +77,27 @@ export function Guide() {
     });
   }, [activeChangeId, getChangeIndex]);
 
-  if (changesForGuide.length === 0) {
-    return <div className="guide p-4 opacity-70">No steps saved...</div>;
+  if (isEditing() && changesForGuide.length === 0) {
+    return <div className="guide h-full p-4">No steps saved...</div>;
+  }
+
+  if (
+    !isEditing() &&
+    (changesForGuide.length === 0 ||
+      (changesForGuide.length === 1 && changesForGuide[0]?.change.isFileNode))
+  ) {
+    return (
+      <div className="guide h-full p-4">
+        <p className="pb-4">The guide is empty...</p>
+        <p>
+          If you are the author of the guide, you can add steps in the{' '}
+          <Link className="font-bold" href={'/edit'}>
+            edit mode
+          </Link>
+          .
+        </p>
+      </div>
+    );
   }
 
   const lastChange = changesForGuide[changesForGuide.length - 1];

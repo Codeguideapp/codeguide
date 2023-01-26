@@ -19,11 +19,15 @@ import { api } from '../utils/api';
 import { useGuideStore } from './store/guide';
 import { useChangesStore } from './store/changes';
 import { useCommentsStore } from './store/comments';
+import { useAtom } from 'jotai';
+import { activeSectionAtom } from './store/atoms';
 
 monaco.editor.defineTheme('darkInvertedDiff', darkThemeInvertedDif);
 monaco.editor.defineTheme('darkTheme', darkTheme);
 
 export default function Loader() {
+  const [, setActiveSection] = useAtom(activeSectionAtom);
+
   const res = api.guide.getGuide.useQuery(
     {
       guideId: document.location.pathname.split('/')[1],
@@ -41,8 +45,11 @@ export default function Loader() {
       useGuideStore.getState().setGuide(res.data.guide);
       useChangesStore.getState().storeChangesFromServer(res.data.changes);
       useCommentsStore.getState().storeCommentsFromServer(res.data.comments);
+      if (res.data.guide.type === 'browse') {
+        setActiveSection('filesExplorer');
+      }
     }
-  }, [res.data]);
+  }, [res.data, setActiveSection]);
 
   useEffect(() => {
     Mousetrap.bindGlobal(['command+s', 'ctrl+s'], function (e) {
