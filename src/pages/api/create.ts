@@ -114,7 +114,8 @@ export default async function handler(
 
     await saveGuide(guide);
 
-    return res.status(200).json({ guide });
+    // redirect to the guide
+    return res.status(303).redirect(`/${guide.id}/edit`);
   } catch (error) {
     if (error instanceof Error && error.message) {
       return res.status(400).json({ message: error.message });
