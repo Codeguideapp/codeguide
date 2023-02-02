@@ -1,3 +1,4 @@
+import * as monaco from 'monaco-editor';
 import create from 'zustand';
 
 import { fetchWithThrow } from '../../utils/fetchWithThrow';
@@ -25,6 +26,8 @@ export type RepoFileRef = {
 interface FilesState {
   fileNodes: FileNode[];
   activeFile?: FileNode;
+  activeFileModModel: monaco.editor.ITextModel;
+  activeFileOrgModel: monaco.editor.ITextModel;
   undraftActiveFile: () => void;
   setActiveFileByPath: (path: string | undefined) => Promise<void>;
   setActiveFile: (file: FileNode) => void;
@@ -42,9 +45,29 @@ interface FilesState {
 }
 
 export const useFilesStore = create<FilesState>((set, get) => ({
+  activeFileModModel: monaco.editor.createModel('', 'typescript'),
+  activeFileOrgModel: monaco.editor.createModel('', 'typescript'),
   fileNodes: [],
+  getActiveFileModifiedModel: () => {
+    return monaco.editor.createModel('', 'typescript');
+  },
   setActiveFile: (activeFile: FileNode) => {
-    set({ activeFile });
+    get().activeFileModModel.dispose();
+    get().activeFileOrgModel.dispose();
+
+    set({
+      activeFile,
+      activeFileModModel: monaco.editor.createModel(
+        '',
+        undefined,
+        monaco.Uri.file(activeFile.path)
+      ),
+      activeFileOrgModel: monaco.editor.createModel(
+        '',
+        undefined,
+        monaco.Uri.file(activeFile.path)
+      ),
+    });
   },
   setFileNodes: (fileNodes: FileNode[]) => {
     set({ fileNodes });

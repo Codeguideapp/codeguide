@@ -5,11 +5,10 @@ import Delta from 'quill-delta';
 import { useEffect, useRef } from 'react';
 
 import { composeDeltas, getFileContent } from '../../utils/deltaUtils';
-import { modifiedModel, originalModel, previewModel } from '../../utils/monaco';
 import { usePrevious } from '../hooks/usePrevious';
 import { showWhitespaceAtom } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
-import { FileNode } from '../store/files';
+import { FileNode, useFilesStore } from '../store/files';
 import { useHighlight } from './useHighlight';
 
 export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
@@ -24,6 +23,9 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
   const savedChangesLength = useChangesStore(
     (s) => Object.values(s.changes).filter((c) => !c.isDraft).length
   );
+  const modifiedModel = useFilesStore((s) => s.activeFileModModel);
+  const originalModel = useFilesStore((s) => s.activeFileOrgModel);
+
   const currentVal = useChangesStore((s) => {
     const previousChangeId = findLast(
       Object.keys(s.changes).sort(),
@@ -122,9 +124,6 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
 
     if (modifiedModel.getValue() !== currentVal) {
       modifiedModel.setValue(currentVal);
-    }
-    if (previewModel.getValue() !== currentVal) {
-      previewModel.setValue(currentVal);
     }
     if (originalModel.getValue() !== goal) {
       originalModel.setValue(goal);

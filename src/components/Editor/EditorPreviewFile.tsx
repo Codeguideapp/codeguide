@@ -4,10 +4,9 @@ import Delta from 'quill-delta';
 import { useEffect, useRef } from 'react';
 
 import { composeDeltas, getFileContent } from '../../utils/deltaUtils';
-import { modifiedModel } from '../../utils/monaco';
 import { isEditing } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
-import { FileNode } from '../store/files';
+import { FileNode, useFilesStore } from '../store/files';
 import { useHighlight } from './useHighlight';
 
 export function EditorPreviewFile({
@@ -26,6 +25,7 @@ export function EditorPreviewFile({
   const savedChangesLength = useChangesStore(
     (s) => Object.values(s.changes).filter((c) => !c.isDraft).length
   );
+  const modifiedModel = useFilesStore((s) => s.activeFileModModel);
 
   const currentVal = useChangesStore((s) => {
     // refactor: better way to name vars

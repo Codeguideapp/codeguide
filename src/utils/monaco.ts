@@ -1,10 +1,6 @@
 import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 
-export const blankModel = monaco.editor.createModel('', 'typescript');
-export const modifiedModel = monaco.editor.createModel('', 'typescript');
-export const previewModel = monaco.editor.createModel('', 'typescript');
-export const originalModel = monaco.editor.createModel('', 'typescript');
 monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
   noSemanticValidation: true,
   noSyntaxValidation: true,
