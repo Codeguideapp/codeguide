@@ -1,12 +1,17 @@
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faComment } from '@fortawesome/free-solid-svg-icons';
 
+import { useChangesStore } from '../store/changes';
 import { StepActions } from './StepActions';
 import { WriteComment } from './WriteComment';
 
 library.add(faComment);
 
 export function BottomBarEdit() {
+  const activeChangeId = useChangesStore((s) => s.activeChangeId);
+
+  if (!activeChangeId) return null;
+
   return (
     <div className="step-controls absolute bottom-0 right-0 left-0  bg-zinc-900">
       <div

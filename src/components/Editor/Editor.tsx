@@ -64,7 +64,7 @@ export function Editor() {
     <div className="main-right">
       <div className="flex h-full">
         <div className="relative flex w-[calc(100%_-_18rem)] flex-col">
-          <div className="editor-top">
+          <div className="editor-top flex h-[30px] w-full items-center justify-between bg-zinc-900">
             <div
               className={classNames({
                 filename: true,

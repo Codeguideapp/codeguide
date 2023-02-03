@@ -121,10 +121,6 @@ body {
   color: #8d8d8d;
 }
 
-/* .file-tree .tree-file-node.completed {
-  color: #35b05f;
-} */
-
 .file-tree .ant-tree .ant-tree-treenode {
   padding-bottom: 2px;
 }
@@ -242,79 +238,6 @@ code {
   background: #2f2f2f;
 }
 
-.timeline {
-  background: var(--zinc-800);
-}
-
-.timeline-top {
-  background: var(--zinc-800);
-  border-bottom: 1px solid #191c1f;
-  text-align: center;
-  display: flex;
-  justify-content: space-between;
-}
-.timeline-top > div {
-  width: 100px;
-}
-.timeline-top .timeline-menu {
-  display: flex;
-  padding-left: 10px;
-  align-items: center;
-  font-size: 12px;
-  color: #707070;
-}
-.timeline-top .media-controls {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  padding-left: 20px;
-}
-.timeline-top .media-controls .speed {
-  font-size: 10px;
-  color: #8f8f8f;
-  padding-left: 5px;
-  font-family: 'Inconsolata';
-  cursor: default;
-}
-.timeline-top .media-controls svg {
-  padding: 0 4px;
-  opacity: 0.8;
-  cursor: pointer;
-}
-.timeline-top .media-controls svg:hover {
-  opacity: 1;
-}
-.timeline-top .media-controls svg.disable {
-  opacity: 0.2;
-  cursor: default;
-}
-.timeline-top .ant-slider:hover .ant-slider-track,
-.timeline-top .ant-slider .ant-slider-track {
-  background-color: #474747;
-}
-.timeline-top .ant-slider .ant-slider-rail,
-.timeline-top .ant-slider:hover .ant-slider-rail {
-  background-color: var(--zinc-900);
-}
-.timeline-top .ant-slider .ant-slider-handle,
-.timeline-top .ant-slider:hover .ant-slider-handle {
-  background-color: #7e7e7e;
-  border: solid 2px #202428;
-}
-.timeline-top .ant-slider-handle:focus {
-  box-shadow: none;
-}
-
-.editor-top {
-  background: var(--zinc-900);
-  height: 30px;
-  width: 100%;
-  text-align: left;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
 .editor-top .filename {
   font-family: 'Roboto';
   padding: 0 10px;
@@ -363,17 +286,6 @@ code {
   width: 200px;
   direction: rtl;
   text-align: left;
-}
-
-.editor-toolbar {
-  display: flex;
-  align-items: center;
-  height: 100%;
-  padding-left: 10px;
-}
-.editor-toolbar svg {
-  cursor: pointer;
-  margin-left: 10px;
 }
 
 .monaco.edit-mode .diffglyph {
@@ -434,14 +346,6 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   height: 100%;
   box-sizing: border-box;
 }
-/* .highlight-cursor::after {
-  position: absolute;
-  content: ' ';
-  border: 3px solid orange;
-  border-radius: 4px;
-  left: -4px;
-  top: -5px;
-} */
 
 .cursor-color-replace,
 .cursor-color-replace::after {

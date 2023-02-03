@@ -169,26 +169,6 @@
   bottom: 25px;
 }
 
-.guide .step .icons {
-  position: absolute;
-  top: 2px;
-  right: 10px;
-  padding: 0 5px;
-  height: calc(100% - 3px);
-  background: inherit;
-  display: flex;
-  align-items: center;
-}
-
-.guide .step .icons svg {
-  margin-left: 10px;
-}
-.guide .step .icons svg:first-child {
-  margin-left: 0;
-}
-.guide .step .icons svg.active {
-  color: yellow;
-}
 .guide .body .step:last-child {
   margin-bottom: 0;
 }
@@ -207,16 +187,6 @@
 }
 
 .guide .step.after-active .step-file,
-.guide .step.after-active .icons svg,
 .guide .step.after-active .delta-preview {
   opacity: 0.4;
-}
-.guide .step.draft .icons svg {
-  opacity: 0.6;
-}
-.guide .step:not(.draft) .icons svg {
-  opacity: 0.2;
-}
-.guide .step .icons svg:hover {
-  opacity: 1;
 }

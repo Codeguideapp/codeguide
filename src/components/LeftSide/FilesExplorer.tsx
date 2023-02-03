@@ -13,12 +13,13 @@ import { useResizeDetector } from 'react-resize-detector';
 import { decodeTime } from 'ulid';
 
 import { pathsToTreeStructure } from '../../utils/pathsToTree';
-import { expandedFilesAtom } from '../store/atoms';
+import { expandedFilesAtom, isEditing } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
 import { useFilesStore } from '../store/files';
 import { useGuideStore } from '../store/guide';
 
 export function FilesExplorer() {
+  const setActiveChangeId = useChangesStore((s) => s.setActiveChangeId);
   const treeRef = React.useRef<any>();
   const highlightChange = useChangesStore((s) =>
     s.activeChangeId ? s.changes[s.activeChangeId] : null
@@ -106,6 +107,9 @@ export function FilesExplorer() {
           }
 
           if (node.type === 'blob') {
+            if (isEditing()) {
+              setActiveChangeId(null);
+            }
             setActiveFileByPath(node.key);
           }
         }}

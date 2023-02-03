@@ -17,7 +17,7 @@ export function EditorToolbar() {
   const [showWhitespace, setShowWhitespace] = useAtom(showWhitespaceAtom);
 
   return (
-    <div className="editor-toolbar">
+    <div className="flex h-full items-center">
       {activeFile?.isFileDiff && (
         <Tooltip title="Show Leading/Trailing Whitespace Differences">
           <img

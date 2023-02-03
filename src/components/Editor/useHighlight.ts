@@ -47,6 +47,6 @@ export function useHighlight() {
         highlight,
       });
     },
-    [activeFile, lastHighlight, saveDelta]
+    [activeFile, lastHighlight, modifiedModel, saveDelta]
   );
 }

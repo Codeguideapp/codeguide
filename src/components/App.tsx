@@ -18,6 +18,8 @@ import { useGuideStore } from './store/guide';
 
 export function App() {
   const guideId = useGuideStore((s) => s.id);
+  const guideType = useGuideStore((s) => s.type);
+  const prNum = useGuideStore((s) => s.prNum);
   const repository = useGuideStore((s) => s.repository);
   const owner = useGuideStore((s) => s.owner);
   const publishComments = useCommentsStore((s) => s.publishComments);
@@ -41,17 +43,26 @@ export function App() {
     }
   };
 
+  const link =
+    guideType === 'diff'
+      ? `${owner}/${repository}#${prNum}`
+      : `${owner}/${repository}`;
+
   return (
     <div>
       <div className="top-bar">
         <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <span style={{ fontWeight: 'bold', fontSize: 12 }}>CodeGuide</span>
-          <div className="action">
+          <Link className="text-xs font-bold hover:text-gray-400" href="/">
+            CodeGuide
+          </Link>
+          <Link
+            className="flex items-center gap-1 text-xs hover:text-gray-400"
+            href={`https://github.com/${link}`}
+            target="_blank"
+          >
             <FontAwesomeIcon icon={faGithub} />
-            <span>
-              {owner}/{repository}#122
-            </span>
-          </div>
+            <span>{link}</span>
+          </Link>
         </div>
 
         <div className="action flex gap-2">

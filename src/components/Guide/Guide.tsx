@@ -8,7 +8,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classNames from 'classnames';
 import Link from 'next/link';
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import scrollIntoView from 'scroll-into-view-if-needed';
 
 import { getFileContent } from '../../utils/deltaUtils';
@@ -28,27 +28,26 @@ export function Guide() {
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const activeChangeId = useChangesStore((s) => s.activeChangeId);
   const savedComments = useCommentsStore((s) => s.savedComments);
-  const changes = useChangesStore((s) => s.changes);
-  const changesForGuide = useMemo(() => {
-    const changesOrder = Object.keys(changes).sort();
-    const activeChangeIndex = activeChangeId
-      ? changesOrder.indexOf(activeChangeId)
+  const changesForGuide = useChangesStore((s) => {
+    const changesOrder = Object.keys(s.changes).sort();
+    const activeChangeIndex = s.activeChangeId
+      ? changesOrder.indexOf(s.activeChangeId)
       : null;
 
     return changesOrder
-      .filter((id) => !changes[id].isFileDepChange)
-      .map((id) => changes[id])
+      .filter((id) => !s.changes[id].isFileDepChange)
+      .map((id) => s.changes[id])
       .map((change) => {
         const preview = getStepPreview({
           delta: change.delta,
           before: getFileContent({
             upToChangeId: change.id,
-            changes: changes,
+            changes: s.changes,
             excludeChange: true,
           }),
           after: getFileContent({
             upToChangeId: change.id,
-            changes: changes,
+            changes: s.changes,
             excludeChange: false,
           }),
           selections: change.highlight,
@@ -63,10 +62,10 @@ export function Guide() {
             activeChangeIndex === null ? true : changeIndex < activeChangeIndex,
           isAfterActive:
             activeChangeIndex !== null && changeIndex > activeChangeIndex,
-          active: change.id === activeChangeId,
+          active: change.id === s.activeChangeId,
         };
       });
-  }, [changes, activeChangeId]);
+  });
 
   useEffect(() => {
     if (!activeChangeRef.current) return;
@@ -102,7 +101,7 @@ export function Guide() {
 
   const lastChange = changesForGuide[changesForGuide.length - 1];
 
-  if (!isEditing() && lastChange.change.isFileNode) {
+  if (lastChange.change.isFileNode) {
     changesForGuide.pop();
   }
 
@@ -110,7 +109,7 @@ export function Guide() {
     <div className="guide h-full overflow-auto">
       <div className="body">
         {changesForGuide.map(
-          ({ change, isBeforeActive, isAfterActive, active, preview }) => {
+          ({ change, isBeforeActive, isAfterActive, active, preview }, i) => {
             return (
               <div
                 ref={active ? activeChangeRef : null}
@@ -125,7 +124,6 @@ export function Guide() {
                 key={change.id}
                 onClick={() => {
                   if (change.isFileNode) return;
-
                   setActiveChangeId(change.id);
                   setActiveFileByPath(change.path);
                 }}
@@ -152,9 +150,9 @@ export function Guide() {
                       </div>
                     </>
                   )}
-                  {savedComments[change.id] && (
+
+                  {!change.isFileNode && (
                     <div
-                      title={savedComments[change.id].length + ' comments'}
                       style={{ height: 'calc(100% - 2px)' }}
                       className={
                         'absolute right-3 px-2 ' +
@@ -163,14 +161,19 @@ export function Guide() {
                     >
                       <div
                         className={
-                          'flex h-full items-center text-zinc-400 ' +
+                          'flex h-full items-center gap-2 text-zinc-400 ' +
                           (isBeforeActive ? 'opacity-60' : 'opacity-30')
                         }
                       >
-                        <FontAwesomeIcon
-                          style={{ fontSize: 12 }}
-                          icon={faMessage}
-                        />
+                        {savedComments[change.id] && (
+                          <FontAwesomeIcon
+                            title={
+                              'Comments: ' + savedComments[change.id].length
+                            }
+                            style={{ fontSize: 12 }}
+                            icon={faMessage}
+                          />
+                        )}
                       </div>
                     </div>
                   )}
@@ -178,32 +181,6 @@ export function Guide() {
               </div>
             );
           }
-        )}
-
-        {isEditing() && !lastChange.change.isDraft && (
-          <div
-            className={classNames({
-              placeholder: true,
-              step: true,
-              draft: true,
-              active: !activeChangeId,
-            })}
-          >
-            <div className="flex items-center">
-              <div className="step-line-v last"></div>
-              <div className="step-circle"></div>
-              <>
-                <div className="step-line-h"></div>
-                <div
-                  className="step-code"
-                  onClick={() => {
-                    setActiveChangeId(null);
-                    setActiveFileByPath(lastChange.change.path);
-                  }}
-                ></div>
-              </>
-            </div>
-          </div>
         )}
       </div>
     </div>

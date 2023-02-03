@@ -6,6 +6,7 @@ import create from 'zustand';
 import { calcStat, composeDeltas, deltaToString } from '../../utils/deltaUtils';
 import { fetchWithThrow } from '../../utils/fetchWithThrow';
 import { generateId } from '../../utils/generateId';
+import { isEditing } from './atoms';
 import { useCommentsStore } from './comments';
 import { FileNode, useFilesStore } from './files';
 import { useGuideStore } from './guide';
@@ -47,6 +48,7 @@ interface ChangesState {
   saveDelta: (params: SaveDeltaParams) => void;
   saveFileNode: (path: string) => void;
   deleteChange: (id: string) => void;
+  deleteUntilChange: (id: string) => void;
   undraftChange: (id: string) => void;
   publishChanges: () => Promise<{ success: boolean; error?: string }>;
   storeChangesFromServer: (changesToSave: Change[]) => Promise<any>;
@@ -276,19 +278,68 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
   },
   deleteChange: (id: string) => {
     const changes = get().changes;
+    const change = changes[id];
     const changesOrder = Object.keys(changes).sort();
-
-    if (last(changesOrder) !== id) {
-      throw new Error('only last step can be deleted');
-    }
+    const changeIndex = changesOrder.indexOf(id);
 
     const newChanges = produce(changes, (changesDraft) => {
+      const changeIdBefore = changesOrder[changeIndex - 1];
+      const changeIdAfter = changesOrder[changeIndex + 1];
+      const changeBefore = changesDraft[changeIdBefore];
+      const changeAfter = changesDraft[changeIdAfter];
+
+      if (
+        changeAfter?.path !== change.path &&
+        changeBefore?.path === change.path
+      ) {
+        delete changesDraft[changeIdBefore];
+      }
       delete changesDraft[id];
     });
 
     set({ changes: newChanges });
 
-    if (get().activeChangeId === id) {
+    const lastChangeId = last(Object.keys(get().changes).sort());
+    if (lastChangeId) {
+      const lastChange = changes[lastChangeId];
+      useFilesStore.getState().setActiveFileByPath(changes[lastChangeId].path);
+
+      if (lastChange.isFileNode) {
+        set({ activeChangeId: null });
+      } else {
+        set({ activeChangeId: lastChangeId });
+      }
+    } else {
+      useFilesStore.setState({ activeFile: undefined });
+      set({ activeChangeId: null });
+    }
+  },
+  deleteUntilChange: (id: string) => {
+    const changes = get().changes;
+    const changesOrder = Object.keys(changes).sort();
+
+    const changesFromId = changesOrder.slice(changesOrder.indexOf(id));
+
+    const newChanges = produce(changes, (changesDraft) => {
+      for (const id of changesFromId) {
+        delete changesDraft[id];
+      }
+    });
+
+    set({ changes: newChanges });
+
+    const lastChangeId = last(Object.keys(get().changes).sort());
+    if (lastChangeId) {
+      const lastChange = changes[lastChangeId];
+      useFilesStore.getState().setActiveFileByPath(changes[lastChangeId].path);
+
+      if (lastChange.isFileNode) {
+        set({ activeChangeId: null });
+      } else {
+        set({ activeChangeId: lastChangeId });
+      }
+    } else {
+      useFilesStore.setState({ activeFile: undefined });
       set({ activeChangeId: null });
     }
   },
@@ -404,12 +455,22 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
       publishedChangeIds: changesToSave.map((c) => c.id),
     });
 
-    const firstDeltaChange = changesToSave.find(
+    const firstStep = changesToSave.find(
       (c) => !c.isFileNode && !c.isFileDepChange
     );
-    if (firstDeltaChange) {
-      useFilesStore.getState().setActiveFileByPath(firstDeltaChange.path);
-      get().setActiveChangeId(firstDeltaChange.id);
+    if (!isEditing() && firstStep) {
+      useFilesStore.getState().setActiveFileByPath(firstStep.path);
+      get().setActiveChangeId(firstStep.id);
     }
   },
 }));
+
+export function isHighlightChange(change: Change) {
+  return (
+    change.highlight.length &&
+    !change.isFileNode &&
+    !change.isFileDepChange &&
+    change.stat[0] === 0 &&
+    change.stat[1] === 0
+  );
+}

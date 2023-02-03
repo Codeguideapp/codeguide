@@ -34,7 +34,7 @@ export function WriteComment() {
       onChange={handleChange}
       value={value}
       placeholder={`Write a note/explanation for step ${
-        (activeChangeId ? getChangeIndex(activeChangeId) : 0) + 1
+        activeChangeId ? getChangeIndex(activeChangeId) : 0
       } (optional)`}
     />
   );

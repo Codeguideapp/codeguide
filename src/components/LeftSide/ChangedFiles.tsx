@@ -2,6 +2,8 @@ import { Tree } from 'antd';
 import { DataNode } from 'antd/lib/tree';
 import React, { useMemo } from 'react';
 
+import { isEditing } from '../store/atoms';
+import { useChangesStore } from '../store/changes';
 import { useFilesStore } from '../store/files';
 import { useGuideStore } from '../store/guide';
 
@@ -10,6 +12,7 @@ const { DirectoryTree } = Tree;
 export function ChangedFiles() {
   const type = useGuideStore((s) => s.type);
   const changedFileRefs = useGuideStore((s) => s.changedFileRefs);
+  const setActiveChangeId = useChangesStore((s) => s.setActiveChangeId);
   const activeFile = useFilesStore((s) => s.activeFile);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
 
@@ -52,6 +55,9 @@ export function ChangedFiles() {
         activeKey={activeFile?.path}
         selectedKeys={[activeFile?.path || '']}
         onSelect={(selected) => {
+          if (isEditing()) {
+            setActiveChangeId(null);
+          }
           setActiveFileByPath(selected[0] as string);
         }}
       />
