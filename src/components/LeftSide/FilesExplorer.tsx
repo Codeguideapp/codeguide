@@ -12,11 +12,11 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useResizeDetector } from 'react-resize-detector';
 import { decodeTime } from 'ulid';
 
-import { pathsToTreeStructure } from '../../utils/pathsToTree';
 import { expandedFilesAtom, isEditing } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
 import { useFilesStore } from '../store/files';
 import { useGuideStore } from '../store/guide';
+import { pathsToTreeStructure } from './pathsToTree';
 
 export function FilesExplorer() {
   const setActiveChangeId = useChangesStore((s) => s.setActiveChangeId);

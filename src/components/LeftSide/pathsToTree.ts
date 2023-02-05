@@ -1,7 +1,5 @@
 import { ReactElement } from 'react-markdown/lib/react-markdown';
 
-import { RepoFileRef } from '../components/store/files';
-
 type TreeItem = {
   key: string;
   title: string;

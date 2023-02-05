@@ -49,7 +49,7 @@ export function getStepPreview({
           value = '[whitespace]';
         }
 
-        let code = lineContent;
+        const code = lineContent;
 
         if (!preview[lineNum]) {
           preview[lineNum] = [];
@@ -100,7 +100,7 @@ function appendHighlightPreview(
         value = '[whitespace]';
       }
 
-      let code = lineContent;
+      const code = lineContent;
 
       if (!preview[lineNum]) {
         preview[lineNum] = [];

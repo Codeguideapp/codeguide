@@ -1,10 +1,10 @@
+import { customAlphabet } from 'nanoid';
 import { NextApiRequest, NextApiResponse } from 'next';
 import { Octokit } from 'octokit';
 
 import { getUserSession } from '../../server/getUserSession';
 import { saveGuide } from '../../server/saveGuide';
 import { IGuide } from '../../types/Guide';
-import { generateGuideId } from '../../utils/generateGuideId';
 import { parseGithubUrl } from '../../utils/parseGithubUrl';
 
 export default async function handler(
@@ -121,7 +121,10 @@ export default async function handler(
       return res.status(400).json({ message: error.message });
     }
   }
+}
 
-  // do something with the url here
-  res.status(200).json({ message: 'URL received' });
+function generateGuideId() {
+  const alphabet = '0123456789abcdefghijklmnopqrstuvwxyz';
+  const nanoid = customAlphabet(alphabet, 9);
+  return nanoid();
 }
