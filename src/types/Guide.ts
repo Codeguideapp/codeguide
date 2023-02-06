@@ -28,6 +28,7 @@ export const Guide = z.object({
       ]),
     })
   ),
+  createdAt: z.number(),
 });
 
 export type IGuide = z.infer<typeof Guide>;

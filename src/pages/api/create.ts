@@ -110,6 +110,7 @@ export default async function handler(
         type: file.type,
       })),
       changedFileRefs,
+      createdAt: Date.now(),
     };
 
     await saveGuide(guide);

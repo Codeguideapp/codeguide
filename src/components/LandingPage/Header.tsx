@@ -2,8 +2,9 @@ import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Head from 'next/head';
 import Link from 'next/link';
-import { signIn, signOut, useSession } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 
+import { ProfileMenu } from '../ProfileMenu';
 import { LogoIcon } from '../svgIcons/LogoIcon';
 
 export function Header() {
@@ -41,7 +42,6 @@ export function Header() {
                       Features
                     </Link>
                   </li>
-
                   <li>
                     <Link
                       className="text-white transition hover:text-white/75"
@@ -50,7 +50,6 @@ export function Header() {
                       Pricing
                     </Link>
                   </li>
-
                   <li>
                     <Link
                       className="text-white transition hover:text-white/75"
@@ -61,15 +60,7 @@ export function Header() {
                   </li>
 
                   <li>
-                    {session ? (
-                      <span
-                        onClick={() => signOut()}
-                        className="flex cursor-pointer items-center justify-center gap-2  rounded-full border-white border-opacity-20 px-4 py-3 text-sm font-medium text-white hover:bg-white hover:text-black"
-                      >
-                        <FontAwesomeIcon icon={faGithub} className="text-lg" />
-                        <span>Log out</span>
-                      </span>
-                    ) : (
+                    {!session ? (
                       <span
                         onClick={() => signIn('github')}
                         className="flex cursor-pointer items-center justify-center gap-2  rounded-full border-white border-opacity-20 px-4 py-3 text-sm font-medium text-white hover:bg-white hover:text-black"
@@ -77,6 +68,8 @@ export function Header() {
                         <FontAwesomeIcon icon={faGithub} className="text-lg" />
                         <span>Log in</span>
                       </span>
+                    ) : (
+                      <ProfileMenu />
                     )}
                   </li>
                 </ul>

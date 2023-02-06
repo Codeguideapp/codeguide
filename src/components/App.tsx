@@ -1,22 +1,24 @@
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
-import { faSave } from '@fortawesome/free-solid-svg-icons';
+import { faEarthAmericas, faEdit } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { message } from 'antd';
 import classNames from 'classnames';
 import Link from 'next/link';
-import { signOut } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useState } from 'react';
 import Split from 'react-split';
 
 import { Editor } from './Editor/Editor';
 import { LeftSide } from './LeftSide/LeftSide';
 import { PrevNextControls } from './PrevNextControls';
+import { ProfileMenu } from './ProfileMenu';
 import { isEditing } from './store/atoms';
 import { useChangesStore } from './store/changes';
 import { useCommentsStore } from './store/comments';
 import { useGuideStore } from './store/guide';
 
 export function App() {
+  const { data: session } = useSession();
   const guideId = useGuideStore((s) => s.id);
   const guideType = useGuideStore((s) => s.type);
   const prNum = useGuideStore((s) => s.prNum);
@@ -45,7 +47,7 @@ export function App() {
 
   const link =
     guideType === 'diff'
-      ? `${owner}/${repository}#${prNum}`
+      ? `${owner}/${repository}/pull/${prNum}`
       : `${owner}/${repository}`;
 
   return (
@@ -66,26 +68,46 @@ export function App() {
         </div>
 
         <div className="action flex gap-2">
-          {isEditing() &&
-            (isSaving ? (
-              <span>saving...</span>
-            ) : (
-              <div
-                onClick={shouldPublish ? handlePublish : undefined}
-                className={shouldPublish ? '' : 'opacity-30'}
-              >
-                <FontAwesomeIcon icon={faSave} />
-                <span>Save</span>
-              </div>
-            ))}
-
-          {isEditing() ? (
-            <Link href={`/${guideId}`}>preview</Link>
+          {session ? (
+            <>
+              {isEditing() ? (
+                <>
+                  {isSaving ? (
+                    <span>publishing...</span>
+                  ) : (
+                    <div
+                      onClick={shouldPublish ? handlePublish : undefined}
+                      className="font-small flex cursor-pointer items-center justify-center gap-1 px-3 py-2 text-xs text-white hover:text-gray-400"
+                      style={shouldPublish ? {} : { opacity: 0.3 }}
+                    >
+                      <FontAwesomeIcon
+                        icon={faEarthAmericas}
+                        className="text-md"
+                      />
+                      <span>Publish guide</span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <Link
+                  className="font-small flex items-center justify-center gap-1 px-3 py-2 text-xs text-white hover:text-gray-400"
+                  href={`/${guideId}/edit`}
+                >
+                  <FontAwesomeIcon icon={faEdit} className="text-md" />
+                  <span>Edit guide</span>
+                </Link>
+              )}
+              <ProfileMenu />
+            </>
           ) : (
-            <Link href={`/${guideId}/edit`}>edit</Link>
+            <span
+              onClick={() => signIn('github')}
+              className="font-small flex cursor-pointer items-center justify-center gap-1 px-3 py-2 text-xs text-white hover:text-gray-400"
+            >
+              <FontAwesomeIcon icon={faGithub} className="text-md" />
+              <span>Log in</span>
+            </span>
           )}
-
-          <span onClick={() => signOut()}>logout</span>
         </div>
       </div>
       <div className="fixed top-[40px] bottom-0 left-0 right-0">

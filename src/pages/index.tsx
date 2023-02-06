@@ -1,3 +1,5 @@
+import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Switch } from 'antd';
 import Head from 'next/head';
 import Image from 'next/image';
@@ -8,15 +10,17 @@ import { useState } from 'react';
 
 import { Footer } from '../components/LandingPage/Footer';
 import { Header } from '../components/LandingPage/Header';
-import { LogoIcon } from '../components/svgIcons/LogoIcon';
 
 export default function Page() {
   const [pricing, setPricing] = useState<'monthly' | 'yearly'>('yearly');
   const { push } = useRouter();
   const { data: session } = useSession();
+  const [isSubmitting, setSubmitting] = useState(false);
 
   const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setSubmitting(true);
 
     const target = e.target as typeof e.target & {
       url: { value: string };
@@ -69,7 +73,7 @@ export default function Page() {
                   type="submit"
                   className="flex cursor-pointer items-center justify-center gap-2  rounded-lg border border-white bg-white px-6 py-3 text-sm font-medium text-black focus:outline-none"
                 >
-                  <span>Create guide</span>
+                  <span>{isSubmitting ? 'Creating...' : 'Create guide'}</span>
                 </button>
               </form>
               <div className="flex justify-center">
@@ -77,7 +81,7 @@ export default function Page() {
                   href="/example"
                   className="flex items-center gap-2 text-white opacity-60 hover:text-white hover:opacity-100"
                 >
-                  <LogoIcon />
+                  <FontAwesomeIcon icon={faArrowRight} />
 
                   <span>try example guide</span>
                 </Link>
@@ -135,9 +139,9 @@ export default function Page() {
                 </div>
 
                 <p className="mt-4 text-lg leading-relaxed text-gray-700">
-                  It makes it easy for PR authors to draw attention to important
-                  parts of their changes and for reviewers to focus on those
-                  first.
+                  It makes it easy for PR authors to explain the reasoning
+                  behind their decisions and draw attention to important parts
+                  of their changes so reviewers can focus on those first.
                 </p>
               </div>
 

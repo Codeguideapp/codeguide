@@ -13,7 +13,7 @@ export function BottomBarEdit() {
   if (!activeChangeId) return null;
 
   return (
-    <div className="step-controls absolute bottom-0 right-0 left-0  bg-zinc-900">
+    <div className="step-controls absolute bottom-0 right-0 left-0 z-10  bg-zinc-900">
       <div
         style={{
           padding: 10,
