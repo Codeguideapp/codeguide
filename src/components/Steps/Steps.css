@@ -13,13 +13,13 @@
   color: #5c5a5a;
 }
 
-.guide {
+.steps {
   overflow: auto;
   background: var(--zinc-custom-850);
 }
 
-.guide .header,
-.guide .footer {
+.steps .header,
+.steps .footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -27,46 +27,46 @@
   padding-right: 20px;
   height: 30px;
 }
-.guide .footer svg {
+.steps .footer svg {
   opacity: 0.4;
   cursor: pointer;
 }
-.guide .footer .right svg {
+.steps .footer .right svg {
   opacity: 0.4;
   cursor: not-allowed;
 }
-.guide .footer svg:hover {
+.steps .footer svg:hover {
   opacity: 1;
 }
 
-.guide .footer svg.disabled {
+.steps .footer svg.disabled {
   opacity: 0.1;
   cursor: not-allowed;
 }
 
-.guide .header .left svg {
+.steps .header .left svg {
   margin-right: 7px;
 }
-.guide .footer .right svg,
-.guide .header .right svg {
+.steps .footer .right svg,
+.steps .header .right svg {
   margin-left: 7px;
 }
 
-.guide .body {
+.steps .body {
   padding-bottom: 20px;
   overflow: auto;
 }
 
-.guide .step {
+.steps .step {
   position: relative;
   margin: 10px;
   cursor: pointer;
 }
-.guide .step.file {
+.steps .step.file {
   cursor: default;
 }
 
-.guide .step-circle {
+.steps .step-circle {
   background: var(--zinc-custom-850);
   width: 22px;
   height: 22px;
@@ -78,18 +78,18 @@
   z-index: 1;
 }
 
-.guide .file .step-circle {
+.steps .file .step-circle {
   width: 7px;
   height: 7px;
   margin: 7px;
   background-color: var(--zinc-900);
 }
 
-.guide .file .step-circle span {
+.steps .file .step-circle span {
   display: none !important;
 }
 
-.guide .step-code {
+.steps .step-code {
   width: calc(100% - 40px);
   min-height: 35px;
   border-radius: 4px;
@@ -97,50 +97,50 @@
   border: 1px solid #212326;
   padding: 5px;
 }
-.guide .step.draft .step-code {
+.steps .step.draft .step-code {
   border: 1px dotted rgb(52 52 52);
 }
 
-.guide .step:hover .step-code {
+.steps .step:hover .step-code {
   border-color: #3f4449;
 }
-.guide .active .step-code {
+.steps .active .step-code {
   border-color: #272a2e;
 }
-.guide .before-active .step-code {
+.steps .before-active .step-code {
   background: #2c3035;
   border-color: #272a2e;
 }
 
-.guide .draft .step-circle {
+.steps .draft .step-circle {
   background: var(--zinc-custom-850);
   border: 1px solid #824500;
 }
 
-.guide .step.before-active:not(.draft) .step-circle {
+.steps .step.before-active:not(.draft) .step-circle {
   background: #393d42;
 }
-.guide .step.active .step-code {
+.steps .step.active .step-code {
   border: 1px solid #1a6b92;
 }
-.guide .step.active .step-circle {
+.steps .step.active .step-circle {
   border: 2px solid #1a6b92;
 }
-.guide .step.active .step-circle span {
+.steps .step.active .step-circle span {
   color: #fff;
 }
-.guide .step.before-active .step-circle span {
+.steps .step.before-active .step-circle span {
   color: #fff;
 }
 
-.guide .step-circle span {
+.steps .step-circle span {
   font-size: 11px;
   color: rgb(124, 124, 124);
   font-weight: bold;
   font-family: 'Inconsolata';
 }
 
-.guide .step-file {
+.steps .step-file {
   font-family: 'Inconsolata';
   margin-left: 10px;
   width: calc(100% - 50px);
@@ -149,12 +149,12 @@
   overflow: hidden;
 }
 
-.guide .step-line-h {
+.steps .step-line-h {
   width: 10px;
   height: 1px;
   background: #373737;
 }
-.guide .step-line-v {
+.steps .step-line-v {
   position: absolute;
   width: 1px;
   background: #373737;
@@ -162,31 +162,31 @@
   bottom: -10px;
   left: 10px;
 }
-.guide .step:first-child .step-line-v {
+.steps .step:first-child .step-line-v {
   top: 10px;
 }
-.guide .step:last-child .step-line-v {
+.steps .step:last-child .step-line-v {
   bottom: 25px;
 }
 
-.guide .body .step:last-child {
+.steps .body .step:last-child {
   margin-bottom: 0;
 }
 
-.guide .delta-preview {
+.steps .delta-preview {
   color: #4b856a;
 }
 
-.guide .delta-preview .deleted {
+.steps .delta-preview .deleted {
   color: #995454;
 }
-.guide .delta-preview .highlight {
+.steps .delta-preview .highlight {
   color: #bebebe;
   background: #143d51;
   border-radius: 2px;
 }
 
-.guide .step.after-active .step-file,
-.guide .step.after-active .delta-preview {
+.steps .step.after-active .step-file,
+.steps .step.after-active .delta-preview {
   opacity: 0.4;
 }

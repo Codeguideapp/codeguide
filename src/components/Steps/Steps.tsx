@@ -22,7 +22,7 @@ import { getStepPreview } from './getStepPreview';
 
 library.add(faCheck, faImage, faUpload);
 
-export function Guide() {
+export function Steps() {
   const activeChangeRef = useRef<HTMLDivElement>(null);
   const isFetching = useGuideStore((s) => s.isFetching);
   const setActiveChangeId = useChangesStore((s) => s.setActiveChangeId);
@@ -79,10 +79,10 @@ export function Guide() {
   }, [activeChangeId, getChangeIndex]);
 
   if (isFetching) {
-    return <div className="guide h-full p-4">Loading...</div>;
+    return <div className="steps h-full p-4">Loading...</div>;
   }
   if (isEditing() && changesForGuide.length === 0) {
-    return <div className="guide h-full p-4">No steps saved...</div>;
+    return <div className="steps h-full p-4">No steps saved...</div>;
   }
 
   if (
@@ -91,7 +91,7 @@ export function Guide() {
       (changesForGuide.length === 1 && changesForGuide[0]?.change.isFileNode))
   ) {
     return (
-      <div className="guide h-full p-4">
+      <div className="steps h-full p-4">
         <p className="pb-4">The guide is empty...</p>
         <p>
           If you are the author of the guide, you can add steps in the{' '}
@@ -111,7 +111,7 @@ export function Guide() {
   }
 
   return (
-    <div className="guide h-full overflow-auto">
+    <div className="steps h-full overflow-auto">
       <div className="body">
         {changesForGuide.map(
           ({ change, isBeforeActive, isAfterActive, active, preview }, i) => {

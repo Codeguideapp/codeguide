@@ -3,9 +3,9 @@ import { useMemo } from 'react';
 
 import { BottomBarEdit } from '../BottomBar/BottomBar';
 import { Comments } from '../Comments/Comments';
-import { Guide } from '../Guide/Guide';
 import { useActiveChange } from '../hooks/useActiveChange';
 import { useShallowChanges } from '../hooks/useShallowChanges';
+import { Steps } from '../Steps/Steps';
 import { isEditing } from '../store/atoms';
 import { Change, useChangesStore } from '../store/changes';
 import { FileNode, useFilesStore } from '../store/files';
@@ -101,7 +101,7 @@ export function Editor() {
         </div>
 
         <div className="h-full w-72">
-          <Guide />
+          <Steps />
         </div>
       </div>
     </div>
