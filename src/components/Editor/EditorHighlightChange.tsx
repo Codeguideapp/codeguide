@@ -30,13 +30,15 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
     const currentChange = s.changes[changeId];
     const changesOrder = Object.keys(s.changes).sort();
     const currentChangeIndex = changesOrder.findIndex((c) => c === changeId);
-    const prevChange = s.changes[changesOrder[currentChangeIndex - 1]];
+    const changesUpToChangeId = changesOrder
+      .slice(0, currentChangeIndex)
+      .map((id) => s.changes[id]);
+
+    const prevChange = changesUpToChangeId.findLast(
+      (c) => c.path === currentChange.path
+    );
 
     if (activeFile.path !== currentChange.path) {
-      const changesUpToChangeId = changesOrder
-        .slice(0, currentChangeIndex)
-        .map((id) => s.changes[id]);
-
       const changeForTheFile = changesUpToChangeId
         .reverse()
         .find((c) => c.path === activeFile.path);

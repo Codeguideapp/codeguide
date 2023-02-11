@@ -1,12 +1,12 @@
-import { faMagnifyingGlass, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Button, message, Popconfirm, Tooltip } from 'antd';
 import { last } from 'lodash';
 import { useState } from 'react';
 
-import { isEditing } from '../store/atoms';
 import { isHighlightChange, useChangesStore } from '../store/changes';
 import { useCommentsStore } from '../store/comments';
+import { useFilesStore } from '../store/files';
 
 export function StepActions() {
   const activeChange = useChangesStore((s) =>
@@ -27,6 +27,7 @@ export function StepActions() {
   const undraftChange = useChangesStore((s) => s.undraftChange);
   const deleteUntilChange = useChangesStore((s) => s.deleteUntilChange);
   const deleteChange = useChangesStore((s) => s.deleteChange);
+  const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const [submitting, setSubmitting] = useState(false);
   const draftCommentPerChange = useCommentsStore(
     (s) => s.draftCommentPerChange
@@ -138,6 +139,17 @@ export function StepActions() {
             </Button>
           </Popconfirm>
         </Tooltip>
+      )}
+      {!activeChange?.isDraft && (
+        <Button
+          onClick={() => {
+            setActiveChangeId(null);
+            setActiveFileByPath(activeChange?.path);
+          }}
+          type="link"
+        >
+          Close Preview
+        </Button>
       )}
     </div>
   );

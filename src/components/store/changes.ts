@@ -434,13 +434,25 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
         .fileNodes.find((f) => f.path === change.path);
 
       if (!fileNode) {
-        const content = deltaToString([change.delta]);
+        if (
+          isEditing() &&
+          useGuideStore
+            .getState()
+            .changedFileRefs.find((f) => f.path === change.path)
+        ) {
+          // if in edit mode, we need to load old/new vals from github
+          await useFilesStore.getState().loadFile(change.path);
+        } else {
+          // if not in edit mode, or file is not diff, file content can be derived
+          // from a change (fileDepChange)
+          const content = deltaToString([change.delta]);
 
-        useFilesStore.getState().storeFile({
-          oldVal: content,
-          newVal: content,
-          path: change.path,
-        });
+          useFilesStore.getState().storeFile({
+            oldVal: '',
+            newVal: content,
+            path: change.path,
+          });
+        }
       }
     }
 

@@ -1,11 +1,16 @@
+/* eslint-disable @next/next/no-html-link-for-pages */
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
-import { faEarthAmericas, faEdit } from '@fortawesome/free-solid-svg-icons';
+import {
+  faEdit,
+  faMagnifyingGlass,
+  faUpload,
+} from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { message } from 'antd';
 import classNames from 'classnames';
 import Link from 'next/link';
 import { signIn, useSession } from 'next-auth/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Split from 'react-split';
 
 import { Editor } from './Editor/Editor';
@@ -32,6 +37,20 @@ export function App() {
   const [isSaving, setSaving] = useState(false);
   const shouldPublish = hasUnpublishedChanges || hasUnpublishedComments;
 
+  useEffect(() => {
+    if (shouldPublish) {
+      window.onbeforeunload = function () {
+        return true;
+      };
+    } else {
+      window.onbeforeunload = null;
+    }
+
+    return () => {
+      window.onbeforeunload = null;
+    };
+  }, [shouldPublish]);
+
   const handlePublish = async () => {
     setSaving(true);
     const changesRes = await publishChanges();
@@ -52,45 +71,57 @@ export function App() {
 
   return (
     <div>
-      <div className="top-bar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <Link className="text-xs font-bold hover:text-gray-400" href="/">
+      <div className="top-bar flex h-[40px] items-center justify-between gap-2 bg-zinc-800 px-4">
+        <div className="flex items-center gap-5">
+          <a className="text-xs font-bold hover:text-gray-400" href="/">
             CodeGuide
-          </Link>
-          <Link
-            className="flex items-center gap-1 text-xs hover:text-gray-400"
-            href={`https://github.com/${link}`}
-            target="_blank"
-          >
-            <FontAwesomeIcon icon={faGithub} />
-            <span>{link}</span>
-          </Link>
+          </a>
+          {repository && (
+            <Link
+              className="flex items-center gap-1 text-xs hover:text-gray-400"
+              href={`https://github.com/${link}`}
+              target="_blank"
+            >
+              <FontAwesomeIcon icon={faGithub} />
+              <span>{link}</span>
+            </Link>
+          )}
         </div>
 
-        <div className="action flex gap-2">
+        <div className="flex items-center gap-2">
+          {isSaving ? (
+            <span className="cursor-wait px-1 py-2 text-xs text-white">
+              publishing...
+            </span>
+          ) : (
+            <div
+              onClick={shouldPublish ? handlePublish : undefined}
+              className="flex cursor-pointer items-center justify-center gap-1 px-1 py-2 text-xs text-white hover:text-gray-400"
+              style={shouldPublish ? {} : { opacity: 0.3 }}
+            >
+              <FontAwesomeIcon icon={faUpload} className="text-md" />
+              <span>Publish guide</span>
+            </div>
+          )}
+
           {session ? (
             <>
               {isEditing() ? (
                 <>
-                  {isSaving ? (
-                    <span>publishing...</span>
-                  ) : (
-                    <div
-                      onClick={shouldPublish ? handlePublish : undefined}
-                      className="font-small flex cursor-pointer items-center justify-center gap-1 px-3 py-2 text-xs text-white hover:text-gray-400"
-                      style={shouldPublish ? {} : { opacity: 0.3 }}
-                    >
-                      <FontAwesomeIcon
-                        icon={faEarthAmericas}
-                        className="text-md"
-                      />
-                      <span>Publish guide</span>
-                    </div>
-                  )}
+                  <Link
+                    className=" flex items-center justify-center gap-1 px-1 py-2 text-xs text-white hover:text-gray-400"
+                    href={`/${guideId}`}
+                  >
+                    <FontAwesomeIcon
+                      icon={faMagnifyingGlass}
+                      className="text-md"
+                    />
+                    <span>Preview guide</span>
+                  </Link>
                 </>
               ) : (
                 <Link
-                  className="font-small flex items-center justify-center gap-1 px-3 py-2 text-xs text-white hover:text-gray-400"
+                  className=" flex items-center justify-center gap-1 px-1 py-2 text-xs text-white hover:text-gray-400"
                   href={`/${guideId}/edit`}
                 >
                   <FontAwesomeIcon icon={faEdit} className="text-md" />
@@ -102,7 +133,7 @@ export function App() {
           ) : (
             <span
               onClick={() => signIn('github')}
-              className="font-small flex cursor-pointer items-center justify-center gap-1 px-3 py-2 text-xs text-white hover:text-gray-400"
+              className=" flex cursor-pointer items-center justify-center gap-1 px-1 py-2 text-xs text-white hover:text-gray-400"
             >
               <FontAwesomeIcon icon={faGithub} className="text-md" />
               <span>Log in</span>

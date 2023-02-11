@@ -6,6 +6,7 @@ import { isEditing } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
 import { useFilesStore } from '../store/files';
 import { useGuideStore } from '../store/guide';
+import { FileIcon } from './FileIcon';
 
 const { DirectoryTree } = Tree;
 
@@ -26,6 +27,7 @@ export function ChangedFiles() {
         key: fileRef.path,
         title: filename,
         isLeaf: true,
+        icon: <FileIcon path={fileRef.path} />,
       });
     }
 

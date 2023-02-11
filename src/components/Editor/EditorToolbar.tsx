@@ -24,6 +24,8 @@ export function EditorToolbar() {
             width="16"
             src="/icons/whitespace.svg"
             alt=""
+            className="mx-2 cursor-pointer"
+            style={showWhitespace ? { opacity: 1 } : { opacity: 0.5 }}
             onClick={() => setShowWhitespace(!showWhitespace)}
           />
         </Tooltip>

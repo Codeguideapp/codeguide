@@ -16,6 +16,7 @@ import { isEditing } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
 import { useCommentsStore } from '../store/comments';
 import { useFilesStore } from '../store/files';
+import { useGuideStore } from '../store/guide';
 import { DeltaPreview } from './DeltaPreview';
 import { getStepPreview } from './getStepPreview';
 
@@ -23,6 +24,7 @@ library.add(faCheck, faImage, faUpload);
 
 export function Guide() {
   const activeChangeRef = useRef<HTMLDivElement>(null);
+  const isFetching = useGuideStore((s) => s.isFetching);
   const setActiveChangeId = useChangesStore((s) => s.setActiveChangeId);
   const getChangeIndex = useChangesStore((s) => s.getChangeIndex);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
@@ -76,6 +78,9 @@ export function Guide() {
     });
   }, [activeChangeId, getChangeIndex]);
 
+  if (isFetching) {
+    return <div className="guide h-full p-4">Loading...</div>;
+  }
   if (isEditing() && changesForGuide.length === 0) {
     return <div className="guide h-full p-4">No steps saved...</div>;
   }
@@ -124,8 +129,8 @@ export function Guide() {
                 key={change.id}
                 onClick={() => {
                   if (change.isFileNode) return;
-                  setActiveChangeId(change.id);
                   setActiveFileByPath(change.path);
+                  setActiveChangeId(change.id);
                 }}
               >
                 <div className="step-line-v"></div>

@@ -8,6 +8,7 @@ import { api } from '../utils/api';
 export default function Dashboard() {
   const res = api.guide.getUserGuides.useQuery(undefined, {
     refetchOnWindowFocus: false,
+    retry: false,
   });
 
   return (

@@ -9,6 +9,7 @@ import { usePrevious } from '../hooks/usePrevious';
 import { showWhitespaceAtom } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
 import { FileNode, useFilesStore } from '../store/files';
+import { EditorToolbar } from './EditorToolbar';
 import { useHighlight } from './useHighlight';
 
 export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
@@ -169,7 +170,22 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
           )
         );
       });
-  }, [currentVal, activeFile, prevFile?.path, saveDelta, saveHighlight]);
+  }, [
+    modifiedModel,
+    originalModel,
+    currentVal,
+    activeFile,
+    prevFile?.path,
+    saveDelta,
+    saveHighlight,
+  ]);
 
-  return <div ref={editorDiffDom} className="monaco edit-mode"></div>;
+  return (
+    <div className="h-full w-full">
+      <div ref={editorDiffDom} className="monaco edit-mode h-full w-full"></div>
+      <div className="absolute top-2 right-2">
+        <EditorToolbar />
+      </div>
+    </div>
+  );
 }

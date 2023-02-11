@@ -3,7 +3,7 @@ import create from 'zustand';
 import { IGuide } from '../../types/Guide';
 
 export const useGuideStore = create<
-  IGuide & { setGuide: (guide: IGuide) => void }
+  IGuide & { isFetching: boolean; setGuide: (guide: IGuide) => void }
 >((set, get) => ({
   id: '',
   owner: '',
@@ -14,5 +14,9 @@ export const useGuideStore = create<
   canEdit: [],
   changedFileRefs: [],
   fileRefs: [],
-  setGuide: (guide) => set(guide),
+  createdAt: 0,
+  setGuide: (guide) => {
+    set(guide);
+  },
+  isFetching: true,
 }));

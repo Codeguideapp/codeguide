@@ -13,7 +13,6 @@ import { LoadingIcon } from '../svgIcons/LoadingIcon';
 import { EditorEditDiff } from './EditorEditDiff';
 import { EditorHighlightChange } from './EditorHighlightChange';
 import { EditorPreviewFile } from './EditorPreviewFile';
-import { EditorToolbar } from './EditorToolbar';
 import { Welcome } from './Welcome';
 
 function GetEditorComponent({
@@ -76,15 +75,14 @@ export function Editor() {
                 ? `  (step ${getChangeIndex(activeChange.id)})`
                 : ''}
               <div
-                className={classNames({
-                  unsaved: true,
-                  hidden: activeFile?.path
-                    ? !unsavedFilePaths.includes(activeFile.path)
-                    : true,
-                })}
+                className="ml-2 h-[8px] w-[8px] rounded-full bg-yellow-300"
+                style={
+                  activeFile && unsavedFilePaths.includes(activeFile.path)
+                    ? { display: 'inline-block' }
+                    : { display: 'none' }
+                }
               ></div>
             </div>
-            <EditorToolbar />
           </div>
 
           <div className="flex h-full flex-col">

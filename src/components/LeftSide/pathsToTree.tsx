@@ -1,5 +1,7 @@
 import { ReactElement } from 'react-markdown/lib/react-markdown';
 
+import { FileIcon } from './FileIcon';
+
 type TreeItem = {
   key: string;
   title: string;
@@ -33,7 +35,7 @@ export function pathsToTreeStructure(
     references[file.path] = {
       isLeaf: file.type !== 'tree',
       type: file.type,
-      icon: null,
+      icon: file.type === 'tree' ? null : <FileIcon path={file.path} />,
       key: file.path,
       title: splittedPath[splittedPath.length - 1],
     };

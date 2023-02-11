@@ -33,6 +33,7 @@ export default function Loader() {
       guideId: document.location.pathname.split('/')[1],
     },
     {
+      refetchOnMount: false,
       refetchOnWindowFocus: false,
       retry: false,
     }
@@ -43,8 +44,13 @@ export default function Loader() {
   useEffect(() => {
     if (res.data && !useGuideStore.getState().id) {
       useGuideStore.getState().setGuide(res.data.guide);
-      useChangesStore.getState().storeChangesFromServer(res.data.changes);
-      useCommentsStore.getState().storeCommentsFromServer(res.data.comments);
+      Promise.all([
+        useChangesStore.getState().storeChangesFromServer(res.data.changes),
+        useCommentsStore.getState().storeCommentsFromServer(res.data.comments),
+      ]).then(() => {
+        useGuideStore.setState({ isFetching: false });
+      });
+
       if (res.data.guide.type === 'browse') {
         setActiveSection('filesExplorer');
       }
