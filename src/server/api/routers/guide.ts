@@ -53,6 +53,7 @@ export const guideRouter = createTRPCRouter({
           TableName: process.env.DYNAMODB_GUIDES_TABLE,
           IndexName: 'createdBy-createdAt-index',
           KeyConditionExpression: 'createdBy = :createdBy',
+          ScanIndexForward: false,
           ExpressionAttributeValues: {
             ':createdBy': email,
           },
@@ -65,4 +66,38 @@ export const guideRouter = createTRPCRouter({
       throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
     }
   }),
+  deleteGuide: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const email = ctx.session.user.email;
+
+      try {
+        const resGet = await dynamoDb
+          .get({
+            TableName: process.env.DYNAMODB_GUIDES_TABLE,
+            Key: {
+              id: input.id,
+            },
+          })
+          .promise();
+
+        if (resGet.Item?.createdBy !== email) {
+          throw new TRPCError({ code: 'FORBIDDEN' });
+        }
+
+        const res = await dynamoDb
+          .delete({
+            TableName: process.env.DYNAMODB_GUIDES_TABLE,
+            Key: {
+              id: input.id,
+            },
+          })
+          .promise();
+
+        return res;
+      } catch (e) {
+        console.error(e);
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR' });
+      }
+    }),
 });

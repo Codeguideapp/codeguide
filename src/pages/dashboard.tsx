@@ -1,3 +1,4 @@
+import { Popconfirm } from 'antd';
 import Link from 'next/link';
 import Moment from 'react-moment';
 
@@ -6,9 +7,18 @@ import { Header } from '../components/LandingPage/Header';
 import { api } from '../utils/api';
 
 export default function Dashboard() {
-  const res = api.guide.getUserGuides.useQuery(undefined, {
-    refetchOnWindowFocus: false,
-    retry: false,
+  const { isFetching, data, error, refetch } = api.guide.getUserGuides.useQuery(
+    undefined,
+    {
+      refetchOnWindowFocus: false,
+      retry: false,
+    }
+  );
+
+  const { mutate } = api.guide.deleteGuide.useMutation({
+    onSuccess: () => {
+      refetch();
+    },
   });
 
   return (
@@ -26,30 +36,41 @@ export default function Dashboard() {
               Guides
             </h1>
             <div className="text-md py-4 text-left text-white">
-              {res.isFetching ? (
+              {isFetching ? (
                 <div>Loading...</div>
               ) : (
-                res.data?.map((guide) => (
-                  <div key={guide.id}>
+                data?.map((guide) => (
+                  <div
+                    key={guide.id}
+                    className="my-2 flex w-full justify-around gap-6 rounded-lg bg-opacity-20 p-2 hover:bg-purple-800"
+                  >
+                    <Moment className="w-28 opacity-80" fromNow>
+                      {guide.createdAt}
+                    </Moment>
                     <Link
                       href={`/${guide.id}`}
-                      className="hover:text-neutral-200"
+                      className="grow hover:text-neutral-200"
                     >
-                      <div className="my-2 flex gap-6">
-                        <Moment className="opacity-80" fromNow>
-                          {guide.createdAt}
-                        </Moment>
-                        <div>
-                          {guide.owner}/{guide.repository}
-                          {guide.prNum ? `#${guide.prNum}` : ''}
-                        </div>
+                      <div>
+                        {guide.owner}/{guide.repository}
+                        {guide.prNum ? `#${guide.prNum}` : ''}
                       </div>
                     </Link>
+                    <Popconfirm
+                      onConfirm={() => {
+                        mutate({ id: guide.id });
+                      }}
+                      title="Are you sure you want to delete this guide?"
+                    >
+                      <div className="cursor-pointer hover:text-neutral-200">
+                        delete
+                      </div>
+                    </Popconfirm>
                   </div>
                 ))
               )}
             </div>
-            {res.error && <div>{res.error.message}</div>}
+            {error && <div>{error.message}</div>}
           </div>
           <div className="mx-auto mt-14 w-full text-center md:w-4/6"></div>
         </div>
