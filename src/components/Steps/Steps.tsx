@@ -187,6 +187,34 @@ export function Steps() {
             );
           }
         )}
+
+        {changesForGuide.length !== 0 && (
+          <div
+            className={classNames({
+              placeholder: true,
+              step: true,
+              draft: true,
+              active: !activeChangeId,
+            })}
+          >
+            <div className="flex items-center pt-4">
+              <div className="step-line-v last"></div>
+              <div className="step-circle"></div>
+              <>
+                <div className="step-line-h"></div>
+                <div
+                  className="step-code"
+                  onClick={() => {
+                    setActiveChangeId(null);
+                    if (!isEditing()) {
+                      setActiveFileByPath(undefined);
+                    }
+                  }}
+                ></div>
+              </>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

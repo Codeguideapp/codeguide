@@ -13,6 +13,7 @@ import { LoadingIcon } from '../svgIcons/LoadingIcon';
 import { EditorEditDiff } from './EditorEditDiff';
 import { EditorHighlightChange } from './EditorHighlightChange';
 import { EditorPreviewFile } from './EditorPreviewFile';
+import { TheEnd } from './TheEnd';
 import { Welcome } from './Welcome';
 
 function GetEditorComponent({
@@ -22,7 +23,15 @@ function GetEditorComponent({
   activeFile?: FileNode;
   activeChange?: Change | null;
 }) {
-  if (!activeFile) return <Welcome />;
+  const changeIds = Object.keys(useChangesStore.getState().changes);
+
+  if (!activeFile) {
+    if (changeIds.length === 0) {
+      return <Welcome />;
+    } else {
+      return <TheEnd />;
+    }
+  }
 
   if (activeFile.isFetching)
     return (
@@ -58,6 +67,12 @@ export function Editor() {
   const activeFile = useFilesStore((s) => s.activeFile);
   const unsavedFilePaths = useUnsavedFilePaths();
   const getChangeIndex = useChangesStore((s) => s.getChangeIndex);
+  const changesNum = useChangesStore((s) => Object.keys(s.changes).length);
+  const tabName = activeFile
+    ? activeFile?.path.split('/').pop()
+    : changesNum === 0
+    ? 'Welcome'
+    : 'The End';
 
   return (
     <div className="main-right">
@@ -70,7 +85,7 @@ export function Editor() {
                 'in-past': Boolean(activeChange),
               })}
             >
-              {activeFile ? activeFile?.path.split('/').pop() : 'Welcome'}
+              {tabName}
               {activeChange
                 ? `  (step ${getChangeIndex(activeChange.id)})`
                 : ''}

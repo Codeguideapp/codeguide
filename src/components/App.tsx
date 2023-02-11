@@ -35,10 +35,10 @@ export function App() {
   const hasUnpublishedComments = useCommentsStore((s) => s.hasDataToPublish());
   const [isDragging, setDragging] = useState(false);
   const [isSaving, setSaving] = useState(false);
-  const shouldPublish = hasUnpublishedChanges || hasUnpublishedComments;
+  const hasUnpublishedData = hasUnpublishedChanges || hasUnpublishedComments;
 
   useEffect(() => {
-    if (shouldPublish) {
+    if (hasUnpublishedData) {
       window.onbeforeunload = function () {
         return true;
       };
@@ -49,7 +49,7 @@ export function App() {
     return () => {
       window.onbeforeunload = null;
     };
-  }, [shouldPublish]);
+  }, [hasUnpublishedData]);
 
   const handlePublish = async () => {
     setSaving(true);
@@ -89,20 +89,22 @@ export function App() {
         </div>
 
         <div className="flex items-center gap-2">
-          {isSaving ? (
-            <span className="cursor-wait px-1 py-2 text-xs text-white">
-              publishing...
-            </span>
-          ) : (
-            <div
-              onClick={shouldPublish ? handlePublish : undefined}
-              className="flex cursor-pointer items-center justify-center gap-1 px-1 py-2 text-xs text-white hover:text-gray-400"
-              style={shouldPublish ? {} : { opacity: 0.3 }}
-            >
-              <FontAwesomeIcon icon={faUpload} className="text-md" />
-              <span>Publish guide</span>
-            </div>
-          )}
+          {isEditing() ? (
+            isSaving ? (
+              <span className="cursor-wait px-1 py-2 text-xs text-white">
+                publishing...
+              </span>
+            ) : (
+              <div
+                onClick={hasUnpublishedData ? handlePublish : undefined}
+                className="flex cursor-pointer items-center justify-center gap-1 px-1 py-2 text-xs text-white hover:text-gray-400"
+                style={hasUnpublishedData ? {} : { opacity: 0.3 }}
+              >
+                <FontAwesomeIcon icon={faUpload} className="text-md" />
+                <span>Publish guide</span>
+              </div>
+            )
+          ) : null}
 
           {session ? (
             <>
@@ -128,7 +130,7 @@ export function App() {
                   <span>Edit guide</span>
                 </Link>
               )}
-              <ProfileMenu />
+              <ProfileMenu hasUnpublishedData={hasUnpublishedData} />
             </>
           ) : (
             <span

@@ -8,13 +8,15 @@ import { last } from 'lodash';
 import * as Mousetrap from 'mousetrap';
 import { useCallback, useEffect, useMemo } from 'react';
 
+import { useShallowChanges } from './hooks/useShallowChanges';
+import { isEditing } from './store/atoms';
 import { useChangesStore } from './store/changes';
 import { useFilesStore } from './store/files';
 
 library.add(faBackwardStep, faForwardStep, faPlay);
 
 export function PrevNextControls() {
-  const changes = useChangesStore((s) => s.changes);
+  const changes = useShallowChanges();
   const activeChangeId = useChangesStore((s) => s.activeChangeId);
   const setActiveChangeId = useChangesStore((s) => s.setActiveChangeId);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
@@ -75,6 +77,8 @@ export function PrevNextControls() {
 
     if (nextChangeId) {
       setActiveFileByPath(changes[nextChangeId].path);
+    } else if (!isEditing()) {
+      setActiveFileByPath(undefined);
     }
   }, [
     activeChangeId,
@@ -86,9 +90,13 @@ export function PrevNextControls() {
 
   const goToLastChange = useCallback(() => {
     setActiveChangeId(null);
-    const lastChangeId = last(Object.keys(changes).sort());
-    if (lastChangeId) {
-      setActiveFileByPath(changes[lastChangeId].path);
+    if (!isEditing()) {
+      setActiveFileByPath(undefined);
+    } else {
+      const lastChangeId = last(Object.keys(changes).sort());
+      if (lastChangeId) {
+        setActiveFileByPath(changes[lastChangeId].path);
+      }
     }
   }, [changes, setActiveChangeId, setActiveFileByPath]);
 

@@ -1,8 +1,13 @@
+/* eslint-disable @next/next/no-html-link-for-pages */
 import { Avatar, Dropdown, Menu } from 'antd';
 import Link from 'next/link';
 import { signOut, useSession } from 'next-auth/react';
 
-export function ProfileMenu() {
+export function ProfileMenu({
+  hasUnpublishedData,
+}: {
+  hasUnpublishedData?: boolean;
+}) {
   const { data: session } = useSession();
 
   if (!session) {
@@ -14,9 +19,25 @@ export function ProfileMenu() {
       overlay={
         <Menu>
           <Menu.Item>
-            <Link href="/dashboard">Dashboard</Link>
+            <a href="/dashboard">Dashboard</a>
           </Menu.Item>
-          <Menu.Item onClick={() => signOut()}>Log out</Menu.Item>
+          <Menu.Item
+            onClick={() => {
+              if (!hasUnpublishedData) {
+                return signOut();
+              }
+
+              if (
+                window.confirm(
+                  'You have unpublished changes. Are you sure you want to log out?'
+                )
+              ) {
+                signOut();
+              }
+            }}
+          >
+            Log out
+          </Menu.Item>
         </Menu>
       }
     >

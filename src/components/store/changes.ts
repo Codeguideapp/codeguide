@@ -51,7 +51,7 @@ interface ChangesState {
   deleteUntilChange: (id: string) => void;
   undraftChange: (id: string) => void;
   publishChanges: () => Promise<{ success: boolean; error?: string }>;
-  storeChangesFromServer: (changesToSave: Change[]) => Promise<any>;
+  storeChangesFromServer: (changesToSave: Change[]) => Promise<void>;
 }
 
 export const useChangesStore = create<ChangesState>((set, get) => ({
