@@ -110,6 +110,7 @@ export default async function handler(
         type: file.type,
       })),
       changedFileRefs,
+      privateRepoWhenCreated: repoInfo.data.private,
       createdAt: Date.now(),
     };
 

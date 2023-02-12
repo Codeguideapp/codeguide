@@ -10,12 +10,14 @@ import { useState } from 'react';
 
 import { Footer } from '../components/LandingPage/Footer';
 import { Header } from '../components/LandingPage/Header';
+import { Modal } from '../components/Modal';
 
-export default function Page() {
+export default function LandingPage() {
   const [pricing, setPricing] = useState<'monthly' | 'yearly'>('yearly');
   const { push } = useRouter();
   const { data: session } = useSession();
   const [isSubmitting, setSubmitting] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
@@ -46,7 +48,7 @@ export default function Page() {
         >
           <Header />
 
-          <div className="mx-auto max-w-7xl px-12">
+          <div id="heading" className="mx-auto max-w-7xl px-12">
             <div className="mx-auto w-full text-left md:w-11/12 md:text-center xl:w-9/12">
               <h1 className="mb-8 font-catamaran text-3xl font-extrabold leading-none tracking-normal text-white md:text-5xl md:tracking-tight">
                 Step-by-step code walkthroughs
@@ -112,7 +114,6 @@ export default function Page() {
             </svg>
           </div>
         </section>
-
         <section id="features" className="mb-8 bg-white text-black">
           <div className="m-auto flow-root max-w-3xl px-8">
             <div className="">
@@ -183,7 +184,6 @@ export default function Page() {
             </div>
           </div>
         </section>
-
         <section id="pricing" className="mb-12 bg-neutral-900 pt-16 ">
           <div className="mx-auto mb-6 max-w-lg text-center">
             <span className="font-catamaran text-3xl font-bold sm:text-4xl">
@@ -255,17 +255,17 @@ export default function Page() {
               <div className="flex justify-center">
                 <Link
                   className="relative font-medium text-white before:absolute before:-bottom-1 before:h-0.5 before:w-full before:origin-left before:scale-x-0 before:bg-amber-200 before:transition hover:text-amber-200 hover:before:scale-100"
-                  href="/download"
+                  href="/#heading"
                 >
                   Create Guide
                 </Link>
               </div>
             </div>
             <div className="w-56 rounded-2xl border border-gray-500/10 bg-neutral-900 p-4 shadow-sm shadow-gray-500/10">
-              <p className="mb-4 text-xl font-medium text-gray-50">Basic</p>
+              <p className="mb-4 text-xl font-medium text-gray-50">Premium</p>
               <p className="text-3xl font-bold text-white">
-                {pricing === 'monthly' ? '$15' : '$12'}
-                <span className="text-sm text-gray-300">/ month</span>
+                {pricing === 'monthly' ? '$4' : '$3'}
+                <span className="text-sm text-gray-300"> per user / month</span>
               </p>
               <ul className="mt-6 mb-6 w-full text-sm text-gray-100">
                 <li className="mb-3 flex items-center ">
@@ -277,7 +277,7 @@ export default function Page() {
                   >
                     <path d="M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" />
                   </svg>
-                  5 team members
+                  Up to 50 users
                 </li>
                 <li className="mb-3 flex items-center ">
                   <svg
@@ -303,64 +303,15 @@ export default function Page() {
                 </li>
               </ul>
               <div className="flex justify-center">
-                <Link
-                  className="relative font-medium text-white before:absolute before:-bottom-1 before:h-0.5 before:w-full before:origin-left before:scale-x-0 before:bg-amber-200 before:transition hover:text-amber-200 hover:before:scale-100"
-                  href="/download"
+                <span
+                  className="relative cursor-pointer font-medium text-white before:absolute before:-bottom-1 before:h-0.5 before:w-full before:origin-left before:scale-x-0 before:bg-amber-200 before:transition hover:text-amber-200 hover:before:scale-100"
+                  onClick={() => setIsModalOpen(true)}
                 >
                   Choose Plan
-                </Link>
+                </span>
               </div>
             </div>
-            <div className="w-56 rounded-2xl border border-neutral-600 bg-neutral-900 p-4 shadow-sm shadow-gray-500/10">
-              <p className="mb-4 text-xl font-medium text-gray-50">Pro</p>
-              <p className="text-3xl font-bold text-white">
-                {pricing === 'monthly' ? '$45' : '$39'}
-                <span className="text-sm text-gray-300">/ month</span>
-              </p>
-              <ul className="mt-6 mb-6 w-full text-sm text-gray-100">
-                <li className="mb-3 flex items-center ">
-                  <svg
-                    className="mr-2 h-4 w-4"
-                    fill="#fff"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 512 512"
-                  >
-                    <path d="M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" />
-                  </svg>
-                  20 team members
-                </li>
-                <li className="mb-3 flex items-center ">
-                  <svg
-                    className="mr-2 h-4 w-4"
-                    fill="#fff"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 512 512"
-                  >
-                    <path d="M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" />
-                  </svg>
-                  Unlimited public guides
-                </li>
-                <li className="mb-3 flex items-center">
-                  <svg
-                    className="mr-2 h-4 w-4"
-                    fill="#fff"
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 512 512"
-                  >
-                    <path d="M470.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L192 338.7 425.4 105.4c12.5-12.5 32.8-12.5 45.3 0z" />
-                  </svg>
-                  Unlimited private guides
-                </li>
-              </ul>
-              <div className="flex justify-center">
-                <Link
-                  className="relative font-medium text-white before:absolute before:-bottom-1 before:h-0.5 before:w-full before:origin-left before:scale-x-0 before:bg-amber-200 before:transition hover:text-amber-200 hover:before:scale-100"
-                  href="/download"
-                >
-                  Choose Plan
-                </Link>
-              </div>
-            </div>
+
             <div className="w-56 rounded-2xl border border-gray-500/10 bg-neutral-900 p-4 shadow-sm shadow-gray-500/10">
               <p className="mb-4 text-xl font-medium text-gray-50">
                 Enterprise
@@ -415,7 +366,7 @@ export default function Page() {
               <div className="flex justify-center">
                 <Link
                   className="relative font-medium text-white before:absolute before:-bottom-1 before:h-0.5 before:w-full before:origin-left before:scale-x-0 before:bg-amber-200 before:transition hover:text-amber-200 hover:before:scale-100"
-                  href="/download"
+                  href="/contact"
                 >
                   Contact Us
                 </Link>
@@ -433,7 +384,6 @@ export default function Page() {
             </svg>
           </div>
         </section>
-
         <section id="faq">
           <div className="m-auto flow-root max-w-3xl px-8">
             <div className=" py-4">
@@ -510,20 +460,47 @@ export default function Page() {
               </div>
 
               <p className="mt-4 text-lg leading-relaxed text-gray-700">
-                For onboarding guides, we fetch code directly from GitHub and
-                store only filenames and line numbers. For code review guides,
-                we also store code &quot;deltas&quot;, or the parts of code that
-                are added or deleted.
-              </p>
-              <p className="mt-4 text-lg leading-relaxed text-gray-700">
-                In the case of private repositories, this data is only returned
-                if the user has access to the repository on GitHub.
+                The guide can be accessed only if the user has access to the
+                repository on GitHub.
               </p>
             </div>
           </div>
         </section>
-
         <Footer />
+
+        {isModalOpen && (
+          <Modal>
+            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+              <div className="sm:flex sm:items-start">
+                <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                  <h3
+                    className="text-lg font-medium leading-6 text-gray-900"
+                    id="modal-title"
+                  >
+                    Premium Plan
+                  </h3>
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-500">
+                      Codeguide is still in beta, so there are no limits on the
+                      number of private guides you can create. If you are
+                      utilizing private repositories, we will notify you when we
+                      are prepared to launch the premium plan.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                className="mt-3 inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-base font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+              >
+                Ok
+              </button>
+            </div>
+          </Modal>
+        )}
       </div>
     </>
   );

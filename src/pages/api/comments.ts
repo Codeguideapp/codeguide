@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 
 import { deleteComments } from '../../server/deleteComments';
-import { getGuide } from '../../server/getGuide';
+import { getGuideInfo } from '../../server/getGuideInfo';
 import { getUserSession } from '../../server/getUserSession';
 import { saveComments } from '../../server/saveComment';
 
@@ -23,7 +23,7 @@ export default async function handler(
 
   try {
     const user = await getUserSession(req, res);
-    const guide = await getGuide(guideId);
+    const guide = await getGuideInfo(guideId);
 
     if (req.method === 'POST') {
       const { statusCode, json } = await saveComments({

@@ -5,8 +5,8 @@ import Link from 'next/link';
 export function Footer() {
   return (
     <footer aria-label="Site Footer" className="bg-white">
-      <div className="max-w-screen-xl px-4 pb-8 mx-auto sm:px-6 lg:px-8">
-        <div className="pt-8 mt-16 border-t border-gray-100 sm:flex sm:items-center sm:justify-between lg:mt-24">
+      <div className="mx-auto max-w-screen-xl px-4 pb-8 sm:px-6 lg:px-8">
+        <div className="mt-16 border-t border-gray-100 pt-8 sm:flex sm:items-center sm:justify-between lg:mt-24">
           <nav aria-label="Footer Navigation - Support">
             <ul className="flex flex-wrap justify-center gap-4 text-xs lg:justify-end">
               <li>
@@ -36,7 +36,7 @@ export function Footer() {
             </ul>
           </nav>
 
-          <ul className="flex justify-center gap-6 mt-8 sm:mt-0 lg:justify-end">
+          <ul className="mt-8 flex justify-center gap-6 sm:mt-0 lg:justify-end">
             <li>
               <Link
                 href="https://github.com/Codeguideapp/codeguide"
@@ -46,7 +46,7 @@ export function Footer() {
               >
                 <span className="sr-only">GitHub</span>
 
-                <FontAwesomeIcon icon={faGithub} />
+                <FontAwesomeIcon size="lg" icon={faGithub} />
               </Link>
             </li>
           </ul>

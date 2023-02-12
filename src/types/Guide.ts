@@ -28,6 +28,7 @@ export const Guide = z.object({
       ]),
     })
   ),
+  privateRepoWhenCreated: z.boolean(),
   createdAt: z.number(),
 });
 

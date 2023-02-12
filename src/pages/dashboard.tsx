@@ -70,6 +70,7 @@ export default function Dashboard() {
                 ))
               )}
             </div>
+            {data?.length === 0 && <div>No guides found</div>}
             {error && <div>{error.message}</div>}
           </div>
           <div className="mx-auto mt-14 w-full text-center md:w-4/6"></div>

@@ -19,4 +19,5 @@ export const useGuideStore = create<
     set(guide);
   },
   isFetching: true,
+  privateRepoWhenCreated: false,
 }));
