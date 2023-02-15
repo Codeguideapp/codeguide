@@ -13,20 +13,20 @@ export default function Page() {
       >
         <Header />
 
-        <div className="px-12 mx-auto max-w-7xl">
-          <div className="w-full py-6 mx-auto text-left md:w-11/12 xl:w-9/12 md:text-center">
-            <h1 className="font-catamaran mb-8 text-3xl font-extrabold leading-none tracking-normal text-white md:text-5xl md:tracking-tight">
+        <div className="mx-auto max-w-7xl px-12">
+          <div className="mx-auto w-full py-6 text-left md:w-11/12 md:text-center xl:w-9/12">
+            <h1 className="mb-8 font-catamaran text-3xl font-extrabold leading-none tracking-normal text-white md:text-5xl md:tracking-tight">
               Terms of service
             </h1>
           </div>
-          <div className="w-full mx-auto mt-14 text-center md:w-4/6"></div>
+          <div className="mx-auto mt-14 w-full text-center md:w-4/6"></div>
         </div>
       </section>
 
       <section>
-        <div className="flow-root max-w-3xl m-auto px-8">
+        <div className="m-auto flow-root max-w-3xl px-8">
           <div className="py-4">
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 When we say &rdquo;company&rdquo;, &ldquo;we&rdquo;,
                 &ldquo;our&rdquo;, &ldquo;us&rdquo;, &rdquo;service&rdquo; or
@@ -34,7 +34,7 @@ export default function Page() {
                 Codeguide.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>Note</span>
               <span>
                 : The following Terms of Service does not apply to Codeguide
@@ -42,14 +42,14 @@ export default function Page() {
                 and therefore the Terms of Service isn&rsquo;t needed.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 We may update these Terms of Service in the future. Whenever we
                 make a significant change to our policies, we will also announce
                 them.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 When you use our service, now or in the future, you are agreeing
                 to the latest Terms of Service. That&rsquo;s true for any of our
@@ -60,7 +60,7 @@ export default function Page() {
                 terms do contain a limitation of our liability.&nbsp;
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 If you do not agree to these Terms of Service, do not use this
                 service. Violation of any of the terms below may result in the
@@ -70,7 +70,7 @@ export default function Page() {
             <h2 className="mt-4 text-lg font-bold text-black">
               <span>Account terms</span>
             </h2>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 You are responsible for maintaining the security of your
                 account. Codeguide cannot and will not be liable for any loss or
@@ -78,20 +78,20 @@ export default function Page() {
                 obligation.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 You are responsible for any activity that occurs under your
                 account (even by others who have their own logins under your
                 account).
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 You may not use our service for any illegal purpose or to
                 violate any laws in your jurisdiction.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 You must be a human. Accounts registered by bots or other
                 automated methods are not permitted.
@@ -100,32 +100,32 @@ export default function Page() {
             <h2 className="mt-4 text-lg font-bold text-black">
               <span>Payment, refunds terms</span>
             </h2>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
-                If you are upgrade to a paid plan, we will charge you
-                immediately and your billing cycle starts on the day of upgrade.
+                If you upgrade to a paid plan, we will charge you immediately
+                and your billing cycle starts on the day of upgrade.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 Paying customers are billed automatically via credit card or
                 PayPal depending on their preference.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 There are no surprise fees and your card will never be charged
                 unexpectedly.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 Cancelling your plan may cause the loss of features or capacity
                 of your account. Codeguide does not accept any liability for
                 such loss.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 Our payment process is conducted by our payment processor
                 Paddle. Paddle provides customer service inquiries and handles
@@ -139,37 +139,37 @@ export default function Page() {
               </a>
               <span> for details.</span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>Fees paid hereunder are non-refundable.</span>
             </p>
             <h2 className="mt-4 text-lg font-bold text-black">
               <span>Cancellation and termination</span>
             </h2>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 You are solely responsible for properly canceling your account.
                 You can cancel your subscription at any time within your account
                 settings.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 If you cancel the service before the end of your current paid up
                 period, your cancellation will take effect at the end of the
                 current billing cycle, and you will not be charged again. All of
-                your private guides (except the first 3 free ones) will be
+                your private guides (except the first free ones) will be
                 inaccessible from the service after the time you paid for
                 expires.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 You can choose to delete your account and all your data at any
                 time. All your guides will be permanently deleted immediately
                 when you delete your Codeguide account.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 We reserve the right to suspend or terminate your account and
                 refuse any and all current or future use of the service for any
@@ -182,7 +182,7 @@ export default function Page() {
                 something nefarious.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 Verbal, physical, written or other abuse (including threats of
                 abuse or retribution) of any service customer, company employee
@@ -192,14 +192,14 @@ export default function Page() {
             <h2 className="mt-4 text-lg font-bold text-black">
               <span>Modifications to the service and prices</span>
             </h2>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 We reserve the right at any time and from time to time to modify
                 or discontinue, temporarily or permanently, any part of the
                 service with or without notice.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 Sometimes we change the pricing structure for our products. When
                 we do that, we tend to exempt existing customers from those
@@ -210,7 +210,7 @@ export default function Page() {
                 services themselves.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 Codeguide shall not be liable to you or to any third-party for
                 any modification, price change, suspension or discontinuance of
@@ -220,20 +220,20 @@ export default function Page() {
             <h2 className="mt-4 text-lg font-bold text-black">
               <span>Content ownership, copyright and trademark</span>
             </h2>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 You are solely responsible for any content and other material
                 that you submit, publish, transmit, email, or display on,
                 through, or with the service.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 We claim no intellectual property rights over the material you
                 provide to the service.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 You may provide us with feedback, suggestions, and ideas about
                 the service. You agree that we own all rights to use and
@@ -242,7 +242,7 @@ export default function Page() {
                 payment or attribution to you.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 You must not modify another website so as to falsely imply that
                 it is associated with Codeguide. The look and feel of the
@@ -260,13 +260,13 @@ export default function Page() {
             <h2 className="mt-4 text-lg font-bold text-black">
               <span>Privacy and security of your data</span>
             </h2>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 You agree to comply with all applicable laws including all
                 privacy and data protection regulations.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 You agree not to use the service to send sensitive information
                 to the company where unauthorized disclosure could cause
@@ -283,7 +283,7 @@ export default function Page() {
             <h2 className="mt-4 text-lg font-bold text-black">
               <span>General conditions</span>
             </h2>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 Your use of Codeguide is at your sole risk. The service is
                 provided on an &ldquo;as is&rdquo; and &ldquo;as
@@ -291,7 +291,7 @@ export default function Page() {
                 seriously.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 We design our services with care, based on our own experience
                 and the experiences of customers who share their time and
@@ -300,7 +300,7 @@ export default function Page() {
                 meet your specific requirements or expectations.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 We also test all of our features extensively before shipping
                 them. As with any software, our services inevitably have some
@@ -310,21 +310,21 @@ export default function Page() {
                 completely error-free services.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 Technical support is provided by email. Email responses are
                 provided on the reasonable effort basis without guaranteed
                 response time.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 We as humans can access your data to help you with support
                 requests you make and to maintain and safeguard Codeguide to
                 ensure the security of your data and the service as a whole.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 We use third party vendors to provide the necessary hardware,
                 storage, payment processing and related technology required to
@@ -334,13 +334,13 @@ export default function Page() {
             <h2 className="mt-4 text-lg font-bold text-black">
               <span>Liability</span>
             </h2>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 We mention liability throughout these Terms but to put it all in
                 one section:
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 You expressly understand and agree that Codeguide shall not be
                 liable, in law or in equity, to you or to any third party for
@@ -361,7 +361,7 @@ export default function Page() {
                 or any other theory of liability.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 This agreement shall be governed by the laws of Croatia, and the
                 courts of Croatia shall have exclusive jurisdiction to hear and
@@ -372,13 +372,13 @@ export default function Page() {
             <h2 className="mt-4 text-lg font-bold text-black">
               <span>Contact us</span>
             </h2>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>
                 If you have a question about any of the Terms of Service, please
                 <Link href="/contact"> contact us</Link>.
               </span>
             </p>
-            <p className="text-lg mt-4 leading-relaxed text-gray-700">
+            <p className="mt-4 text-lg leading-relaxed text-gray-700">
               <span>&nbsp;</span>
             </p>
           </div>
