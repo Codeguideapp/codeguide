@@ -53,7 +53,7 @@
     "remark-gfm": "^3.0.1",
     "superjson": "1.9.1",
     "swr": "^1.2.2",
-    "typescript": "^5.0.0-beta",
+    "typescript": "4.9.5",
     "ulid": "^2.3.0",
     "zod": "^3.20.2",
     "zustand": "^4.1.4"

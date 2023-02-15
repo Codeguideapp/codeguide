@@ -34,8 +34,11 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
       .slice(0, currentChangeIndex)
       .map((id) => s.changes[id]);
 
+    // this works in ts 5.0
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     const prevChange = changesUpToChangeId.findLast(
-      (c) => c.path === currentChange.path
+      (c: any) => c.path === currentChange.path
     );
 
     if (activeFile.path !== currentChange.path) {
