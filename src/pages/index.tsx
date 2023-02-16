@@ -48,7 +48,7 @@ export default function LandingPage() {
         >
           <Header />
 
-          <div id="heading" className="mx-auto max-w-7xl px-12">
+          <div id="heading" className="mx-auto max-w-7xl px-6 md:px-12">
             <div className="mx-auto w-full text-left md:w-11/12 md:text-center xl:w-9/12">
               <h1 className="mb-8 font-catamaran text-3xl font-extrabold leading-none tracking-normal text-white md:text-5xl md:tracking-tight">
                 Step-by-step code walkthroughs

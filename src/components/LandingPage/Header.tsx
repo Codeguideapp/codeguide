@@ -16,7 +16,7 @@ export function Header() {
         <title>CodeGuide</title>
       </Head>
       <header aria-label="Site Header">
-        <div className="mx-auto mb-10 max-w-screen-lg px-12">
+        <div className="mx-auto mb-10 max-w-screen-lg px-6 md:px-12">
           <div className="flex h-16 items-center justify-between">
             <div className="flex-1 md:flex md:items-center md:gap-12">
               <Link
