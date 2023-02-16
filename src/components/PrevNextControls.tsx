@@ -25,9 +25,7 @@ export function PrevNextControls() {
     () =>
       Object.keys(changes)
         .sort()
-        .filter(
-          (id) => !changes[id].isFileDepChange && !changes[id].isFileNode
-        ),
+        .filter((id) => !changes[id].isFileDepChange),
     [changes]
   );
 

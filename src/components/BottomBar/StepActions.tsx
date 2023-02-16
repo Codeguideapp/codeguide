@@ -16,9 +16,7 @@ export function StepActions() {
     const lastChangeId = last(
       Object.keys(s.changes)
         .sort()
-        .filter(
-          (c) => !s.changes[c].isFileDepChange && !s.changes[c].isFileNode
-        )
+        .filter((c) => !s.changes[c].isFileDepChange)
     );
     return lastChangeId ? s.changes[lastChangeId] : null;
   });

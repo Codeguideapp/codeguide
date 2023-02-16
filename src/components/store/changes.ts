@@ -18,7 +18,6 @@ export type Change = {
   path: string;
   previewOpened: boolean;
   isFileDepChange?: true;
-  isFileNode?: true;
   fileStatus: 'added' | 'modified' | 'deleted';
   isDraft: boolean;
   highlight: {
@@ -63,7 +62,6 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
     const { changes, publishedChangeIds } = get();
 
     const changesThatShouldBeSaved = Object.values(changes)
-      .filter((change) => !change.isFileNode)
       .filter((change) => !change.isFileDepChange)
       .filter(
         (change) =>
@@ -87,9 +85,7 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
     const { changes } = get();
     const changesOrder = Object.keys(changes).sort();
 
-    const ids = changesOrder.filter(
-      (id) => !changes[id].isFileDepChange && !changes[id].isFileNode
-    );
+    const ids = changesOrder.filter((id) => !changes[id].isFileDepChange);
 
     return ids.indexOf(changeId) + 1;
   },
@@ -233,48 +229,6 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
 
       changes = get().changes;
     }
-
-    const nonDepChanges = Object.keys(changes)
-      .sort()
-      .filter((id) => !changes[id].isFileDepChange)
-      .map((id) => changes[id]);
-
-    const lastChange = last(nonDepChanges);
-    const secondLast = nonDepChanges[nonDepChanges.length - 2];
-
-    if (lastChange?.path !== path && lastChange?.isFileNode) {
-      if (secondLast?.path === path) {
-        const newChanges = produce(changes, (changesDraft) => {
-          delete changesDraft[lastChange.id];
-        });
-        set({ changes: newChanges });
-      } else {
-        const newChanges = produce(changes, (changesDraft) => {
-          changesDraft[lastChange.id].path = path;
-        });
-
-        set({ changes: newChanges });
-      }
-    } else if (!lastChange || lastChange.path !== path) {
-      const newChangeId = generateId();
-
-      const newChanges = produce(changes, (changesDraft) => {
-        changesDraft[newChangeId] = {
-          isFileNode: true,
-          isDraft: false,
-          previewOpened: false,
-          fileStatus: 'modified', // todo
-          highlight: [],
-          id: newChangeId,
-          path,
-          delta: new Delta(),
-          stat: [0, 0],
-          deltaInverted: new Delta(),
-        };
-      });
-
-      set({ changes: newChanges });
-    }
   },
   deleteChange: (id: string) => {
     const changes = get().changes;
@@ -301,14 +255,9 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
 
     const lastChangeId = last(Object.keys(get().changes).sort());
     if (lastChangeId) {
-      const lastChange = changes[lastChangeId];
       useFilesStore.getState().setActiveFileByPath(changes[lastChangeId].path);
 
-      if (lastChange.isFileNode) {
-        set({ activeChangeId: null });
-      } else {
-        set({ activeChangeId: lastChangeId });
-      }
+      set({ activeChangeId: lastChangeId });
     } else {
       useFilesStore.setState({ activeFile: undefined });
       set({ activeChangeId: null });
@@ -333,11 +282,7 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
       const lastChange = changes[lastChangeId];
       useFilesStore.getState().setActiveFileByPath(changes[lastChangeId].path);
 
-      if (lastChange.isFileNode) {
-        set({ activeChangeId: null });
-      } else {
-        set({ activeChangeId: lastChangeId });
-      }
+      set({ activeChangeId: lastChangeId });
     } else {
       useFilesStore.setState({ activeFile: undefined });
       set({ activeChangeId: null });
@@ -467,9 +412,7 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
       publishedChangeIds: changesToSave.map((c) => c.id),
     });
 
-    const firstStep = changesToSave.find(
-      (c) => !c.isFileNode && !c.isFileDepChange
-    );
+    const firstStep = changesToSave.find((c) => !c.isFileDepChange);
     if (!isEditing() && firstStep) {
       useFilesStore.getState().setActiveFileByPath(firstStep.path);
       get().setActiveChangeId(firstStep.id);
@@ -480,7 +423,6 @@ export const useChangesStore = create<ChangesState>((set, get) => ({
 export function isHighlightChange(change: Change) {
   return (
     change.highlight.length &&
-    !change.isFileNode &&
     !change.isFileDepChange &&
     change.stat[0] === 0 &&
     change.stat[1] === 0

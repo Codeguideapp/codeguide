@@ -7,6 +7,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import classNames from 'classnames';
+import { nanoid } from 'nanoid';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import scrollIntoView from 'scroll-into-view-if-needed';
@@ -18,7 +19,7 @@ import { useCommentsStore } from '../store/comments';
 import { useFilesStore } from '../store/files';
 import { useGuideStore } from '../store/guide';
 import { DeltaPreview } from './DeltaPreview';
-import { getStepPreview } from './getStepPreview';
+import { getStepPreview, StepPreview } from './getStepPreview';
 
 library.add(faCheck, faImage, faUpload);
 
@@ -30,43 +31,89 @@ export function Steps() {
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const activeChangeId = useChangesStore((s) => s.activeChangeId);
   const savedComments = useCommentsStore((s) => s.savedComments);
-  const changesForGuide = useChangesStore((s) => {
+  const steps = useChangesStore((s) => {
     const changesOrder = Object.keys(s.changes).sort();
     const activeChangeIndex = s.activeChangeId
       ? changesOrder.indexOf(s.activeChangeId)
       : null;
 
-    return changesOrder
+    const changes = changesOrder
       .filter((id) => !s.changes[id].isFileDepChange)
-      .map((id) => s.changes[id])
-      .map((change) => {
-        const preview = getStepPreview({
-          delta: change.delta,
-          before: getFileContent({
-            upToChangeId: change.id,
-            changes: s.changes,
-            excludeChange: true,
-          }),
-          after: getFileContent({
-            upToChangeId: change.id,
-            changes: s.changes,
-            excludeChange: false,
-          }),
-          selections: change.highlight,
-        });
+      .map((id) => s.changes[id]);
 
-        const changeIndex = changesOrder.indexOf(change.id);
+    const resultSteps: {
+      isFileNode: boolean;
+      path: string;
+      id: string;
+      isDraft: boolean;
+      preview?: StepPreview;
+      isBeforeActive: boolean;
+      isAfterActive: boolean;
+      active: boolean;
+    }[] = changes[0]
+      ? [
+          {
+            isFileNode: true,
+            id: nanoid(),
+            path: changes[0].path,
+            isBeforeActive: true,
+            isAfterActive: false,
+            active: false,
+            isDraft: false,
+          },
+        ]
+      : [];
 
-        return {
-          change,
-          preview,
+    let lasFile = changes[0]?.path;
+
+    for (const change of changes) {
+      const changeIndex = changesOrder.indexOf(change.id);
+
+      if (lasFile !== change.path) {
+        resultSteps.push({
+          isFileNode: true,
+          id: nanoid(),
+          isDraft: false,
+          path: change.path,
           isBeforeActive:
             activeChangeIndex === null ? true : changeIndex < activeChangeIndex,
           isAfterActive:
             activeChangeIndex !== null && changeIndex > activeChangeIndex,
-          active: change.id === s.activeChangeId,
-        };
+          active: false,
+        });
+        lasFile = change.path;
+      }
+
+      const preview = getStepPreview({
+        delta: change.delta,
+        before: getFileContent({
+          upToChangeId: change.id,
+          changes: s.changes,
+          excludeChange: true,
+        }),
+        after: getFileContent({
+          upToChangeId: change.id,
+          changes: s.changes,
+          excludeChange: false,
+        }),
+        selections: change.highlight,
       });
+
+      resultSteps.push({
+        isFileNode: false,
+        id: change.id,
+        path: change.path,
+        isDraft: change.isDraft,
+        preview,
+        isBeforeActive:
+          activeChangeIndex === null ? true : changeIndex < activeChangeIndex,
+        isAfterActive:
+          activeChangeIndex !== null && changeIndex > activeChangeIndex,
+        active: change.id === s.activeChangeId,
+      });
+    }
+
+    return resultSteps;
   });
 
   useEffect(() => {
@@ -81,14 +128,13 @@ export function Steps() {
   if (isFetching) {
     return <div className="steps h-full p-4">Loading...</div>;
   }
-  if (isEditing() && changesForGuide.length === 0) {
+  if (isEditing() && steps.length === 0) {
     return <div className="steps h-full p-4">No steps saved...</div>;
   }
 
   if (
     !isEditing() &&
-    (changesForGuide.length === 0 ||
-      (changesForGuide.length === 1 && changesForGuide[0]?.change.isFileNode))
+    (steps.length === 0 || (steps.length === 1 && steps[0]?.isFileNode))
   ) {
     return (
       <div className="steps h-full p-4">
@@ -104,59 +150,58 @@ export function Steps() {
     );
   }
 
-  const lastChange = changesForGuide[changesForGuide.length - 1];
-
-  if (lastChange.change.isFileNode) {
-    changesForGuide.pop();
-  }
-
   return (
     <div className="steps h-full overflow-auto">
       <div className="body">
-        {changesForGuide.map(
-          ({ change, isBeforeActive, isAfterActive, active, preview }, i) => {
+        {steps.map(
+          ({
+            path,
+            id,
+            isDraft,
+            isBeforeActive,
+            isAfterActive,
+            active,
+            preview,
+            isFileNode,
+          }) => {
             return (
               <div
                 ref={active ? activeChangeRef : null}
                 className={classNames({
                   'before-active': isBeforeActive,
                   'after-active': isAfterActive,
-                  file: change.isFileNode,
+                  file: isFileNode,
                   step: true,
                   active,
-                  draft: change.isDraft,
+                  draft: isDraft,
                 })}
-                key={change.id}
+                key={id}
                 onClick={() => {
-                  if (change.isFileNode) return;
-                  setActiveFileByPath(change.path);
-                  setActiveChangeId(change.id);
+                  if (isFileNode) return;
+                  setActiveFileByPath(path);
+                  setActiveChangeId(id);
                 }}
               >
                 <div className="step-line-v"></div>
                 <div className="relative flex items-center">
                   <div className="step-circle">
-                    <span
-                      style={{ display: change.isDraft ? 'none' : 'block' }}
-                    >
+                    <span style={{ display: isDraft ? 'none' : 'block' }}>
                       {isBeforeActive && <FontAwesomeIcon icon="check" />}
                     </span>
                   </div>
 
-                  {change.isFileNode ? (
-                    <div className="step-file">
-                      {change.path.split('/').pop()}
-                    </div>
+                  {isFileNode ? (
+                    <div className="step-file">{path.split('/').pop()}</div>
                   ) : (
                     <>
                       <div className="step-line-h"></div>
                       <div className="step-code">
-                        <DeltaPreview preview={preview} />
+                        {preview && <DeltaPreview preview={preview} />}
                       </div>
                     </>
                   )}
 
-                  {!change.isFileNode && (
+                  {!isFileNode && (
                     <div
                       style={{ height: 'calc(100% - 2px)' }}
                       className={
@@ -170,11 +215,9 @@ export function Steps() {
                           (isBeforeActive ? 'opacity-60' : 'opacity-30')
                         }
                       >
-                        {savedComments[change.id] && (
+                        {savedComments[id] && (
                           <FontAwesomeIcon
-                            title={
-                              'Comments: ' + savedComments[change.id].length
-                            }
+                            title={'Comments: ' + savedComments[id].length}
                             style={{ fontSize: 12 }}
                             icon={faMessage}
                           />
@@ -188,7 +231,7 @@ export function Steps() {
           }
         )}
 
-        {changesForGuide.length !== 0 && (
+        {steps.length !== 0 && (
           <div
             className={classNames({
               placeholder: true,
