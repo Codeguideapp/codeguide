@@ -284,7 +284,7 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   opacity: 0.8;
 }
 .insert-highlight {
-  background: rgba(213, 255, 116, 0.3);
+  background: rgba(213, 255, 116, 0.2);
   min-width: 2px;
 }
 .select-highlight {

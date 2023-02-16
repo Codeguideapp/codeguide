@@ -64,7 +64,7 @@ export default function LandingPage() {
                 <input
                   required
                   name="url"
-                  pattern="(https?:\/\/)?(www\.)?(github\.com|#)[\/]?([A-Za-z0-9-_]+\/[A-Za-z0-9-_]+(\/(pull\/\d+)?)?)"
+                  pattern="(https?:\/\/)?(www\.)?(github\.com)[\/]?([A-Za-z0-9-_.]+\/[A-Za-z0-9-_.]+(\/(pull\/\d+)?)?)"
                   title="Please enter a valid GitHub link (repo or pull request)"
                   autoFocus={true}
                   className="max-w-xs grow rounded-lg border border-white border-opacity-50 bg-transparent px-4 py-3 text-sm font-medium text-white placeholder-white placeholder-opacity-50 outline-none focus:border-opacity-100"

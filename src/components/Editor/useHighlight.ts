@@ -1,15 +1,15 @@
 import { isEqual } from 'lodash';
 import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { useRef } from 'react';
 
+import { modifiedModel } from '../../utils/monaco';
 import { useChangesStore } from '../store/changes';
 import { useFilesStore } from '../store/files';
 
 export function useHighlight() {
   const activeFile = useFilesStore((s) => s.activeFile);
-  const modifiedModel = useFilesStore((s) => s.activeFileModModel);
   const saveDelta = useChangesStore((s) => s.saveDelta);
   const lastHighlight = useRef<
     {
@@ -47,6 +47,6 @@ export function useHighlight() {
         highlight,
       });
     },
-    [activeFile, lastHighlight, modifiedModel, saveDelta]
+    [activeFile, lastHighlight, saveDelta]
   );
 }

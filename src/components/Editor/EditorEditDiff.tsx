@@ -5,10 +5,11 @@ import Delta from 'quill-delta';
 import { useEffect, useRef } from 'react';
 
 import { composeDeltas, getFileContent } from '../../utils/deltaUtils';
+import { modifiedModel, originalModel } from '../../utils/monaco';
 import { usePrevious } from '../hooks/usePrevious';
 import { showWhitespaceAtom } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
-import { FileNode, useFilesStore } from '../store/files';
+import { FileNode } from '../store/files';
 import { EditorToolbar } from './EditorToolbar';
 import { useHighlight } from './useHighlight';
 
@@ -24,8 +25,6 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
   const savedChangesLength = useChangesStore(
     (s) => Object.values(s.changes).filter((c) => !c.isDraft).length
   );
-  const modifiedModel = useFilesStore((s) => s.activeFileModModel);
-  const originalModel = useFilesStore((s) => s.activeFileOrgModel);
 
   const currentVal = useChangesStore((s) => {
     const previousChangeId = findLast(
@@ -170,15 +169,7 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
           )
         );
       });
-  }, [
-    modifiedModel,
-    originalModel,
-    currentVal,
-    activeFile,
-    prevFile?.path,
-    saveDelta,
-    saveHighlight,
-  ]);
+  }, [currentVal, activeFile, prevFile?.path, saveDelta, saveHighlight]);
 
   return (
     <div className="h-full w-full">

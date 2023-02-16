@@ -2,6 +2,7 @@ import * as monaco from 'monaco-editor';
 import create from 'zustand';
 
 import { fetchWithThrow } from '../../utils/fetchWithThrow';
+import { modifiedModel, originalModel } from '../../utils/monaco';
 import { useChangesStore } from './changes';
 import { useGuideStore } from './guide';
 import { useUserStore } from './user';
@@ -26,11 +27,9 @@ export type RepoFileRef = {
 interface FilesState {
   fileNodes: FileNode[];
   activeFile?: FileNode;
-  activeFileModModel: monaco.editor.ITextModel;
-  activeFileOrgModel: monaco.editor.ITextModel;
   undraftActiveFile: () => void;
   setActiveFileByPath: (path: string | undefined) => Promise<void>;
-  setActiveFile: (file: FileNode) => void;
+  setActiveFile: (file: FileNode | undefined) => void;
   setFileNodes: (refs: FileNode[]) => void;
   storeFile: ({
     newVal,
@@ -45,29 +44,19 @@ interface FilesState {
 }
 
 export const useFilesStore = create<FilesState>((set, get) => ({
-  activeFileModModel: monaco.editor.createModel('', 'typescript'),
-  activeFileOrgModel: monaco.editor.createModel('', 'typescript'),
   fileNodes: [],
-  getActiveFileModifiedModel: () => {
-    return monaco.editor.createModel('', 'typescript');
-  },
-  setActiveFile: (activeFile: FileNode) => {
-    get().activeFileModModel.dispose();
-    get().activeFileOrgModel.dispose();
+  setActiveFile: (activeFile: FileNode | undefined) => {
+    if (!activeFile) return;
+    set({ activeFile });
 
-    set({
-      activeFile,
-      activeFileModModel: monaco.editor.createModel(
-        '',
-        undefined,
-        monaco.Uri.file(activeFile.path)
-      ),
-      activeFileOrgModel: monaco.editor.createModel(
-        '',
-        undefined,
-        monaco.Uri.file(activeFile.path)
-      ),
-    });
+    const extension = activeFile.path.split('.').pop() || '';
+
+    const foundLang = monaco.languages
+      .getLanguages()
+      .find((lang) => lang.extensions?.includes(`.${extension}`));
+
+    monaco.editor.setModelLanguage(modifiedModel, foundLang?.id || 'plaintext');
+    monaco.editor.setModelLanguage(originalModel, foundLang?.id || 'plaintext');
   },
   setFileNodes: (fileNodes: FileNode[]) => {
     set({ fileNodes });
@@ -89,7 +78,7 @@ export const useFilesStore = create<FilesState>((set, get) => ({
   },
   setActiveFileByPath: async (path: string | undefined) => {
     if (!path) {
-      set({ activeFile: undefined });
+      get().setActiveFile(undefined);
       return;
     }
 
@@ -97,7 +86,7 @@ export const useFilesStore = create<FilesState>((set, get) => ({
 
     const file = fileNodes.find((f) => f.path === path);
 
-    set({ activeFile: file });
+    get().setActiveFile(file);
 
     if (!file) {
       // make "loading file"
@@ -114,18 +103,17 @@ export const useFilesStore = create<FilesState>((set, get) => ({
 
       try {
         const newFile = await get().loadFile(path);
-        set({ activeFile: newFile });
+        get().setActiveFile(newFile);
       } catch (e) {
-        set({
-          activeFile: {
-            isFileDiff: false,
-            oldVal: '',
-            newVal: '',
-            path,
-            status: 'modified',
-            isFetching: false,
-            fetchError: 'error fetching file',
-          },
+        console.error(e);
+        get().setActiveFile({
+          isFileDiff: false,
+          oldVal: '',
+          newVal: '',
+          path,
+          status: 'modified',
+          isFetching: false,
+          fetchError: 'error fetching file',
         });
       }
     }

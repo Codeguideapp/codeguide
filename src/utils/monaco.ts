@@ -1,7 +1,12 @@
 import * as monaco from 'monaco-editor';
 import Delta from 'quill-delta';
 
+export const modifiedModel = monaco.editor.createModel('', 'typescript');
+export const originalModel = monaco.editor.createModel('', 'typescript');
+
 monaco.languages.typescript.typescriptDefaults.setDiagnosticsOptions({
+  diagnosticCodesToIgnore: [7027],
+  noSuggestionDiagnostics: true,
   noSemanticValidation: true,
   noSyntaxValidation: true,
 });

@@ -3,13 +3,15 @@ import * as monaco from 'monaco-editor';
 import { useEffect, useRef } from 'react';
 
 import { getFileContent } from '../../utils/deltaUtils';
-import { getMonacoEdits, getRange } from '../../utils/monaco';
+import {
+  getMonacoEdits,
+  getRange,
+  modifiedModel,
+  originalModel,
+} from '../../utils/monaco';
 import { showWhitespaceAtom } from '../store/atoms';
 import { useChangesStore } from '../store/changes';
 import { useFilesStore } from '../store/files';
-
-const modelPrev = monaco.editor.createModel('', 'typescript');
-const modelCurrent = monaco.editor.createModel('', 'typescript');
 
 export function EditorHighlightChange({ changeId }: { changeId: string }) {
   const monacoDom = useRef<HTMLDivElement>(null);
@@ -105,22 +107,22 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
         },
       });
 
-      standaloneEditor.current.setModel(modelCurrent);
+      standaloneEditor.current.setModel(modifiedModel);
 
       if (noInserts && noDeletes) {
         // no changes (only highlight)
-        modelCurrent.setValue(currValue);
+        modifiedModel.setValue(currValue);
 
         standaloneEditor.current.createDecorationsCollection(
-          highlightDecorations(modelCurrent)
+          highlightDecorations(modifiedModel)
         );
         standaloneEditor.current.revealRangeNearTop(
-          highlightDecorations(modelCurrent)[0].range
+          highlightDecorations(modifiedModel)[0].range
         );
       } else if (noDeletes) {
         // only inserts
-        modelCurrent.setValue(currValue);
-        const edits = getMonacoEdits(currentChange.delta, modelCurrent);
+        modifiedModel.setValue(currValue);
+        const edits = getMonacoEdits(currentChange.delta, modifiedModel);
         const decorations = edits.map((ed) => {
           return {
             range: ed.range,
@@ -137,13 +139,13 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
 
         standaloneEditor.current.createDecorationsCollection([
           ...decorations,
-          ...highlightDecorations(modelCurrent),
+          ...highlightDecorations(modifiedModel),
         ]);
         standaloneEditor.current.revealRangeNearTop(decorations[0].range);
       } else if (noInserts && prevValue) {
         // only deletes
-        modelCurrent.setValue(prevValue);
-        const edits = getMonacoEdits(currentChange.delta, modelCurrent);
+        modifiedModel.setValue(prevValue);
+        const edits = getMonacoEdits(currentChange.delta, modifiedModel);
         const decorations = edits.map((ed) => {
           return {
             range: ed.range,
@@ -160,13 +162,13 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
 
         standaloneEditor.current.createDecorationsCollection([
           ...decorations,
-          ...highlightDecorations(modelCurrent),
+          ...highlightDecorations(modifiedModel),
         ]);
         standaloneEditor.current.revealRangeNearTop(decorations[0].range);
       }
     } else {
-      modelCurrent.setValue(currValue);
-      modelPrev.setValue(prevValue);
+      modifiedModel.setValue(currValue);
+      originalModel.setValue(prevValue);
 
       if (!diffEditor.current) {
         diffEditor.current = monaco.editor.createDiffEditor(monacoDom.current, {
@@ -180,8 +182,8 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
         });
 
         diffEditor.current.setModel({
-          original: modelPrev,
-          modified: modelCurrent,
+          original: originalModel,
+          modified: modifiedModel,
         });
 
         diffNavigatorRef.current = monaco.editor.createDiffNavigator(
@@ -193,7 +195,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
 
         diffEditor.current
           .getModifiedEditor()
-          .createDecorationsCollection(highlightDecorations(modelCurrent));
+          .createDecorationsCollection(highlightDecorations(modifiedModel));
       }
     }
 
