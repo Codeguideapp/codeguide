@@ -95,9 +95,9 @@ export default function LandingPage() {
                 className="relative z-0 my-8 w-full"
               >
                 <Image
-                  width={2200}
-                  height={1462}
-                  src="/landing/hero.png"
+                  width={2578}
+                  height={1478}
+                  src="/landing/editor.png"
                   alt="Codeguide"
                 />
               </div>
