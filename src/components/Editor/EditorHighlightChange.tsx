@@ -17,7 +17,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
   const monacoDom = useRef<HTMLDivElement>(null);
   const standaloneEditor = useRef<monaco.editor.IStandaloneCodeEditor>();
   const diffEditor = useRef<monaco.editor.IStandaloneDiffEditor>();
-  const diffNavigatorRef = useRef<monaco.IDisposable>();
+  const onUpdateDiffRef = useRef<monaco.IDisposable>();
   const currentChange = useChangesStore((s) => s.changes[changeId]);
   const activeFile = useFilesStore((s) => s.activeFile);
   const showWhitespace = useAtomValue(showWhitespaceAtom);
@@ -186,12 +186,18 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
           modified: modifiedModel,
         });
 
-        diffNavigatorRef.current = monaco.editor.createDiffNavigator(
-          diffEditor.current,
-          {
-            alwaysRevealFirst: true,
+        onUpdateDiffRef.current = diffEditor.current.onDidUpdateDiff(() => {
+          onUpdateDiffRef.current?.dispose();
+
+          const firstLineChange =
+            diffEditor.current?.getLineChanges()?.[0].modifiedStartLineNumber;
+
+          if (typeof firstLineChange === 'number') {
+            diffEditor.current
+              ?.getModifiedEditor()
+              .revealLineNearTop(firstLineChange);
           }
-        );
+        });
 
         diffEditor.current
           .getModifiedEditor()
@@ -200,7 +206,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
     }
 
     return () => {
-      diffNavigatorRef.current?.dispose();
+      onUpdateDiffRef.current?.dispose();
       standaloneEditor.current?.dispose();
       standaloneEditor.current = undefined;
 
