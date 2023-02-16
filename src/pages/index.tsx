@@ -1,4 +1,4 @@
-import { faArrowRight } from '@fortawesome/free-solid-svg-icons';
+import { faArrowRight, faDesktop } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Switch } from 'antd';
 import Head from 'next/head';
@@ -58,7 +58,7 @@ export default function LandingPage() {
                 onboarding, explaining the context of a code review, and more.
               </p>
               <form
-                className="my-6 mb-6 flex flex-wrap items-center justify-center gap-2"
+                className="my-6 mb-6 hidden flex-wrap items-center justify-center gap-2 md:flex"
                 onSubmit={handleSubmit}
               >
                 <input
@@ -77,7 +77,7 @@ export default function LandingPage() {
                   <span>{isSubmitting ? 'Creating...' : 'Create guide'}</span>
                 </button>
               </form>
-              <div className="flex justify-center">
+              <div className="hidden justify-center md:flex">
                 <Link
                   href="/9r658ysho"
                   className="flex items-center gap-2 text-white opacity-60 hover:text-white hover:opacity-100"
@@ -86,6 +86,10 @@ export default function LandingPage() {
 
                   <span>try example guide</span>
                 </Link>
+              </div>
+              <div className="flex items-center justify-center gap-2 md:hidden">
+                <FontAwesomeIcon icon={faDesktop} />
+                <span>Try it on desktop / laptop</span>
               </div>
             </div>
             <div className="mx-auto w-full text-center md:w-4/6">
