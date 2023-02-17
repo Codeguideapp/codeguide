@@ -20,13 +20,16 @@ import { useGuideStore } from './store/guide';
 import { useChangesStore } from './store/changes';
 import { useCommentsStore } from './store/comments';
 import { useAtom } from 'jotai';
-import { activeSectionAtom } from './store/atoms';
+import { activeSectionAtom, isEditing } from './store/atoms';
+import { useUserStore } from './store/user';
+import { EditAccessDenied } from './editAccessDenied';
 
 monaco.editor.defineTheme('darkInvertedDiff', darkThemeInvertedDif);
 monaco.editor.defineTheme('darkTheme', darkTheme);
 
 export default function Loader() {
   const [, setActiveSection] = useAtom(activeSectionAtom);
+  const userEmail = useUserStore((s) => s.userSession?.user.email);
 
   const res = api.guide.getGuide.useQuery(
     {
@@ -66,7 +69,12 @@ export default function Loader() {
   }, [undraftActiveFile]);
 
   if (res.isFetching) return <Loading />;
+
   if (res.error?.data?.code === 'FORBIDDEN') return <AccessDenied />;
+
+  if (isEditing() && !res.data?.guide.canEdit.includes(userEmail || ''))
+    return <EditAccessDenied />;
+
   if (res.error?.data?.code === 'NOT_FOUND') return <GuideNotFound />;
   if (res.error) return <InternalError />;
 
