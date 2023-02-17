@@ -1,46 +1,59 @@
-# Getting Started with Create React App
+# CodeGuide
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+[Codeguide](https://codeguide.app) is an open-source tool for creating and viewing code guides. For onboarding, explaining the context of a code review, and more.
 
-## Available Scripts
+![CodeGuide](https://codeguide.app/_next/image?url=%2Flanding%2Fscreenshot-editor.png&w=3840&q=75)
 
-In the project directory, you can run:
+## Why would you use it?
 
-### `yarn start`
+**Onboard (or re-board) to a new project or feature**
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+With code guides you can help new team members understand the codebase and get up to speed quickly. Also, it's a great way to re-board yourself to a project or feature area you haven't worked on for a while.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+**Understand the context of a code review/PR change**
 
-### `yarn test`
+It makes it easy for PR authors to explain the reasoning behind their decisions and draw attention to important parts of their changes so reviewers can focus on those first.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+**Make code presentations**
 
-### `yarn build`
+You can use Codeguide for creating code presentations, whether it's for a conference talk or a training session.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Next.js
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+This is a [Next.js](https://nextjs.org/) project. To bootstrap a similar one, we recommend using [`create-t3-stack`](https://github.com/t3-oss/create-t3-app).
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Architecture
 
-### `yarn eject`
+Project is written in TypeScript, using:
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+- [AWS DynamoDB](https://aws.amazon.com/dynamodb/) as a database (but the plan is to support other databases in the future)
+- [NextAuth.js](https://next-auth.js.org/) for authentication (only GitHub connection at the moment)
+- [tRPC](https://trpc.io/) for handling API requests
+- [Tailwind CSS](https://tailwindcss.com/) for styling
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Self hosting
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+If you want to self host this projec, first you need to set up enviroment variables:
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+```
+AWS_APP_REGION=''
+AWS_APP_ACCESS_KEY=''
+AWS_APP_SECRET_KEY=''
 
-## Learn More
+DYNAMODB_GUIDES_TABLE=''
+DYNAMODB_CHANGES_TABLE=''
+DYNAMODB_COMMENTS_TABLE=''
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+NEXTAUTH_SECRET=''
+NEXTAUTH_URL=http://localhost:3000
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+then run the development server:
+
+```bash
+npm run dev
+# or
+yarn dev
+```
+
+After that, open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
