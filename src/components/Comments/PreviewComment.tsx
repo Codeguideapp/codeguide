@@ -31,12 +31,12 @@ export function PreviewComment({ comment }: { comment: IComment }) {
           <Link
             href={author.data?.data?.html_url}
             target="_blank"
-            className=" font-bold text-white"
+            className="font-bold text-black hover:text-black hover:underline"
           >
             {name}
           </Link>
         ) : (
-          <span className=" font-bold text-white">{name}</span>
+          <span className="font-bold text-black">{name}</span>
         )
       }
       actions={

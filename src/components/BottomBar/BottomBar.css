@@ -51,9 +51,21 @@
 
 .step-controls .ant-comment {
   position: relative;
-  background-color: var(--zinc-custom-850);
-  margin: 10px;
-  border-radius: 5px;
+  background-color: #fff;
+  color: #000;
+  margin: 10px 15px;
+  border-radius: 8px;
+}
+
+.ant-comment-content-author a {
+  font-size: 14px;
+}
+
+.ant-comment-actions > li > span {
+  color: #00000073;
+}
+.ant-comment-actions > li > span:hover {
+  color: #000000;
 }
 
 .step-controls .ant-comment-inner {
