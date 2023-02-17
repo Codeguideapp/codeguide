@@ -2,7 +2,7 @@
 
 [Codeguide](https://codeguide.app) is an open-source tool for creating and viewing code guides. For onboarding, explaining the context of a code review, and more.
 
-![CodeGuide](https://codeguide.app/_next/image?url=%2Flanding%2Fscreenshot-editor.png&w=3840&q=75)
+![CodeGuide](/public/landing/editor-2.png)
 
 ## Why would you use it?
 
