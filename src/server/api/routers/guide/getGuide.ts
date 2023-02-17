@@ -26,7 +26,10 @@ export const getGuide = publicProcedure
         repo: guide.repository,
       })
       .then((res) => res.status)
-      .catch((e) => e.status);
+      .catch((e) => {
+        console.log(e);
+        return e.status;
+      });
 
     if (checkStatus !== 200) {
       throw new TRPCError({ code: 'FORBIDDEN' });

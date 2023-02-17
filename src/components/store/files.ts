@@ -46,8 +46,8 @@ interface FilesState {
 export const useFilesStore = create<FilesState>((set, get) => ({
   fileNodes: [],
   setActiveFile: (activeFile: FileNode | undefined) => {
-    if (!activeFile) return;
     set({ activeFile });
+    if (!activeFile) return;
 
     const extension = activeFile.path.split('.').pop() || '';
 
