@@ -33,7 +33,7 @@ Project is written in TypeScript, using:
 
 ## Self hosting
 
-If you want to self host this projec, first you need to set up enviroment variables:
+If you want to self host this project, first you need to set up enviroment variables:
 
 ```
 AWS_APP_REGION=''
