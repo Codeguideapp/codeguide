@@ -56,4 +56,17 @@ npm run dev
 yarn dev
 ```
 
+### DynamoDB table structure
+
+- `DYNAMODB_GUIDES_TABLE`
+  - used for storing guide info (repository name, owner, createdBy etc)
+  - partition key: `id` (string)
+  - secundary index: `createdBy` (string) partition key, `createdAt` (number) sort key
+- `DYNAMODB_CHANGES_TABLE`
+  - saved changes, which are actually steps and will be renamed in future (the goal of this project changed over time so the name stayed)
+  - partition key: `guideId` (string), sort key: `changeId` (string). `changeId` (string, ULID)
+- `DYNAMODB_COMMENTS_TABLE`
+  - saved comments for each step
+  - partition key: `guideId` (string), sort key: `commentId` (string, ULID)
+
 After that, open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
