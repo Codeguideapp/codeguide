@@ -1,6 +1,6 @@
 import Delta from 'quill-delta';
 
-import { Change } from '../components/store/changes';
+import { Step } from '../components/store/steps';
 
 export function composeDeltas(deltas: Delta[]) {
   return deltas.reduce((acc, curr) => acc.compose(curr), new Delta());
@@ -17,15 +17,15 @@ export function deltaToString(deltas: Delta[]) {
 }
 
 export function getFileContent({
-  upToChangeId,
+  upToStepId,
   changes,
   excludeChange,
 }: {
-  upToChangeId: string;
-  changes: Record<string, Change>;
+  upToStepId: string;
+  changes: Record<string, Step>;
   excludeChange?: boolean;
 }) {
-  const change = changes[upToChangeId];
+  const change = changes[upToStepId];
   if (!change) throw new Error('change not found');
 
   const changesOrder = Object.keys(changes).sort();

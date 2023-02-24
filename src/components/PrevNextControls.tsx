@@ -8,25 +8,25 @@ import { last } from 'lodash';
 import * as Mousetrap from 'mousetrap';
 import { useCallback, useEffect, useMemo } from 'react';
 
-import { useShallowChanges } from './hooks/useShallowChanges';
+import { useShallowSteps } from './hooks/useShallowSteps';
 import { isEditing } from './store/atoms';
-import { useChangesStore } from './store/changes';
 import { useFilesStore } from './store/files';
+import { useStepsStore } from './store/steps';
 
 library.add(faBackwardStep, faForwardStep, faPlay);
 
 export function PrevNextControls() {
-  const changes = useShallowChanges();
-  const activeChangeId = useChangesStore((s) => s.activeChangeId);
-  const setActiveChangeId = useChangesStore((s) => s.setActiveChangeId);
+  const steps = useShallowSteps();
+  const activeStepId = useStepsStore((s) => s.activeStepId);
+  const setActiveChangeId = useStepsStore((s) => s.setActiveStepId);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
 
   const changesIdsNoFile = useMemo(
     () =>
-      Object.keys(changes)
+      Object.keys(steps)
         .sort()
-        .filter((id) => !changes[id].isFileDepChange),
-    [changes]
+        .filter((id) => !steps[id].isFileDepChange),
+    [steps]
   );
 
   const goToFirstChange = useCallback(() => {
@@ -35,52 +35,52 @@ export function PrevNextControls() {
     if (!firstChange) return;
 
     setActiveChangeId(firstChange);
-    setActiveFileByPath(changes[firstChange].path);
-  }, [changesIdsNoFile, changes, setActiveChangeId, setActiveFileByPath]);
+    setActiveFileByPath(steps[firstChange].path);
+  }, [changesIdsNoFile, steps, setActiveChangeId, setActiveFileByPath]);
 
   const goToPrevChange = useCallback(() => {
-    if (!activeChangeId) {
+    if (!activeStepId) {
       const lastChangeId = last(changesIdsNoFile);
       if (lastChangeId) {
         setActiveChangeId(lastChangeId);
-        setActiveFileByPath(changes[lastChangeId].path);
+        setActiveFileByPath(steps[lastChangeId].path);
       }
       return;
     }
 
-    const currentIndex = changesIdsNoFile.indexOf(activeChangeId);
+    const currentIndex = changesIdsNoFile.indexOf(activeStepId);
 
     const prevChangeId = changesIdsNoFile[currentIndex - 1];
     if (!prevChangeId) return;
 
     setActiveChangeId(prevChangeId);
-    setActiveFileByPath(changes[prevChangeId].path);
+    setActiveFileByPath(steps[prevChangeId].path);
   }, [
-    activeChangeId,
-    changes,
+    activeStepId,
+    steps,
     changesIdsNoFile,
     setActiveChangeId,
     setActiveFileByPath,
   ]);
 
   const goToNextChange = useCallback(() => {
-    if (!activeChangeId) {
+    if (!activeStepId) {
       return;
     }
 
-    const currentIndex = changesIdsNoFile.indexOf(activeChangeId);
+    const currentIndex = changesIdsNoFile.indexOf(activeStepId);
     const nextChangeId: string | undefined = changesIdsNoFile[currentIndex + 1];
 
     setActiveChangeId(nextChangeId);
 
     if (nextChangeId) {
-      setActiveFileByPath(changes[nextChangeId].path);
+      setActiveFileByPath(steps[nextChangeId].path);
     } else if (!isEditing()) {
       setActiveFileByPath(undefined);
     }
   }, [
-    activeChangeId,
-    changes,
+    activeStepId,
+    steps,
     changesIdsNoFile,
     setActiveFileByPath,
     setActiveChangeId,
@@ -91,12 +91,12 @@ export function PrevNextControls() {
     if (!isEditing()) {
       setActiveFileByPath(undefined);
     } else {
-      const lastChangeId = last(Object.keys(changes).sort());
+      const lastChangeId = last(Object.keys(steps).sort());
       if (lastChangeId) {
-        setActiveFileByPath(changes[lastChangeId].path);
+        setActiveFileByPath(steps[lastChangeId].path);
       }
     }
-  }, [changes, setActiveChangeId, setActiveFileByPath]);
+  }, [steps, setActiveChangeId, setActiveFileByPath]);
 
   useEffect(() => {
     Mousetrap.bind(['shift+up', 'shift+left'], goToFirstChange);

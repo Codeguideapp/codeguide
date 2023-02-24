@@ -13,26 +13,26 @@ import { useResizeDetector } from 'react-resize-detector';
 import { decodeTime } from 'ulid';
 
 import { expandedFilesAtom, isEditing } from '../store/atoms';
-import { useChangesStore } from '../store/changes';
 import { useFilesStore } from '../store/files';
 import { useGuideStore } from '../store/guide';
+import { useStepsStore } from '../store/steps';
 import { pathsToTreeStructure } from './pathsToTree';
 
 export function FilesExplorer() {
-  const setActiveChangeId = useChangesStore((s) => s.setActiveChangeId);
+  const setActiveChangeId = useStepsStore((s) => s.setActiveStepId);
   const treeRef = React.useRef<any>();
-  const highlightChange = useChangesStore((s) =>
-    s.activeChangeId ? s.changes[s.activeChangeId] : null
+  const highlightChange = useStepsStore((s) =>
+    s.activeStepId ? s.steps[s.activeStepId] : null
   );
-  const appliedPaths = useChangesStore((s) => {
-    const changeIds = Object.keys(s.changes).sort();
-    const activeChangeId = s.activeChangeId;
+  const appliedPaths = useStepsStore((s) => {
+    const changeIds = Object.keys(s.steps).sort();
+    const activeChangeId = s.activeStepId;
     return uniq(
       changeIds
         .filter((id) =>
           !activeChangeId ? false : decodeTime(id) <= decodeTime(activeChangeId)
         )
-        .map((id) => s.changes[id].path)
+        .map((id) => s.steps[id].path)
     );
   });
   const fileRefs = useGuideStore((s) => s.fileRefs);

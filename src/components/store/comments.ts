@@ -1,25 +1,24 @@
 import produce from 'immer';
-import { ulid } from 'ulid';
 import create from 'zustand';
 
 import { fetchWithThrow } from '../../utils/fetchWithThrow';
 import { generateId } from '../../utils/generateId';
-import { useChangesStore } from './changes';
 import { useGuideStore } from './guide';
+import { useStepsStore } from './steps';
 import { useUserStore } from './user';
 
 export type IComment = {
   isMine: boolean;
   githubUserId: string;
   commentId: string;
-  changeId: string;
+  stepId: string;
   commentBody: string;
   timestamp: number;
 };
 interface CommentsState {
   publishedComments: IComment[];
   savedComments: Record<string, IComment[]>;
-  draftCommentPerChange: Record<string, IComment & { isEditing: boolean }>;
+  draftCommentPerStep: Record<string, IComment & { isEditing: boolean }>;
   hasDataToPublish: () => boolean;
   deleteComment: (commentId: string) => void;
   editComment: (commentId: string) => void;
@@ -32,13 +31,12 @@ interface CommentsState {
 export const useCommentsStore = create<CommentsState>((set, get) => ({
   publishedComments: [],
   savedComments: {},
-  draftCommentPerChange: {},
-  activeCommentIdPerChange: {},
+  draftCommentPerStep: {},
   hasDataToPublish: () => {
     const savedComments = Object.values(get().savedComments).flat();
 
-    const draftComments = Object.values(get().draftCommentPerChange).filter(
-      (change) => change.commentBody !== ''
+    const draftComments = Object.values(get().draftCommentPerStep).filter(
+      (step) => step.commentBody !== ''
     );
 
     const commentsToPush = savedComments.filter(
@@ -68,56 +66,53 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
     }
 
     set({
-      draftCommentPerChange: produce(
-        get().draftCommentPerChange,
-        (draftObj) => {
-          draftObj[commentToEdit.changeId] = {
-            ...commentToEdit,
-            isEditing: true,
-          };
-        }
-      ),
+      draftCommentPerStep: produce(get().draftCommentPerStep, (draftObj) => {
+        draftObj[commentToEdit.stepId] = {
+          ...commentToEdit,
+          isEditing: true,
+        };
+      }),
     });
   },
 
   saveActiveCommentVal: async (val: string) => {
-    const activeChangeId = useChangesStore.getState().activeChangeId;
-    const { draftCommentPerChange } = get();
+    const activeStepId = useStepsStore.getState().activeStepId;
+    const { draftCommentPerStep } = get();
 
-    if (!activeChangeId) {
-      throw new Error('cant save note, invalid activeChangeId');
+    if (!activeStepId) {
+      throw new Error('cant save note, invalid activeStepId');
     }
 
-    const commentToEdit = draftCommentPerChange[activeChangeId]?.isEditing
-      ? draftCommentPerChange[activeChangeId]
+    const commentToEdit = draftCommentPerStep[activeStepId]?.isEditing
+      ? draftCommentPerStep[activeStepId]
       : undefined;
 
     const session = useUserStore.getState().userSession;
 
-    const newDraftCommentPerChange = produce(
-      get().draftCommentPerChange,
+    const newDraftCommentPerStep = produce(
+      get().draftCommentPerStep,
       (draftObj) => {
-        draftObj[activeChangeId] = {
+        draftObj[activeStepId] = {
           isEditing: Boolean(commentToEdit),
           isMine: true,
           githubUserId: session?.user?.id || '',
           commentBody: val,
           commentId: commentToEdit ? commentToEdit.commentId : generateId(),
-          changeId: activeChangeId,
+          stepId: activeStepId,
           timestamp: Date.now(),
         };
       }
     );
 
-    set({ draftCommentPerChange: newDraftCommentPerChange });
+    set({ draftCommentPerStep: newDraftCommentPerStep });
   },
 
   deleteComment: (commentId: string) => {
     const { savedComments } = get();
 
     const newSavedComments = produce(savedComments, (draftObj) => {
-      for (const changeId of Object.keys(draftObj)) {
-        draftObj[changeId] = draftObj[changeId].filter(
+      for (const stepId of Object.keys(draftObj)) {
+        draftObj[stepId] = draftObj[stepId].filter(
           (comment) => comment.commentId !== commentId
         );
       }
@@ -127,36 +122,36 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
   },
 
   saveComment: () => {
-    const activeChangeId = useChangesStore.getState().activeChangeId;
-    const { savedComments, draftCommentPerChange } = get();
+    const activeStepId = useStepsStore.getState().activeStepId;
+    const { savedComments, draftCommentPerStep: draftCommentPerStep } = get();
 
-    if (!activeChangeId) {
-      throw new Error('cant save comment, invalid activeChangeId');
+    if (!activeStepId) {
+      throw new Error('cant save comment, invalid activeStepId');
     }
-    if (!draftCommentPerChange[activeChangeId]) {
+    if (!draftCommentPerStep[activeStepId]) {
       throw new Error('comment is empty');
     }
 
-    const commentToEdit = draftCommentPerChange[activeChangeId]?.isEditing
-      ? draftCommentPerChange[activeChangeId]
+    const commentToEdit = draftCommentPerStep[activeStepId]?.isEditing
+      ? draftCommentPerStep[activeStepId]
       : undefined;
 
     const newSavedComments = produce(savedComments, (savedCommentsTemp) => {
-      const newComment = draftCommentPerChange[activeChangeId];
+      const newComment = draftCommentPerStep[activeStepId];
 
       if (commentToEdit) {
         // edit existing comment
-        const commentIndexToEdit = savedCommentsTemp[activeChangeId].findIndex(
+        const commentIndexToEdit = savedCommentsTemp[activeStepId].findIndex(
           (c) => c.commentId === commentToEdit.commentId
         );
 
         if (commentIndexToEdit !== -1) {
-          savedCommentsTemp[activeChangeId][commentIndexToEdit] = newComment;
+          savedCommentsTemp[activeStepId][commentIndexToEdit] = newComment;
         }
       } else {
         // add new comment
-        savedCommentsTemp[activeChangeId] = [
-          ...(savedCommentsTemp[activeChangeId] || []),
+        savedCommentsTemp[activeStepId] = [
+          ...(savedCommentsTemp[activeStepId] || []),
           newComment,
         ];
       }
@@ -164,36 +159,40 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
 
     set({
       savedComments: newSavedComments,
-      draftCommentPerChange: produce(draftCommentPerChange, (draftObj) => {
-        delete draftObj[activeChangeId];
+      draftCommentPerStep: produce(draftCommentPerStep, (draftObj) => {
+        delete draftObj[activeStepId];
       }),
     });
   },
 
   publishComments: async () => {
-    const { savedComments, draftCommentPerChange, publishedComments } = get();
+    const {
+      savedComments,
+      draftCommentPerStep: draftCommentPerStep,
+      publishedComments,
+    } = get();
 
     // undraft all comments
-    for (const changeId of Object.keys(useChangesStore.getState().changes)) {
-      if (!draftCommentPerChange[changeId]) {
+    for (const stepId of Object.keys(useStepsStore.getState().steps)) {
+      if (!draftCommentPerStep[stepId]) {
         continue;
       }
 
       const newSavedComments = produce(savedComments, (draftObj) => {
-        draftObj[changeId] = [
-          ...(draftObj[changeId] || []),
-          draftCommentPerChange[changeId],
+        draftObj[stepId] = [
+          ...(draftObj[stepId] || []),
+          draftCommentPerStep[stepId],
         ];
       });
-      const newDraftCommentPerChange = produce(
-        draftCommentPerChange,
+      const newDraftCommentPerStep = produce(
+        draftCommentPerStep,
         (draftObj) => {
-          delete draftObj[changeId];
+          delete draftObj[stepId];
         }
       );
 
       set({
-        draftCommentPerChange: newDraftCommentPerChange,
+        draftCommentPerStep: newDraftCommentPerStep,
         savedComments: newSavedComments,
       });
     }
@@ -253,7 +252,7 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
           publishedComments: [...get().publishedComments, ...savedComments],
         });
 
-        // If there are more changes to save, send another request
+        // If there are more steps to save, send another request
         if (commentsToPush.length > 25) {
           return get().publishComments();
         } else {
@@ -276,21 +275,21 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
   },
 
   storeCommentsFromServer: (comments: IComment[]) => {
-    const commentsPerChange = produce(get().savedComments, (draftObj) => {
+    const commentsPerStep = produce(get().savedComments, (draftObj) => {
       for (const comment of comments) {
-        if (!draftObj[comment.changeId]) {
-          draftObj[comment.changeId] = [];
+        if (!draftObj[comment.stepId]) {
+          draftObj[comment.stepId] = [];
         }
-        const changeComments = draftObj[comment.changeId];
+        const stepComments = draftObj[comment.stepId];
 
-        if (!changeComments.find((c) => c.commentId === comment.commentId)) {
-          changeComments.push(comment);
+        if (!stepComments.find((c) => c.commentId === comment.commentId)) {
+          stepComments.push(comment);
         }
       }
     });
 
     set({
-      savedComments: commentsPerChange,
+      savedComments: commentsPerStep,
       publishedComments: comments,
     });
   },

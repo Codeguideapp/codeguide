@@ -10,31 +10,31 @@ import {
   originalModel,
 } from '../../utils/monaco';
 import { showWhitespaceAtom } from '../store/atoms';
-import { useChangesStore } from '../store/changes';
 import { useFilesStore } from '../store/files';
+import { useStepsStore } from '../store/steps';
 
 export function EditorHighlightChange({ changeId }: { changeId: string }) {
   const monacoDom = useRef<HTMLDivElement>(null);
   const standaloneEditor = useRef<monaco.editor.IStandaloneCodeEditor>();
   const diffEditor = useRef<monaco.editor.IStandaloneDiffEditor>();
   const onUpdateDiffRef = useRef<monaco.IDisposable>();
-  const currentChange = useChangesStore((s) => s.changes[changeId]);
+  const currentChange = useStepsStore((s) => s.steps[changeId]);
   const activeFile = useFilesStore((s) => s.activeFile);
   const showWhitespace = useAtomValue(showWhitespaceAtom);
-  const { currValue, prevValue } = useChangesStore((s) => {
+  const { currValue, prevValue } = useStepsStore((s) => {
     if (!activeFile) return {};
 
     const contentCurrent = getFileContent({
-      upToChangeId: changeId,
-      changes: s.changes,
+      upToStepId: changeId,
+      changes: s.steps,
     });
 
-    const currentChange = s.changes[changeId];
-    const changesOrder = Object.keys(s.changes).sort();
+    const currentChange = s.steps[changeId];
+    const changesOrder = Object.keys(s.steps).sort();
     const currentChangeIndex = changesOrder.findIndex((c) => c === changeId);
     const changesUpToChangeId = changesOrder
       .slice(0, currentChangeIndex)
-      .map((id) => s.changes[id]);
+      .map((id) => s.steps[id]);
 
     // this works in ts 5.0
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -51,8 +51,8 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
       if (changeForTheFile) {
         return {
           currValue: getFileContent({
-            upToChangeId: changeForTheFile.id,
-            changes: s.changes,
+            upToStepId: changeForTheFile.id,
+            changes: s.steps,
           }),
         };
       } else {
@@ -68,8 +68,8 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
       return {
         currValue: contentCurrent,
         prevValue: getFileContent({
-          upToChangeId: prevChange.id,
-          changes: s.changes,
+          upToStepId: prevChange.id,
+          changes: s.steps,
         }),
       };
     }

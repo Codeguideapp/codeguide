@@ -1,15 +1,15 @@
 import TextArea from 'antd/lib/input/TextArea';
 import { useCallback } from 'react';
 
-import { useChangesStore } from '../store/changes';
 import { useCommentsStore } from '../store/comments';
+import { useStepsStore } from '../store/steps';
 
 export function WriteComment() {
-  const activeChangeId = useChangesStore((s) => s.activeChangeId);
-  const getChangeIndex = useChangesStore((s) => s.getChangeIndex);
+  const activeChangeId = useStepsStore((s) => s.activeStepId);
+  const getChangeIndex = useStepsStore((s) => s.getStepIndex);
   const value = useCommentsStore((s) => {
     if (activeChangeId) {
-      return s.draftCommentPerChange[activeChangeId]?.commentBody || '';
+      return s.draftCommentPerStep[activeChangeId]?.commentBody || '';
     } else {
       return '';
     }

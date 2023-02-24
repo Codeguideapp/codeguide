@@ -41,7 +41,7 @@ AWS_APP_ACCESS_KEY=''
 AWS_APP_SECRET_KEY=''
 
 DYNAMODB_GUIDES_TABLE=''
-DYNAMODB_CHANGES_TABLE=''
+DYNAMODB_STEPS_TABLE=''
 DYNAMODB_COMMENTS_TABLE=''
 
 NEXTAUTH_SECRET=''
@@ -62,8 +62,8 @@ yarn dev
   - used for storing guide info (repository name, owner, createdBy etc)
   - partition key: `id` (string)
   - secundary index: `createdBy` (string) partition key, `createdAt` (number) sort key
-- `DYNAMODB_CHANGES_TABLE`
-  - saved changes, which are actually steps and will be renamed in future (the goal of this project changed over time so the name stayed)
+- `DYNAMODB_STEPS_TABLE`
+  - saved steps for each guide
   - partition key: `guideId` (string), sort key: `changeId` (string). `changeId` (string, ULID)
 - `DYNAMODB_COMMENTS_TABLE`
   - saved comments for each step

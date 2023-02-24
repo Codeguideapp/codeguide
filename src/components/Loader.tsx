@@ -17,7 +17,7 @@ import { InternalError } from './indexInternalError';
 import { useFilesStore } from './store/files';
 import { api } from '../utils/api';
 import { useGuideStore } from './store/guide';
-import { useChangesStore } from './store/changes';
+import { useStepsStore } from './store/steps';
 import { useCommentsStore } from './store/comments';
 import { useAtom } from 'jotai';
 import { activeSectionAtom, isEditing } from './store/atoms';
@@ -49,7 +49,7 @@ export default function Loader() {
     if (res.data && !useGuideStore.getState().id) {
       useGuideStore.getState().setGuide(res.data.guide);
       Promise.all([
-        useChangesStore.getState().storeChangesFromServer(res.data.changes),
+        useStepsStore.getState().storeStepsFromServer(res.data.changes),
         useCommentsStore.getState().storeCommentsFromServer(res.data.comments),
       ]).then(() => {
         useGuideStore.setState({ isFetching: false });

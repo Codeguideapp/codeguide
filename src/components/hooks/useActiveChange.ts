@@ -1,13 +1,13 @@
 import { useMemo } from 'react';
 
-import { useChangesStore } from '../store/changes';
-import { useShallowChanges } from './useShallowChanges';
+import { useStepsStore } from '../store/steps';
+import { useShallowSteps } from './useShallowSteps';
 
 export function useActiveChange() {
-  const activeChangeId = useChangesStore((s) => s.activeChangeId);
-  const changes = useShallowChanges();
+  const activeChangeId = useStepsStore((s) => s.activeStepId);
+  const steps = useShallowSteps();
 
   return useMemo(() => {
-    return activeChangeId ? changes[activeChangeId] : null;
-  }, [activeChangeId, changes]);
+    return activeChangeId ? steps[activeChangeId] : null;
+  }, [activeChangeId, steps]);
 }

@@ -36,7 +36,7 @@ export async function deleteChanges({
     await dynamoDb
       .batchWrite({
         RequestItems: {
-          [process.env.DYNAMODB_CHANGES_TABLE]: deleteRequests,
+          [process.env.DYNAMODB_STEPS_TABLE]: deleteRequests,
         },
       })
       .promise();

@@ -18,9 +18,9 @@ import { LeftSide } from './LeftSide/LeftSide';
 import { PrevNextControls } from './PrevNextControls';
 import { ProfileMenu } from './ProfileMenu';
 import { isEditing } from './store/atoms';
-import { useChangesStore } from './store/changes';
 import { useCommentsStore } from './store/comments';
 import { useGuideStore } from './store/guide';
+import { useStepsStore } from './store/steps';
 
 export function App() {
   const { data: session } = useSession();
@@ -30,8 +30,8 @@ export function App() {
   const repository = useGuideStore((s) => s.repository);
   const owner = useGuideStore((s) => s.owner);
   const publishComments = useCommentsStore((s) => s.publishComments);
-  const publishChanges = useChangesStore((s) => s.publishChanges);
-  const hasUnpublishedChanges = useChangesStore((s) => s.hasDataToPublish());
+  const publishChanges = useStepsStore((s) => s.publishSteps);
+  const hasUnpublishedChanges = useStepsStore((s) => s.hasDataToPublish());
   const hasUnpublishedComments = useCommentsStore((s) => s.hasDataToPublish());
   const [isDragging, setDragging] = useState(false);
   const [isSaving, setSaving] = useState(false);

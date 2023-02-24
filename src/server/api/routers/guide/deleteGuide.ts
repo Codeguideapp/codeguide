@@ -27,7 +27,7 @@ export const deleteGuide = protectedProcedure
       await deleteAllForPrimaryKey({
         primaryKeyName: 'guideId',
         primaryKeyValue: input.id,
-        tableName: process.env.DYNAMODB_CHANGES_TABLE,
+        tableName: process.env.DYNAMODB_STEPS_TABLE,
         sortKeyName: 'changeId',
       });
 

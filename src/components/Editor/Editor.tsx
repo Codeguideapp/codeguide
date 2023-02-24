@@ -4,11 +4,11 @@ import { useMemo } from 'react';
 import { BottomBarEdit } from '../BottomBar/BottomBar';
 import { Comments } from '../Comments/Comments';
 import { useActiveChange } from '../hooks/useActiveChange';
-import { useShallowChanges } from '../hooks/useShallowChanges';
+import { useShallowSteps } from '../hooks/useShallowSteps';
 import { Steps } from '../Steps/Steps';
 import { isEditing } from '../store/atoms';
-import { Change, useChangesStore } from '../store/changes';
 import { FileNode, useFilesStore } from '../store/files';
+import { Step, useStepsStore } from '../store/steps';
 import { LoadingIcon } from '../svgIcons/LoadingIcon';
 import { EditorEditDiff } from './EditorEditDiff';
 import { EditorHighlightChange } from './EditorHighlightChange';
@@ -21,9 +21,9 @@ function GetEditorComponent({
   activeChange,
 }: {
   activeFile?: FileNode;
-  activeChange?: Change | null;
+  activeChange?: Step | null;
 }) {
-  const changeIds = Object.keys(useChangesStore.getState().changes);
+  const changeIds = Object.keys(useStepsStore.getState().steps);
 
   if (!activeFile) {
     if (changeIds.length === 0) {
@@ -66,8 +66,8 @@ export function Editor() {
   const activeChange = useActiveChange();
   const activeFile = useFilesStore((s) => s.activeFile);
   const unsavedFilePaths = useUnsavedFilePaths();
-  const getChangeIndex = useChangesStore((s) => s.getChangeIndex);
-  const changesNum = useChangesStore((s) => Object.keys(s.changes).length);
+  const getChangeIndex = useStepsStore((s) => s.getStepIndex);
+  const changesNum = useStepsStore((s) => Object.keys(s.steps).length);
   const tabName = activeFile
     ? activeFile?.path.split('/').pop()
     : changesNum === 0
@@ -124,13 +124,13 @@ export function Editor() {
 }
 
 function useUnsavedFilePaths() {
-  const changes = useShallowChanges();
+  const steps = useShallowSteps();
 
   return useMemo(
     () =>
-      Object.values(changes)
+      Object.values(steps)
         .filter((c) => c.isDraft)
         .map((c) => c.path),
-    [changes]
+    [steps]
   );
 }

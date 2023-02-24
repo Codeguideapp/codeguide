@@ -2,11 +2,11 @@ import { faFile } from '@fortawesome/free-regular-svg-icons';
 import { faFileAlt } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
-import { useChangesStore } from '../store/changes';
+import { useStepsStore } from '../store/steps';
 
 export function FileIcon({ path }: { path: string }) {
-  const draftChanges = useChangesStore((s) =>
-    Object.values(s.changes)
+  const draftChanges = useStepsStore((s) =>
+    Object.values(s.steps)
       .filter((c) => c.isDraft)
       .map((c) => c.path)
   );

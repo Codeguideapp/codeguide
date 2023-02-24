@@ -6,7 +6,7 @@ import { dynamoDb } from './dynamoDb';
 
 const Comments = z.array(
   z.object({
-    changeId: z.string(),
+    stepId: z.string(),
     commentId: z.string(),
     commentBody: z.string(),
     timestamp: z.number(),

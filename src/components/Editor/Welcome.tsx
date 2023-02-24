@@ -1,13 +1,13 @@
 import Link from 'next/link';
 
 import { isEditing } from '../store/atoms';
-import { useChangesStore } from '../store/changes';
 import { useGuideStore } from '../store/guide';
+import { useStepsStore } from '../store/steps';
 
 export function Welcome() {
   const guideId = useGuideStore((s) => s.id);
   const guideType = useGuideStore((s) => s.type);
-  const stepsNum = useChangesStore((s) => Object.keys(s.changes).length);
+  const stepsNum = useStepsStore((s) => Object.keys(s.steps).length);
 
   return (
     <div className="h-full overflow-auto bg-zinc-900 p-5">

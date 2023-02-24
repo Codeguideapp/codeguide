@@ -1,6 +1,6 @@
 import { DynamoDB } from 'aws-sdk';
 
-import { Change } from '../components/store/changes';
+import { Step } from '../components/store/steps';
 
 const dynamoDb = new DynamoDB.DocumentClient({
   region: process.env.AWS_APP_REGION,
@@ -10,10 +10,10 @@ const dynamoDb = new DynamoDB.DocumentClient({
   },
 });
 
-export function getChanges(guideId: string): Promise<Change[]> {
+export function getChanges(guideId: string): Promise<Step[]> {
   return dynamoDb
     .query({
-      TableName: process.env.DYNAMODB_CHANGES_TABLE,
+      TableName: process.env.DYNAMODB_STEPS_TABLE,
       KeyConditionExpression: 'guideId = :guideId',
       ExpressionAttributeValues: {
         ':guideId': guideId,
@@ -21,11 +21,12 @@ export function getChanges(guideId: string): Promise<Change[]> {
     })
     .promise()
     .then((res) =>
-      (res.Items as any[]).map((change) => {
-        const { changeId, ...rest } = change;
+      (res.Items as any[]).map((step) => {
+        console.log(step);
+        const { stepId, ...rest } = step;
         return {
           ...rest,
-          id: changeId,
+          id: stepId,
         };
       })
     );

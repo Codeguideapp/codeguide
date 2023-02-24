@@ -1,15 +1,15 @@
 import { useEffect, useRef } from 'react';
 
-import { useChangesStore } from '../store/changes';
 import { useCommentsStore } from '../store/comments';
 import { useFilesStore } from '../store/files';
+import { useStepsStore } from '../store/steps';
 import { PreviewComment } from './PreviewComment';
 
 export function Comments() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const activeFile = useFilesStore((s) => s.activeFile);
-  const activeChange = useChangesStore((s) =>
-    s.activeChangeId ? s.changes[s.activeChangeId] : null
+  const activeChange = useStepsStore((s) =>
+    s.activeStepId ? s.steps[s.activeStepId] : null
   );
   const savedComments = useCommentsStore((s) => s.savedComments);
 

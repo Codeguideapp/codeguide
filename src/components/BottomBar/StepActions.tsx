@@ -4,32 +4,30 @@ import { Button, message, Popconfirm, Tooltip } from 'antd';
 import { last } from 'lodash';
 import { useState } from 'react';
 
-import { isHighlightChange, useChangesStore } from '../store/changes';
 import { useCommentsStore } from '../store/comments';
 import { useFilesStore } from '../store/files';
+import { isHighlightStep, useStepsStore } from '../store/steps';
 
 export function StepActions() {
-  const activeChange = useChangesStore((s) =>
-    s.activeChangeId ? s.changes[s.activeChangeId] : null
+  const activeChange = useStepsStore((s) =>
+    s.activeStepId ? s.steps[s.activeStepId] : null
   );
-  const lastChange = useChangesStore((s) => {
+  const lastChange = useStepsStore((s) => {
     const lastChangeId = last(
-      Object.keys(s.changes)
+      Object.keys(s.steps)
         .sort()
-        .filter((c) => !s.changes[c].isFileDepChange)
+        .filter((c) => !s.steps[c].isFileDepChange)
     );
-    return lastChangeId ? s.changes[lastChangeId] : null;
+    return lastChangeId ? s.steps[lastChangeId] : null;
   });
-  const setChangePreview = useChangesStore((s) => s.setChangePreview);
-  const setActiveChangeId = useChangesStore((s) => s.setActiveChangeId);
-  const undraftChange = useChangesStore((s) => s.undraftChange);
-  const deleteUntilChange = useChangesStore((s) => s.deleteUntilChange);
-  const deleteChange = useChangesStore((s) => s.deleteChange);
+  const setChangePreview = useStepsStore((s) => s.setStepPreview);
+  const setActiveChangeId = useStepsStore((s) => s.setActiveStepId);
+  const undraftChange = useStepsStore((s) => s.undraftStep);
+  const deleteUntilChange = useStepsStore((s) => s.deleteUntilStep);
+  const deleteChange = useStepsStore((s) => s.deleteStep);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const [submitting, setSubmitting] = useState(false);
-  const draftCommentPerChange = useCommentsStore(
-    (s) => s.draftCommentPerChange
-  );
+  const draftCommentPerChange = useCommentsStore((s) => s.draftCommentPerStep);
   const saveComment = useCommentsStore((s) => s.saveComment);
   const activeDraftComment = activeChange
     ? draftCommentPerChange[activeChange.id]
@@ -58,7 +56,7 @@ export function StepActions() {
 
   const disabledDelete = Boolean(
     activeChange &&
-      !isHighlightChange(activeChange) &&
+      !isHighlightStep(activeChange) &&
       lastChange?.id !== activeChange.id
   );
 
@@ -123,7 +121,7 @@ export function StepActions() {
             title="Are you sure you want to delete this step?"
             onConfirm={() => {
               setActiveChangeId(null);
-              if (isHighlightChange(activeChange)) {
+              if (isHighlightStep(activeChange)) {
                 deleteChange(activeChange.id);
               } else {
                 deleteUntilChange(activeChange.id);

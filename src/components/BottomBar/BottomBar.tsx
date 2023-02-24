@@ -1,14 +1,14 @@
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { faComment } from '@fortawesome/free-solid-svg-icons';
 
-import { useChangesStore } from '../store/changes';
+import { useStepsStore } from '../store/steps';
 import { StepActions } from './StepActions';
 import { WriteComment } from './WriteComment';
 
 library.add(faComment);
 
 export function BottomBarEdit() {
-  const activeChangeId = useChangesStore((s) => s.activeChangeId);
+  const activeChangeId = useStepsStore((s) => s.activeStepId);
 
   if (!activeChangeId) return null;
 

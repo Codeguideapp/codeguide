@@ -3,8 +3,8 @@ import create from 'zustand';
 
 import { fetchWithThrow } from '../../utils/fetchWithThrow';
 import { modifiedModel, originalModel } from '../../utils/monaco';
-import { useChangesStore } from './changes';
 import { useGuideStore } from './guide';
+import { useStepsStore } from './steps';
 import { useUserStore } from './user';
 
 export type FileNode = {
@@ -66,7 +66,7 @@ export const useFilesStore = create<FilesState>((set, get) => ({
 
     if (!activeFile) return;
 
-    const changes = useChangesStore.getState().changes;
+    const changes = useStepsStore.getState().steps;
 
     const draftChange = Object.values(changes).find(
       (c) => c.isDraft && c.path === activeFile.path
@@ -74,7 +74,7 @@ export const useFilesStore = create<FilesState>((set, get) => ({
 
     if (!draftChange) return;
 
-    useChangesStore.getState().undraftChange(draftChange.id);
+    useStepsStore.getState().undraftStep(draftChange.id);
   },
   setActiveFileByPath: async (path: string | undefined) => {
     if (!path) {
@@ -119,9 +119,9 @@ export const useFilesStore = create<FilesState>((set, get) => ({
     }
 
     // save new change filenode
-    const activeChange = useChangesStore.getState().getActiveChange();
+    const activeChange = useStepsStore.getState().getActiveStep();
     if (!activeChange || activeChange.path !== path) {
-      useChangesStore.getState().saveFileNode(path);
+      useStepsStore.getState().saveFileNode(path);
     }
   },
   storeFile: ({ newVal, oldVal, path }) => {

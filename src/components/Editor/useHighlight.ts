@@ -5,12 +5,12 @@ import { useCallback } from 'react';
 import { useRef } from 'react';
 
 import { modifiedModel } from '../../utils/monaco';
-import { useChangesStore } from '../store/changes';
 import { useFilesStore } from '../store/files';
+import { useStepsStore } from '../store/steps';
 
 export function useHighlight() {
   const activeFile = useFilesStore((s) => s.activeFile);
-  const saveDelta = useChangesStore((s) => s.saveDelta);
+  const saveDelta = useStepsStore((s) => s.saveDelta);
   const lastHighlight = useRef<
     {
       length: number;

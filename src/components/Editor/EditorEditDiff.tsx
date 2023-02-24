@@ -8,13 +8,13 @@ import { composeDeltas, getFileContent } from '../../utils/deltaUtils';
 import { modifiedModel, originalModel } from '../../utils/monaco';
 import { usePrevious } from '../hooks/usePrevious';
 import { showWhitespaceAtom } from '../store/atoms';
-import { useChangesStore } from '../store/changes';
 import { FileNode } from '../store/files';
+import { useStepsStore } from '../store/steps';
 import { EditorToolbar } from './EditorToolbar';
 import { useHighlight } from './useHighlight';
 
 export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
-  const saveDelta = useChangesStore((s) => s.saveDelta);
+  const saveDelta = useStepsStore((s) => s.saveDelta);
   const modifiedContentListener = useRef<monaco.IDisposable>();
   const selectionListener = useRef<monaco.IDisposable>();
   const editorDiffDom = useRef<HTMLDivElement>(null);
@@ -22,20 +22,20 @@ export function EditorEditDiff({ activeFile }: { activeFile: FileNode }) {
   const [showWhitespace] = useAtom(showWhitespaceAtom);
   const saveHighlight = useHighlight();
   const prevFile = usePrevious(activeFile);
-  const savedChangesLength = useChangesStore(
-    (s) => Object.values(s.changes).filter((c) => !c.isDraft).length
+  const savedChangesLength = useStepsStore(
+    (s) => Object.values(s.steps).filter((c) => !c.isDraft).length
   );
 
-  const currentVal = useChangesStore((s) => {
+  const currentVal = useStepsStore((s) => {
     const previousChangeId = findLast(
-      Object.keys(s.changes).sort(),
-      (id) => s.changes[id].path === activeFile.path
+      Object.keys(s.steps).sort(),
+      (id) => s.steps[id].path === activeFile.path
     );
 
     return previousChangeId
       ? getFileContent({
-          upToChangeId: previousChangeId,
-          changes: s.changes,
+          upToStepId: previousChangeId,
+          changes: s.steps,
         })
       : activeFile.oldVal;
   });

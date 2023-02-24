@@ -14,10 +14,10 @@ import scrollIntoView from 'scroll-into-view-if-needed';
 
 import { getFileContent } from '../../utils/deltaUtils';
 import { isEditing } from '../store/atoms';
-import { useChangesStore } from '../store/changes';
 import { useCommentsStore } from '../store/comments';
 import { useFilesStore } from '../store/files';
 import { useGuideStore } from '../store/guide';
+import { useStepsStore } from '../store/steps';
 import { DeltaPreview } from './DeltaPreview';
 import { getStepPreview, StepPreview } from './getStepPreview';
 
@@ -26,20 +26,20 @@ library.add(faCheck, faImage, faUpload);
 export function Steps() {
   const activeChangeRef = useRef<HTMLDivElement>(null);
   const isFetching = useGuideStore((s) => s.isFetching);
-  const setActiveChangeId = useChangesStore((s) => s.setActiveChangeId);
-  const getChangeIndex = useChangesStore((s) => s.getChangeIndex);
+  const setActiveChangeId = useStepsStore((s) => s.setActiveStepId);
+  const getChangeIndex = useStepsStore((s) => s.getStepIndex);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
-  const activeChangeId = useChangesStore((s) => s.activeChangeId);
+  const activeChangeId = useStepsStore((s) => s.activeStepId);
   const savedComments = useCommentsStore((s) => s.savedComments);
-  const steps = useChangesStore((s) => {
-    const changesOrder = Object.keys(s.changes).sort();
-    const activeChangeIndex = s.activeChangeId
-      ? changesOrder.indexOf(s.activeChangeId)
+  const steps = useStepsStore((s) => {
+    const changesOrder = Object.keys(s.steps).sort();
+    const activeChangeIndex = s.activeStepId
+      ? changesOrder.indexOf(s.activeStepId)
       : null;
 
     const changes = changesOrder
-      .filter((id) => !s.changes[id].isFileDepChange)
-      .map((id) => s.changes[id]);
+      .filter((id) => !s.steps[id].isFileDepChange)
+      .map((id) => s.steps[id]);
 
     const resultSteps: {
       isFileNode: boolean;
@@ -87,13 +87,13 @@ export function Steps() {
       const preview = getStepPreview({
         delta: change.delta,
         before: getFileContent({
-          upToChangeId: change.id,
-          changes: s.changes,
+          upToStepId: change.id,
+          changes: s.steps,
           excludeChange: true,
         }),
         after: getFileContent({
-          upToChangeId: change.id,
-          changes: s.changes,
+          upToStepId: change.id,
+          changes: s.steps,
           excludeChange: false,
         }),
         selections: change.highlight,
@@ -109,7 +109,7 @@ export function Steps() {
           activeChangeIndex === null ? true : changeIndex < activeChangeIndex,
         isAfterActive:
           activeChangeIndex !== null && changeIndex > activeChangeIndex,
-        active: change.id === s.activeChangeId,
+        active: change.id === s.activeStepId,
       });
     }
 

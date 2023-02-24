@@ -1,17 +1,17 @@
 import { isEqual } from 'lodash';
 
-import { Change, useChangesStore } from '../store/changes';
+import { Step, useStepsStore } from '../store/steps';
 
-const removeExtraProperties = (change: Change) => {
+const removeExtraProperties = (change: Step) => {
   // delta, deltaInverted and highlight are not compared because they are changed more often
   // for example while text is selected
   const { delta, deltaInverted, highlight, ...rest } = change;
   return rest;
 };
 
-export function useShallowChanges() {
-  return useChangesStore(
-    (state) => state.changes,
+export function useShallowSteps() {
+  return useStepsStore(
+    (state) => state.steps,
     (oldState, newState) => {
       const oldStateReduced = Object.values(oldState).map(
         removeExtraProperties

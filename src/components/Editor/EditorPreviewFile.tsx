@@ -6,8 +6,8 @@ import { useEffect, useRef } from 'react';
 import { composeDeltas, getFileContent } from '../../utils/deltaUtils';
 import { modifiedModel } from '../../utils/monaco';
 import { isEditing } from '../store/atoms';
-import { useChangesStore } from '../store/changes';
 import { FileNode } from '../store/files';
+import { useStepsStore } from '../store/steps';
 import { useHighlight } from './useHighlight';
 
 export function EditorPreviewFile({
@@ -17,19 +17,19 @@ export function EditorPreviewFile({
   activeFile: FileNode;
   upToChangeId?: string;
 }) {
-  const saveDelta = useChangesStore((s) => s.saveDelta);
+  const saveDelta = useStepsStore((s) => s.saveDelta);
   const modifiedContentListener = useRef<monaco.IDisposable>();
   const selectionListener = useRef<monaco.IDisposable>();
   const editorDom = useRef<HTMLDivElement>(null);
   const standaloneEditor = useRef<monaco.editor.IStandaloneCodeEditor>();
   const saveHighlight = useHighlight();
-  const savedChangesLength = useChangesStore(
-    (s) => Object.values(s.changes).filter((c) => !c.isDraft).length
+  const savedChangesLength = useStepsStore(
+    (s) => Object.values(s.steps).filter((c) => !c.isDraft).length
   );
 
-  const currentVal = useChangesStore((s) => {
+  const currentVal = useStepsStore((s) => {
     // refactor: better way to name vars
-    const changeIds = Object.keys(s.changes).sort();
+    const changeIds = Object.keys(s.steps).sort();
 
     const changesUntil = upToChangeId
       ? changeIds.slice(0, changeIds.indexOf(upToChangeId) + 1)
@@ -37,13 +37,13 @@ export function EditorPreviewFile({
 
     const previousChangeId = findLast(
       changesUntil,
-      (id) => s.changes[id].path === activeFile.path
+      (id) => s.steps[id].path === activeFile.path
     );
 
     return previousChangeId
       ? getFileContent({
-          upToChangeId: previousChangeId,
-          changes: s.changes,
+          upToStepId: previousChangeId,
+          changes: s.steps,
         })
       : activeFile.oldVal;
   });

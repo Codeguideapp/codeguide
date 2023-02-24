@@ -14,7 +14,7 @@ const Delta = z.object({
   ),
 });
 
-const Change = z.object({
+const Step = z.object({
   id: z.string(),
   path: z.string(),
   previewOpened: z.boolean(),
@@ -37,7 +37,7 @@ const Change = z.object({
   stat: z.array(z.number()),
 });
 
-const Changes = z.array(Change);
+const Steps = z.array(Step);
 
 export async function saveChanges({
   email,
@@ -56,21 +56,19 @@ export async function saveChanges({
       };
     }
 
-    const changes = Changes.parse(changesBody);
-
-    console.log('Saving changes', changes);
+    const steps = Steps.parse(changesBody);
 
     await dynamoDb
       .batchWrite({
         RequestItems: {
-          [process.env.DYNAMODB_CHANGES_TABLE]: changes.map((change) => {
+          [process.env.DYNAMODB_STEPS_TABLE]: steps.map((step) => {
             return {
               PutRequest: {
                 Item: omit(
                   {
                     guideId: guide.id,
-                    changeId: change.id,
-                    ...change,
+                    stepId: step.id,
+                    ...step,
                   },
                   ['id']
                 ),
@@ -83,7 +81,7 @@ export async function saveChanges({
 
     return {
       statusCode: 200,
-      json: changes.map((c) => c.id),
+      json: steps.map((c) => c.id),
     };
   } catch (error: any) {
     if (error instanceof z.ZodError) {
