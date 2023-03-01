@@ -16,16 +16,13 @@ export const Guide = z.object({
       sha: z.string(),
       url: z.string(),
       type: z.union([z.literal('tree'), z.literal('blob')]),
-    })
-  ),
-  changedFileRefs: z.array(
-    z.object({
-      path: z.string(),
-      status: z.union([
-        z.literal('added'),
-        z.literal('modified'),
-        z.literal('deleted'),
+      origin: z.union([
+        z.literal('commit'),
+        z.literal('pr'),
+        z.literal('virtual'),
       ]),
+      isAdded: z.boolean().optional(),
+      isDeleted: z.boolean().optional(),
     })
   ),
   privateRepoWhenCreated: z.boolean(),

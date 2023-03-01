@@ -125,6 +125,22 @@ export const useFilesStore = create<FilesState>((set, get) => ({
     }
   },
   storeFile: ({ newVal, oldVal, path }) => {
+    const fileRefs = useGuideStore.getState().fileRefs;
+    if (!fileRefs.find((f) => f.path === path)) {
+      useGuideStore.setState({
+        fileRefs: [
+          ...fileRefs,
+          {
+            path,
+            type: 'blob',
+            url: '',
+            sha: '',
+            origin: 'virtual',
+          },
+        ],
+      });
+    }
+
     const newFile: FileNode = {
       isFileDiff: false,
       oldVal,
@@ -136,21 +152,17 @@ export const useFilesStore = create<FilesState>((set, get) => ({
     get().setFileNodes([...get().fileNodes, newFile]);
   },
   loadFile: async (path: string): Promise<FileNode> => {
-    const repoFileRef = useGuideStore
+    const fileRef = useGuideStore
       .getState()
       .fileRefs.find((f) => f.path === path);
 
-    const changedFileRef = useGuideStore
-      .getState()
-      .changedFileRefs.find((f) => f.path === path);
-
-    if (!repoFileRef && !changedFileRef) {
+    if (!fileRef) {
       throw new Error('File not found');
     }
 
     const session = await useUserStore.getState().getUserSession();
 
-    if (changedFileRef) {
+    if (fileRef.origin === 'pr') {
       const octokit = await useUserStore.getState().getOctokit();
       const getFile = (path: string, sha?: string) => {
         return octokit
@@ -167,29 +179,27 @@ export const useFilesStore = create<FilesState>((set, get) => ({
 
       const guide = useGuideStore.getState();
 
-      const oldVal =
-        changedFileRef.status === 'added'
-          ? ''
-          : await getFile(changedFileRef.path, guide.baseSha);
+      const oldVal = fileRef.isAdded
+        ? ''
+        : await getFile(fileRef.path, guide.baseSha);
 
-      const newVal =
-        changedFileRef.status === 'deleted'
-          ? ''
-          : await getFile(changedFileRef.path, guide.mergeCommitSha);
+      const newVal = fileRef.isDeleted
+        ? ''
+        : await getFile(fileRef.path, guide.mergeCommitSha);
 
       const newFile: FileNode = {
         isFileDiff: true,
         oldVal,
         newVal,
-        path: changedFileRef.path,
-        status: changedFileRef.status,
+        path: fileRef.path,
+        status: 'modified',
         isFetching: false,
       };
       get().setFileNodes([...get().fileNodes, newFile]);
 
       return newFile;
-    } else if (repoFileRef) {
-      return fetchWithThrow(repoFileRef.url, {
+    } else {
+      return fetchWithThrow(fileRef.url, {
         headers: session
           ? {
               Authorization: 'Bearer ' + session.user.accessToken,
@@ -201,7 +211,7 @@ export const useFilesStore = create<FilesState>((set, get) => ({
           isFileDiff: false,
           oldVal: content,
           newVal: content,
-          path: repoFileRef.path,
+          path: fileRef.path,
           status: 'modified',
           isFetching: false,
         };
@@ -209,8 +219,6 @@ export const useFilesStore = create<FilesState>((set, get) => ({
 
         return newFile;
       });
-    } else {
-      throw new Error('File not found');
     }
   },
 }));

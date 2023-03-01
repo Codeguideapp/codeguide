@@ -12,7 +12,9 @@ const { DirectoryTree } = Tree;
 
 export function ChangedFiles() {
   const type = useGuideStore((s) => s.type);
-  const changedFileRefs = useGuideStore((s) => s.changedFileRefs);
+  const changedFileRefs = useGuideStore((s) =>
+    s.fileRefs.filter((ref) => ref.origin === 'pr')
+  );
   const setActiveChangeId = useStepsStore((s) => s.setActiveStepId);
   const activeFile = useFilesStore((s) => s.activeFile);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);

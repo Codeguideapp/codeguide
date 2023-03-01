@@ -378,7 +378,7 @@ export const useStepsStore = create<StepsState>((set, get) => ({
           isEditing() &&
           useGuideStore
             .getState()
-            .changedFileRefs.find((f) => f.path === step.path)
+            .fileRefs.find((f) => f.origin === 'pr' && f.path === step.path)
         ) {
           // if in edit mode, we need to load old/new vals from github
           await useFilesStore.getState().loadFile(step.path);

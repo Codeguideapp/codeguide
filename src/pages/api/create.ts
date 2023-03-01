@@ -32,7 +32,7 @@ export default async function handler(
 
     let mergeCommitSha;
     let baseSha;
-    const changedFileRefs: IGuide['changedFileRefs'] = [];
+    const changedFileRefs: any[] = [];
 
     if (pullRequest) {
       const prReq = await octokit.request(
@@ -54,15 +54,7 @@ export default async function handler(
       );
 
       for (const file of prChangedFiles.data) {
-        changedFileRefs.push({
-          path: file.filename,
-          status:
-            file.status === 'added'
-              ? 'added'
-              : file.status === 'removed'
-              ? 'deleted'
-              : 'modified',
-        });
+        changedFileRefs.push(file);
       }
 
       baseSha = prReq.data.base.sha;
@@ -93,6 +85,7 @@ export default async function handler(
       }
     );
 
+    type FileRef = IGuide['fileRefs'][number];
     const guide: IGuide = {
       prNum: pullRequest || undefined,
       mergeCommitSha,
@@ -103,13 +96,33 @@ export default async function handler(
       owner,
       repository,
       type: pullRequest ? 'diff' : 'browse',
-      fileRefs: repoFiles.data.tree.map((file: IGuide['fileRefs'][number]) => ({
-        path: file.path,
-        sha: file.sha,
-        url: file.url,
-        type: file.type,
-      })),
-      changedFileRefs,
+      fileRefs: [
+        ...repoFiles.data.tree
+          .filter(
+            (repoFile: FileRef) =>
+              !changedFileRefs.find((f) => f.filename === repoFile.path)
+          )
+          .map(
+            (file: FileRef): FileRef => ({
+              path: file.path,
+              sha: file.sha,
+              url: file.url,
+              type: file.type,
+              origin: 'commit',
+            })
+          ),
+        ...changedFileRefs.map(
+          (file): FileRef => ({
+            path: file.filename,
+            sha: file.sha,
+            url: file.blob_url,
+            type: 'blob',
+            origin: 'pr',
+            isAdded: file.status === 'added',
+            isDeleted: file.status === 'removed',
+          })
+        ),
+      ],
       privateRepoWhenCreated: repoInfo.data.private,
       createdAt: Date.now(),
     };

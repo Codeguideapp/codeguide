@@ -22,7 +22,6 @@ export function getChanges(guideId: string): Promise<Step[]> {
     .promise()
     .then((res) =>
       (res.Items as any[]).map((step) => {
-        console.log(step);
         const { stepId, ...rest } = step;
         return {
           ...rest,

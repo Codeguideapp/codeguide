@@ -3,10 +3,11 @@ import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import {
   faEdit,
   faMagnifyingGlass,
+  faPlus,
   faUpload,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { message } from 'antd';
+import { Dropdown, Menu, message } from 'antd';
 import classNames from 'classnames';
 import Link from 'next/link';
 import { signIn, useSession } from 'next-auth/react';
@@ -19,6 +20,7 @@ import { PrevNextControls } from './PrevNextControls';
 import { ProfileMenu } from './ProfileMenu';
 import { isEditing } from './store/atoms';
 import { useCommentsStore } from './store/comments';
+import { useFilesStore } from './store/files';
 import { useGuideStore } from './store/guide';
 import { useStepsStore } from './store/steps';
 
@@ -33,8 +35,11 @@ export function App() {
   const publishChanges = useStepsStore((s) => s.publishSteps);
   const hasUnpublishedChanges = useStepsStore((s) => s.hasDataToPublish());
   const hasUnpublishedComments = useCommentsStore((s) => s.hasDataToPublish());
+  const storeFile = useFilesStore((s) => s.storeFile);
   const [isDragging, setDragging] = useState(false);
   const [isSaving, setSaving] = useState(false);
+  const setActiveChangeId = useStepsStore((s) => s.setActiveStepId);
+  const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const hasUnpublishedData = hasUnpublishedChanges || hasUnpublishedComments;
 
   useEffect(() => {
@@ -101,7 +106,7 @@ export function App() {
                 style={hasUnpublishedData ? {} : { opacity: 0.3 }}
               >
                 <FontAwesomeIcon icon={faUpload} className="text-md" />
-                <span>Publish guide</span>
+                <span>Publish</span>
               </div>
             )
           ) : null}
@@ -118,8 +123,37 @@ export function App() {
                       icon={faMagnifyingGlass}
                       className="text-md"
                     />
-                    <span>Preview guide</span>
+                    <span>Preview</span>
                   </Link>
+                  <div className="flex cursor-pointer items-center justify-center gap-1 px-1 py-2 text-xs text-white hover:text-gray-400">
+                    <Dropdown
+                      trigger={['click', 'hover']}
+                      mouseEnterDelay={0}
+                      overlay={
+                        <Menu>
+                          <Menu.Item
+                            onClick={() => {
+                              storeFile({
+                                oldVal: '',
+                                newVal: '',
+                                path: '.test.md',
+                              });
+
+                              setActiveChangeId(null);
+                              setActiveFileByPath('.test.md');
+                            }}
+                          >
+                            Markdown Step
+                          </Menu.Item>
+                        </Menu>
+                      }
+                    >
+                      <div className="mr-2 flex items-center gap-1">
+                        <FontAwesomeIcon icon={faPlus} className="text-md" />
+                        <span>New</span>
+                      </div>
+                    </Dropdown>
+                  </div>
                 </>
               ) : (
                 <Link

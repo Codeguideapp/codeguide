@@ -26,7 +26,9 @@ export function FilesExplorer() {
   );
   const appliedPaths = useStepsStore((s) => {
     const changeIds = Object.keys(s.steps).sort();
-    const activeChangeId = s.activeStepId;
+    const isAtEnd = !s.activeStepId && changeIds.length;
+    const activeChangeId = isAtEnd ? changeIds.at(-1) : s.activeStepId;
+
     return uniq(
       changeIds
         .filter((id) =>
@@ -42,14 +44,21 @@ export function FilesExplorer() {
   const [wrapperHeight, setWrapperHeight] = useState(400);
 
   const treeData = useMemo(() => {
-    const fromFileRefs: { path: string; type: string }[] = fileRefs;
+    const commitedFileRefs = fileRefs.filter(
+      (ref) =>
+        (ref.origin === 'commit' || ref.origin === 'pr') &&
+        !ref.isAdded &&
+        !ref.isDeleted
+    );
+
     const fromApplied = appliedPaths
       .map((path) => ({ path, type: 'blob' }))
       .filter((item) => {
-        return !fromFileRefs.find((fileRef) => fileRef.path === item.path);
+        const file = fileRefs.find((f) => f.path === item.path);
+        return file?.origin === 'pr' && (file.isAdded || file.isDeleted);
       });
 
-    return pathsToTreeStructure([...fromFileRefs, ...fromApplied]);
+    return pathsToTreeStructure([...commitedFileRefs, ...fromApplied]);
   }, [fileRefs, appliedPaths]);
 
   const { ref } = useResizeDetector({

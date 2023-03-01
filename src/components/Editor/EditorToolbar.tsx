@@ -4,7 +4,7 @@ import {
   faCodeCompare,
   faHighlighter,
 } from '@fortawesome/free-solid-svg-icons';
-import { Tooltip } from 'antd';
+import { Checkbox, Tooltip } from 'antd';
 import { useAtom } from 'jotai';
 
 import { showWhitespaceAtom } from '../store/atoms';
@@ -29,6 +29,9 @@ export function EditorToolbar() {
             onClick={() => setShowWhitespace(!showWhitespace)}
           />
         </Tooltip>
+      )}
+      {activeFile?.path.split('.').pop() === 'md' && (
+        <Checkbox className="text-xs">Display as HTML</Checkbox>
       )}
     </div>
   );
