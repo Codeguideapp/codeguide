@@ -9,6 +9,7 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Dropdown, Menu, message } from 'antd';
 import classNames from 'classnames';
+import { nanoid } from 'nanoid';
 import Link from 'next/link';
 import { signIn, useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
@@ -133,14 +134,16 @@ export function App() {
                         <Menu>
                           <Menu.Item
                             onClick={() => {
+                              const fileName = `${nanoid()}.md`;
+
                               storeFile({
                                 oldVal: '',
                                 newVal: '',
-                                path: '.test.md',
+                                path: fileName,
                               });
 
                               setActiveChangeId(null);
-                              setActiveFileByPath('.test.md');
+                              setActiveFileByPath(fileName);
                             }}
                           >
                             Markdown Step

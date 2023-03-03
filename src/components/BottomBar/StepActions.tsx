@@ -1,6 +1,6 @@
 import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Button, message, Popconfirm, Tooltip } from 'antd';
+import { Button, Checkbox, message, Popconfirm, Tooltip } from 'antd';
 import { last } from 'lodash';
 import { useState } from 'react';
 
@@ -9,35 +9,36 @@ import { useFilesStore } from '../store/files';
 import { isHighlightStep, useStepsStore } from '../store/steps';
 
 export function StepActions() {
-  const activeChange = useStepsStore((s) =>
+  const activeStep = useStepsStore((s) =>
     s.activeStepId ? s.steps[s.activeStepId] : null
   );
-  const lastChange = useStepsStore((s) => {
-    const lastChangeId = last(
+  const lastStep = useStepsStore((s) => {
+    const lastStepId = last(
       Object.keys(s.steps)
         .sort()
         .filter((c) => !s.steps[c].isFileDepChange)
     );
-    return lastChangeId ? s.steps[lastChangeId] : null;
+    return lastStepId ? s.steps[lastStepId] : null;
   });
-  const setChangePreview = useStepsStore((s) => s.setStepPreview);
-  const setActiveChangeId = useStepsStore((s) => s.setActiveStepId);
-  const undraftChange = useStepsStore((s) => s.undraftStep);
+  const setStepPreview = useStepsStore((s) => s.setStepPreview);
+  const setActiveStepId = useStepsStore((s) => s.setActiveStepId);
+  const undraftStep = useStepsStore((s) => s.undraftStep);
+  const updateStepProps = useStepsStore((s) => s.updateStepProps);
   const deleteUntilChange = useStepsStore((s) => s.deleteUntilStep);
   const deleteChange = useStepsStore((s) => s.deleteStep);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const [submitting, setSubmitting] = useState(false);
   const draftCommentPerChange = useCommentsStore((s) => s.draftCommentPerStep);
   const saveComment = useCommentsStore((s) => s.saveComment);
-  const activeDraftComment = activeChange
-    ? draftCommentPerChange[activeChange.id]
+  const activeDraftComment = activeStep
+    ? draftCommentPerChange[activeStep.id]
     : undefined;
 
   const handleSaveStep = () => {
     setSubmitting(true);
-    if (!activeChange) return;
+    if (!activeStep) return;
 
-    if (activeChange.isDraft === false) {
+    if (activeStep.isDraft === false) {
       throw new Error('change is not a draft');
     }
 
@@ -47,7 +48,7 @@ export function StepActions() {
 
     setTimeout(() => {
       setSubmitting(false);
-      undraftChange(activeChange.id);
+      undraftStep(activeStep.id);
       message.success({
         content: 'Step created successfully!',
       });
@@ -55,18 +56,16 @@ export function StepActions() {
   };
 
   const disabledDelete = Boolean(
-    activeChange &&
-      !isHighlightStep(activeChange) &&
-      lastChange?.id !== activeChange.id
+    activeStep && !isHighlightStep(activeStep) && lastStep?.id !== activeStep.id
   );
 
   return (
     <div className="flex items-center gap-3">
-      {activeChange?.isDraft && activeChange.previewOpened === false && (
+      {activeStep?.isDraft && activeStep.previewOpened === false && (
         <Tooltip title="Preview Step">
           <FontAwesomeIcon
             onClick={() => {
-              setChangePreview(activeChange.id, true);
+              setStepPreview(activeStep.id, true);
             }}
             icon={faMagnifyingGlass}
             className="cursor-pointer"
@@ -74,10 +73,10 @@ export function StepActions() {
         </Tooltip>
       )}
 
-      {activeChange?.previewOpened && (
+      {activeStep?.previewOpened && (
         <Button
           onClick={() => {
-            setChangePreview(activeChange.id, false);
+            setStepPreview(activeStep.id, false);
           }}
           type="default"
         >
@@ -85,7 +84,7 @@ export function StepActions() {
         </Button>
       )}
 
-      {(activeChange?.id !== lastChange?.id || !activeChange?.isDraft) && (
+      {(activeStep?.id !== lastStep?.id || !activeStep?.isDraft) && (
         <Button
           disabled={!activeDraftComment?.commentBody}
           htmlType="submit"
@@ -96,9 +95,9 @@ export function StepActions() {
           {activeDraftComment?.isEditing ? 'Edit Comment' : 'Add Comment'}
         </Button>
       )}
-      {activeChange?.id === lastChange?.id && activeChange?.isDraft && (
+      {activeStep?.id === lastStep?.id && activeStep?.isDraft && (
         <Button
-          disabled={!activeChange}
+          disabled={!activeStep}
           htmlType="submit"
           loading={submitting}
           onClick={handleSaveStep}
@@ -108,7 +107,7 @@ export function StepActions() {
         </Button>
       )}
 
-      {activeChange && activeChange.previewOpened === false && (
+      {activeStep && activeStep.previewOpened === false && (
         <Tooltip
           title={
             disabledDelete
@@ -120,33 +119,46 @@ export function StepActions() {
             disabled={disabledDelete}
             title="Are you sure you want to delete this step?"
             onConfirm={() => {
-              setActiveChangeId(null);
-              if (isHighlightStep(activeChange)) {
-                deleteChange(activeChange.id);
+              setActiveStepId(null);
+              if (isHighlightStep(activeStep)) {
+                deleteChange(activeStep.id);
               } else {
-                deleteUntilChange(activeChange.id);
+                deleteUntilChange(activeStep.id);
               }
             }}
             okText="Yes"
             cancelText="No"
           >
             <Button disabled={disabledDelete} danger>
-              {activeChange.isDraft ? 'Discard' : 'Delete Step'}
+              {activeStep.isDraft ? 'Discard' : 'Delete Step'}
             </Button>
           </Popconfirm>
         </Tooltip>
       )}
-      {!activeChange?.isDraft && (
+      {!activeStep?.isDraft && (
         <Button
           onClick={() => {
-            setActiveChangeId(null);
-            setActiveFileByPath(activeChange?.path);
+            setActiveStepId(null);
+            setActiveFileByPath(activeStep?.path);
           }}
           type="link"
         >
           Close Preview
         </Button>
       )}
+      {activeStep?.isDraft &&
+        activeStep.path.split('.').pop()?.toLowerCase() === 'md' && (
+          <Tooltip title="Display step as HTML rather than markdown">
+            <Checkbox
+              checked={activeStep.renderHtml}
+              onChange={(e) =>
+                updateStepProps(activeStep.id, { renderHtml: e.target.checked })
+              }
+            >
+              HTML
+            </Checkbox>
+          </Tooltip>
+        )}
     </div>
   );
 }

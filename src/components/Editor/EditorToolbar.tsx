@@ -30,9 +30,6 @@ export function EditorToolbar() {
           />
         </Tooltip>
       )}
-      {activeFile?.path.split('.').pop() === 'md' && (
-        <Checkbox className="text-xs">Display as HTML</Checkbox>
-      )}
     </div>
   );
 }

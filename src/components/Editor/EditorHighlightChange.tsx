@@ -1,6 +1,9 @@
 import { useAtomValue } from 'jotai';
 import * as monaco from 'monaco-editor';
 import { useEffect, useRef } from 'react';
+import { ReactMarkdown } from 'react-markdown/lib/react-markdown';
+import rehypeHighlight from 'rehype-highlight';
+import remarkGfm from 'remark-gfm';
 
 import { getFileContent } from '../../utils/deltaUtils';
 import {
@@ -18,7 +21,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
   const standaloneEditor = useRef<monaco.editor.IStandaloneCodeEditor>();
   const diffEditor = useRef<monaco.editor.IStandaloneDiffEditor>();
   const onUpdateDiffRef = useRef<monaco.IDisposable>();
-  const currentChange = useStepsStore((s) => s.steps[changeId]);
+  const currentStep = useStepsStore((s) => s.steps[changeId]);
   const activeFile = useFilesStore((s) => s.activeFile);
   const showWhitespace = useAtomValue(showWhitespaceAtom);
   const { currValue, prevValue } = useStepsStore((s) => {
@@ -79,11 +82,11 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
     if (!monacoDom.current) return;
     if (currValue === undefined) return;
 
-    const noInserts = currentChange.stat[0] === 0;
-    const noDeletes = currentChange.stat[1] === 0;
+    const noInserts = currentStep.stat[0] === 0;
+    const noDeletes = currentStep.stat[1] === 0;
 
     const highlightDecorations = (model: monaco.editor.ITextModel) =>
-      currentChange.highlight.map((h) => {
+      currentStep.highlight.map((h) => {
         return {
           range: getRange(model, h.offset, h.length),
           options: {
@@ -122,7 +125,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
       } else if (noDeletes) {
         // only inserts
         modifiedModel.setValue(currValue);
-        const edits = getMonacoEdits(currentChange.delta, modifiedModel);
+        const edits = getMonacoEdits(currentStep.delta, modifiedModel);
         const decorations = edits.map((ed) => {
           return {
             range: ed.range,
@@ -145,7 +148,7 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
       } else if (noInserts && prevValue) {
         // only deletes
         modifiedModel.setValue(prevValue);
-        const edits = getMonacoEdits(currentChange.delta, modifiedModel);
+        const edits = getMonacoEdits(currentStep.delta, modifiedModel);
         const decorations = edits.map((ed) => {
           return {
             range: ed.range,
@@ -213,7 +216,19 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
       diffEditor.current?.dispose();
       diffEditor.current = undefined;
     };
-  }, [currValue, prevValue, showWhitespace, currentChange]);
+  }, [currValue, prevValue, showWhitespace, currentStep]);
 
+  if (currentStep.renderHtml) {
+    return (
+      <div className="markdown-body overflow-auto px-4 pt-0 pb-8">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm]}
+          rehypePlugins={[rehypeHighlight]}
+        >
+          {currValue || ''}
+        </ReactMarkdown>
+      </div>
+    );
+  }
   return <div ref={monacoDom} className="monaco read-mode"></div>;
 }

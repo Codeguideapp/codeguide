@@ -1,6 +1,7 @@
 import * as monaco from 'monaco-editor';
 import create from 'zustand';
 
+import { IGuide } from '../../types/Guide';
 import { fetchWithThrow } from '../../utils/fetchWithThrow';
 import { modifiedModel, originalModel } from '../../utils/monaco';
 import { useGuideStore } from './guide';
@@ -15,6 +16,7 @@ export type FileNode = {
   path: string;
   oldVal: string;
   newVal: string;
+  origin: IGuide['fileRefs'][0]['origin'];
 };
 
 export type RepoFileRef = {
@@ -98,6 +100,7 @@ export const useFilesStore = create<FilesState>((set, get) => ({
           path: path,
           status: 'modified',
           isFetching: true,
+          origin: 'virtual',
         },
       });
 
@@ -114,6 +117,7 @@ export const useFilesStore = create<FilesState>((set, get) => ({
           status: 'modified',
           isFetching: false,
           fetchError: 'error fetching file',
+          origin: 'virtual',
         });
       }
     }
@@ -126,7 +130,8 @@ export const useFilesStore = create<FilesState>((set, get) => ({
   },
   storeFile: ({ newVal, oldVal, path }) => {
     const fileRefs = useGuideStore.getState().fileRefs;
-    if (!fileRefs.find((f) => f.path === path)) {
+    const fileRef = fileRefs.find((f) => f.path === path);
+    if (!fileRef) {
       useGuideStore.setState({
         fileRefs: [
           ...fileRefs,
@@ -148,6 +153,7 @@ export const useFilesStore = create<FilesState>((set, get) => ({
       path,
       status: 'modified',
       isFetching: false,
+      origin: fileRef?.origin || 'virtual',
     };
     get().setFileNodes([...get().fileNodes, newFile]);
   },
@@ -194,6 +200,7 @@ export const useFilesStore = create<FilesState>((set, get) => ({
         path: fileRef.path,
         status: 'modified',
         isFetching: false,
+        origin: fileRef.origin,
       };
       get().setFileNodes([...get().fileNodes, newFile]);
 
@@ -214,6 +221,7 @@ export const useFilesStore = create<FilesState>((set, get) => ({
           path: fileRef.path,
           status: 'modified',
           isFetching: false,
+          origin: fileRef.origin,
         };
         get().setFileNodes([...get().fileNodes, newFile]);
 

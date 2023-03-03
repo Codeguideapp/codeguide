@@ -68,11 +68,21 @@ export function Editor() {
   const unsavedFilePaths = useUnsavedFilePaths();
   const getChangeIndex = useStepsStore((s) => s.getStepIndex);
   const changesNum = useStepsStore((s) => Object.keys(s.steps).length);
-  const tabName = activeFile
-    ? activeFile?.path.split('/').pop()
-    : changesNum === 0
-    ? 'Welcome'
-    : 'The End';
+  let tabName = '';
+
+  if (activeChange?.displayName) {
+    tabName = activeChange.displayName;
+  } else if (activeFile) {
+    if (activeFile.origin === 'virtual') {
+      tabName = '[Markdown Step]';
+    } else {
+      tabName = activeFile.path.split('/').pop() || '';
+    }
+  } else if (changesNum === 0) {
+    tabName = 'Welcome';
+  } else {
+    tabName = 'The End';
+  }
 
   return (
     <div className="main-right">
@@ -102,13 +112,11 @@ export function Editor() {
 
           <div className="flex h-full flex-col">
             <Comments />
-            <div className="flex h-full grow flex-col bg-zinc-900">
-              <div className="mt-2 w-full grow">
-                <GetEditorComponent
-                  activeFile={activeFile}
-                  activeChange={activeChange}
-                />
-              </div>
+            <div className="flex h-full grow flex-col bg-zinc-900 pt-1">
+              <GetEditorComponent
+                activeFile={activeFile}
+                activeChange={activeChange}
+              />
             </div>
           </div>
 

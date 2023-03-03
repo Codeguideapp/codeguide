@@ -1,11 +1,6 @@
-import { library } from '@fortawesome/fontawesome-svg-core';
-import {
-  faCheck,
-  faImage,
-  faMessage,
-  faUpload,
-} from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faEdit, faMessage } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { Input, Tooltip } from 'antd';
 import classNames from 'classnames';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
@@ -17,99 +12,105 @@ import { isEditing } from '../store/atoms';
 import { useCommentsStore } from '../store/comments';
 import { useFilesStore } from '../store/files';
 import { useGuideStore } from '../store/guide';
-import { useStepsStore } from '../store/steps';
+import { Step, useStepsStore } from '../store/steps';
 import { DeltaPreview } from './DeltaPreview';
 import { getStepPreview, StepPreview } from './getStepPreview';
 
-library.add(faCheck, faImage, faUpload);
-
 export function Steps() {
-  const activeChangeRef = useRef<HTMLDivElement>(null);
+  const activeStepRef = useRef<HTMLDivElement>(null);
   const isFetching = useGuideStore((s) => s.isFetching);
-  const setActiveChangeId = useStepsStore((s) => s.setActiveStepId);
-  const getChangeIndex = useStepsStore((s) => s.getStepIndex);
+  const fileRefs = useGuideStore((s) => s.fileRefs);
+  const setActiveStepId = useStepsStore((s) => s.setActiveStepId);
+  const getStepIndex = useStepsStore((s) => s.getStepIndex);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
-  const activeChangeId = useStepsStore((s) => s.activeStepId);
+  const activeStepId = useStepsStore((s) => s.activeStepId);
+  const updateStepProps = useStepsStore((s) => s.updateStepProps);
   const savedComments = useCommentsStore((s) => s.savedComments);
   const steps = useStepsStore((s) => {
-    const changesOrder = Object.keys(s.steps).sort();
-    const activeChangeIndex = s.activeStepId
-      ? changesOrder.indexOf(s.activeStepId)
+    const stepsOrder = Object.keys(s.steps).sort();
+    const activeStepIndex = s.activeStepId
+      ? stepsOrder.indexOf(s.activeStepId)
       : null;
 
-    const changes = changesOrder
+    const steps = stepsOrder
       .filter((id) => !s.steps[id].isFileDepChange)
       .map((id) => s.steps[id]);
 
     const resultSteps: {
       isFileNode: boolean;
-      path: string;
       id: string;
       isDraft: boolean;
       preview?: StepPreview;
       isBeforeActive: boolean;
       isAfterActive: boolean;
       active: boolean;
-    }[] = changes[0]
+      isVirtualFile: boolean;
+      step: Step;
+    }[] = steps[0]
       ? [
           {
             isFileNode: true,
             id: nanoid(),
-            path: changes[0].path,
             isBeforeActive: true,
             isAfterActive: false,
             active: false,
             isDraft: false,
+            isVirtualFile:
+              fileRefs.find((f) => f.path === steps[0].path)?.origin ===
+              'virtual',
+            step: steps[0],
           },
         ]
       : [];
 
-    let lasFile = changes[0]?.path;
+    let lasFile = steps[0]?.path;
 
-    for (const change of changes) {
-      const changeIndex = changesOrder.indexOf(change.id);
+    for (const step of steps) {
+      const stepIndex = stepsOrder.indexOf(step.id);
+      const fileRef = fileRefs.find((f) => f.path === step.path);
 
-      if (lasFile !== change.path) {
+      if (lasFile !== step.path) {
         resultSteps.push({
           isFileNode: true,
           id: nanoid(),
           isDraft: false,
-          path: change.path,
           isBeforeActive:
-            activeChangeIndex === null ? true : changeIndex < activeChangeIndex,
+            activeStepIndex === null ? true : stepIndex < activeStepIndex,
           isAfterActive:
-            activeChangeIndex !== null && changeIndex > activeChangeIndex,
+            activeStepIndex !== null && stepIndex > activeStepIndex,
           active: false,
+          isVirtualFile: fileRef?.origin === 'virtual',
+          step,
         });
-        lasFile = change.path;
+        lasFile = step.path;
       }
 
       const preview = getStepPreview({
-        delta: change.delta,
+        delta: step.delta,
         before: getFileContent({
-          upToStepId: change.id,
+          upToStepId: step.id,
           changes: s.steps,
           excludeChange: true,
         }),
         after: getFileContent({
-          upToStepId: change.id,
+          upToStepId: step.id,
           changes: s.steps,
           excludeChange: false,
         }),
-        selections: change.highlight,
+        selections: step.highlight,
       });
 
       resultSteps.push({
         isFileNode: false,
-        id: change.id,
-        path: change.path,
-        isDraft: change.isDraft,
+        id: step.id,
+        isDraft: step.isDraft,
         preview,
         isBeforeActive:
-          activeChangeIndex === null ? true : changeIndex < activeChangeIndex,
-        isAfterActive:
-          activeChangeIndex !== null && changeIndex > activeChangeIndex,
-        active: change.id === s.activeStepId,
+          activeStepIndex === null ? true : stepIndex < activeStepIndex,
+        isAfterActive: activeStepIndex !== null && stepIndex > activeStepIndex,
+        active: step.id === s.activeStepId,
+        isVirtualFile: fileRef?.origin === 'virtual',
+        step,
       });
     }
 
@@ -117,13 +118,13 @@ export function Steps() {
   });
 
   useEffect(() => {
-    if (!activeChangeRef.current) return;
+    if (!activeStepRef.current) return;
 
-    scrollIntoView(activeChangeRef.current, {
+    scrollIntoView(activeStepRef.current, {
       scrollMode: 'if-needed',
       block: 'center',
     });
-  }, [activeChangeId, getChangeIndex]);
+  }, [activeStepId, getStepIndex]);
 
   if (isFetching) {
     return <div className="steps h-full p-4">Loading...</div>;
@@ -155,7 +156,6 @@ export function Steps() {
       <div className="body">
         {steps.map(
           ({
-            path,
             id,
             isDraft,
             isBeforeActive,
@@ -163,10 +163,12 @@ export function Steps() {
             active,
             preview,
             isFileNode,
+            isVirtualFile,
+            step,
           }) => {
             return (
               <div
-                ref={active ? activeChangeRef : null}
+                ref={active ? activeStepRef : null}
                 className={classNames({
                   'before-active': isBeforeActive,
                   'after-active': isAfterActive,
@@ -178,20 +180,43 @@ export function Steps() {
                 key={id}
                 onClick={() => {
                   if (isFileNode) return;
-                  setActiveFileByPath(path);
-                  setActiveChangeId(id);
+                  setActiveFileByPath(step.path);
+                  setActiveStepId(id);
                 }}
               >
                 <div className="step-line-v"></div>
                 <div className="relative flex items-center">
                   <div className="step-circle">
                     <span style={{ display: isDraft ? 'none' : 'block' }}>
-                      {isBeforeActive && <FontAwesomeIcon icon="check" />}
+                      {isBeforeActive && <FontAwesomeIcon icon={faCheck} />}
                     </span>
                   </div>
 
                   {isFileNode ? (
-                    <div className="step-file">{path.split('/').pop()}</div>
+                    isEditing() && isVirtualFile ? (
+                      <Input
+                        size="small"
+                        placeholder="[Markdown step]"
+                        defaultValue={step.displayName}
+                        suffix={<FontAwesomeIcon icon={faEdit} size="xs" />}
+                        style={{
+                          border: '1px solid #28282b',
+                          marginLeft: 12,
+                          marginRight: 8,
+                          fontFamily: 'Inconsolata',
+                          fontSize: 14,
+                        }}
+                        onBlur={(e) => {
+                          updateStepProps(step.id, {
+                            displayName: e.target.value,
+                          });
+                        }}
+                      />
+                    ) : (
+                      <div className="step-file">
+                        {step.displayName || step.path.split('/').pop()}
+                      </div>
+                    )
                   ) : (
                     <>
                       <div className="step-line-h"></div>
@@ -237,7 +262,7 @@ export function Steps() {
               placeholder: true,
               step: true,
               draft: true,
-              active: !activeChangeId,
+              active: !activeStepId,
             })}
           >
             <div className="flex items-center pt-4">
@@ -248,7 +273,7 @@ export function Steps() {
                 <div
                   className="step-code"
                   onClick={() => {
-                    setActiveChangeId(null);
+                    setActiveStepId(null);
                     if (!isEditing()) {
                       setActiveFileByPath(undefined);
                     }

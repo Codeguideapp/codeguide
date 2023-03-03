@@ -16,8 +16,10 @@ export type Steps = Record<string, Readonly<Step>>; // steps are updated using i
 export type Step = {
   id: string;
   path: string;
+  displayName?: string;
   previewOpened: boolean;
   isFileDepChange?: true;
+  renderHtml?: boolean;
   fileStatus: 'added' | 'modified' | 'deleted';
   isDraft: boolean;
   highlight: {
@@ -28,7 +30,6 @@ export type Step = {
   deltaInverted?: Delta;
   stat: [number, number];
 };
-
 interface SaveDeltaParams {
   delta: Delta;
   highlight: Step['highlight'];
@@ -44,6 +45,7 @@ interface StepsState {
   getActiveStep: () => Step | null;
   setActiveStepId: (id: string | null) => void;
   setStepPreview: (stepId: string, opened: boolean) => void;
+  updateStepProps: (stepId: string, props: Partial<Step>) => void;
   saveDelta: (params: SaveDeltaParams) => void;
   saveFileNode: (path: string) => void;
   deleteStep: (id: string) => void;
@@ -57,6 +59,19 @@ export const useStepsStore = create<StepsState>((set, get) => ({
   publishedStepIds: [],
   steps: {},
   activeStepId: null,
+  updateStepProps: (stepId: string, props: Partial<Step>) => {
+    const newSteps = produce(get().steps, (stepsDraft) => {
+      stepsDraft[stepId] = { ...stepsDraft[stepId], ...props };
+    });
+    if (get().publishedStepIds.includes(stepId)) {
+      set({
+        steps: newSteps,
+        publishedStepIds: get().publishedStepIds.filter((id) => id !== stepId),
+      });
+    } else {
+      set({ steps: newSteps });
+    }
+  },
   hasDataToPublish: () => {
     const { steps, publishedStepIds } = get();
 
@@ -194,6 +209,7 @@ export const useStepsStore = create<StepsState>((set, get) => ({
           delta,
           deltaInverted: delta.invert(composeDeltas(fileSteps)),
           stat: calcStat(delta),
+          renderHtml: file.origin === 'virtual',
         };
       });
 
@@ -205,7 +221,7 @@ export const useStepsStore = create<StepsState>((set, get) => ({
     }
   },
   saveFileNode: (path: string) => {
-    let steps = get().steps;
+    const steps = get().steps;
     const file = useFilesStore
       .getState()
       .fileNodes.find((f) => f.path === path);
@@ -225,8 +241,6 @@ export const useStepsStore = create<StepsState>((set, get) => ({
         delta: new Delta().insert(file.oldVal),
         highlight: [],
       });
-
-      steps = get().steps;
     }
   },
   deleteStep: (id: string) => {

@@ -32,6 +32,8 @@ const Step = z.object({
       length: z.number(),
     })
   ),
+  displayName: z.string().optional(),
+  renderHtml: z.boolean().optional(),
   delta: Delta,
   deltaInverted: Delta.optional(),
   stat: z.array(z.number()),

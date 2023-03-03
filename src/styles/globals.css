@@ -224,7 +224,6 @@ code {
   display: flex;
   align-items: center;
   font-weight: bold;
-  margin-top: 10px;
 }
 
 .editor-top .filename.in-past {
@@ -291,35 +290,48 @@ body .monaco-diff-editor.side-by-side .editor.modified {
   background: rgba(0, 157, 255, 0.4);
 }
 
-.delete-cursor {
-  position: absolute;
-  border-left: rgba(100, 0, 0, 0.6) solid 2px;
-  height: 100%;
-  box-sizing: border-box;
+.markdown-body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans',
+    Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  color: white;
 }
-.insert-cursor {
-  position: absolute;
-  border-left: rgba(213, 255, 116, 0.3) solid 2px;
-  height: 100%;
-  box-sizing: border-box;
+.markdown-body ul {
+  list-style-type: disc;
+}
+.markdown-body p,
+.markdown-body blockquote,
+.markdown-body ul,
+.markdown-body ol,
+.markdown-body dl,
+.markdown-body table,
+.markdown-body pre,
+.markdown-body details {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+.markdown-body h1 {
+  padding-bottom: 0.3em;
+  font-size: 2em;
+  border-bottom: 1px solid #333333;
+}
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
 }
 
-.highlight-cursor {
-  position: absolute;
-  border-left: orange solid 2px;
-  border-top: orange solid 2px;
-  border-bottom: orange solid 2px;
-  height: 100%;
-  box-sizing: border-box;
-}
-
-.cursor-color-replace,
-.cursor-color-replace::after {
-  border-color: rgb(0, 115, 255);
-}
-.cursor-color-delete,
-.cursor-color-delete::after {
-  border-color: red;
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 2em;
 }
 
 .rightpanel-top {
