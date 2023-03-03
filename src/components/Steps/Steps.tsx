@@ -258,6 +258,7 @@ export function Steps() {
 
         {steps.length !== 0 && (
           <div
+            ref={!activeStepId ? activeStepRef : null}
             className={classNames({
               placeholder: true,
               step: true,

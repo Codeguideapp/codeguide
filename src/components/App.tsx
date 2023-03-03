@@ -15,6 +15,7 @@ import { signIn, useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import Split from 'react-split';
 
+import { api } from '../utils/api';
 import { Editor } from './Editor/Editor';
 import { LeftSide } from './LeftSide/LeftSide';
 import { PrevNextControls } from './PrevNextControls';
@@ -27,13 +28,14 @@ import { useStepsStore } from './store/steps';
 
 export function App() {
   const { data: session } = useSession();
+  const publishGuideMutation = api.guide.publishGuide.useMutation();
   const guideId = useGuideStore((s) => s.id);
   const guideType = useGuideStore((s) => s.type);
   const prNum = useGuideStore((s) => s.prNum);
   const repository = useGuideStore((s) => s.repository);
   const owner = useGuideStore((s) => s.owner);
-  const publishComments = useCommentsStore((s) => s.publishComments);
-  const publishChanges = useStepsStore((s) => s.publishSteps);
+  const getUnpublishedComments = useCommentsStore((s) => s.getUnpublishedData);
+  const getUnpublishedSteps = useStepsStore((s) => s.getUnpublishedData);
   const hasUnpublishedChanges = useStepsStore((s) => s.hasDataToPublish());
   const hasUnpublishedComments = useCommentsStore((s) => s.hasDataToPublish());
   const storeFile = useFilesStore((s) => s.storeFile);
@@ -42,6 +44,39 @@ export function App() {
   const setActiveChangeId = useStepsStore((s) => s.setActiveStepId);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const hasUnpublishedData = hasUnpublishedChanges || hasUnpublishedComments;
+
+  useEffect(() => {
+    if (publishGuideMutation.data) {
+      useStepsStore.setState({
+        publishedStepIds: [
+          ...useStepsStore
+            .getState()
+            .publishedStepIds.filter(
+              (id) => !publishGuideMutation.data.steps.deletedIds.includes(id)
+            ),
+          ...publishGuideMutation.data.steps.savedIds,
+        ],
+      });
+
+      useCommentsStore.setState({
+        publishedCommentIds: [
+          ...useCommentsStore
+            .getState()
+            .publishedCommentIds.filter(
+              (id) =>
+                !publishGuideMutation.data.comments.deletedIds.includes(id)
+            ),
+          ...publishGuideMutation.data.comments.savedIds,
+        ],
+      });
+
+      message.success({
+        content: 'Guide published successfully!',
+      });
+
+      setSaving(false);
+    }
+  }, [publishGuideMutation.data]);
 
   useEffect(() => {
     if (hasUnpublishedData) {
@@ -57,17 +92,18 @@ export function App() {
     };
   }, [hasUnpublishedData]);
 
-  const handlePublish = async () => {
+  const handlePublish = () => {
     setSaving(true);
-    const changesRes = await publishChanges();
-    const commentsRes = await publishComments();
-    setSaving(false);
+    const unpublishedSteps = getUnpublishedSteps();
+    const unpublishedComments = getUnpublishedComments();
 
-    if (changesRes.success && commentsRes.success) {
-      message.success({
-        content: 'Guide published successfully!',
-      });
-    }
+    publishGuideMutation.mutate({
+      guideId: guideId,
+      deleteSteps: unpublishedSteps.stepIdsToDelete,
+      saveSteps: unpublishedSteps.stepsToPublish,
+      saveComments: unpublishedComments.commentsToPublish,
+      deleteCommentIds: unpublishedComments.commentIdsToDelete,
+    });
   };
 
   const link =

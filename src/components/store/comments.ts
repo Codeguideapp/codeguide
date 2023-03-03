@@ -16,7 +16,7 @@ export type IComment = {
   timestamp: number;
 };
 interface CommentsState {
-  publishedComments: IComment[];
+  publishedCommentIds: string[];
   savedComments: Record<string, IComment[]>;
   draftCommentPerStep: Record<string, IComment & { isEditing: boolean }>;
   hasDataToPublish: () => boolean;
@@ -25,11 +25,14 @@ interface CommentsState {
   saveActiveCommentVal: (val: string) => Promise<void>;
   storeCommentsFromServer: (comments: IComment[]) => void;
   saveComment: () => void;
-  publishComments: () => Promise<{ success: boolean; error?: string }>;
+  getUnpublishedData: () => {
+    commentsToPublish: IComment[];
+    commentIdsToDelete: string[];
+  };
 }
 
 export const useCommentsStore = create<CommentsState>((set, get) => ({
-  publishedComments: [],
+  publishedCommentIds: [],
   savedComments: {},
   draftCommentPerStep: {},
   hasDataToPublish: () => {
@@ -40,11 +43,11 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
     );
 
     const commentsToPush = savedComments.filter(
-      (comment) => !containsComment(get().publishedComments, comment)
+      (comment) => !get().publishedCommentIds.includes(comment.commentId)
     );
 
-    const commentsToDelete = get().publishedComments.filter((comment) => {
-      return !containsComment(savedComments, comment);
+    const commentsToDelete = get().publishedCommentIds.filter((commentId) => {
+      return !savedComments.find((comment) => comment.commentId === commentId);
     });
 
     return (
@@ -165,11 +168,11 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
     });
   },
 
-  publishComments: async () => {
+  getUnpublishedData: () => {
     const {
       savedComments,
       draftCommentPerStep: draftCommentPerStep,
-      publishedComments,
+      publishedCommentIds,
     } = get();
 
     // undraft all comments
@@ -199,79 +202,20 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
 
     const savedCommentsArr = Object.values(get().savedComments).flat();
 
-    const commentsToPush = savedCommentsArr.filter(
-      (comment) => !containsComment(publishedComments, comment)
+    const commentsToPublish = savedCommentsArr.filter(
+      (comment) => !publishedCommentIds.includes(comment.commentId)
     );
 
-    const commentIdsToDelete = publishedComments
-      .filter((comment) => {
-        return !containsComment(savedCommentsArr, comment);
-      })
-      .map((c) => c.commentId);
+    const commentIdsToDelete = publishedCommentIds.filter((commentId) => {
+      return !savedCommentsArr.find(
+        (comment) => comment.commentId === commentId
+      );
+    });
 
-    const guideId = useGuideStore.getState().id;
-
-    try {
-      if (commentIdsToDelete.length) {
-        await fetchWithThrow(`/api/comments?guideId=${guideId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ commentIds: commentIdsToDelete }),
-        }).then((deletedIds: string[]) => {
-          set({
-            publishedComments: get().publishedComments.filter(
-              (comment) => !deletedIds.includes(comment.commentId)
-            ),
-          });
-        });
-      }
-
-      if (commentsToPush.length === 0) {
-        return {
-          success: true,
-        };
-      }
-
-      await fetchWithThrow(`/api/comments?guideId=${guideId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          comments: commentsToPush.slice(0, 25),
-        }),
-      }).then((savedCommentIds: string[]) => {
-        const savedComments = savedCommentIds.map(
-          (commentId) =>
-            savedCommentsArr.find((c) => c.commentId === commentId)!
-        );
-
-        set({
-          publishedComments: [...get().publishedComments, ...savedComments],
-        });
-
-        // If there are more steps to save, send another request
-        if (commentsToPush.length > 25) {
-          return get().publishComments();
-        } else {
-          return {
-            success: true,
-          };
-        }
-      });
-
-      return {
-        success: true,
-      };
-    } catch (err: any) {
-      console.error(err);
-      return {
-        success: false,
-        error: err.message,
-      };
-    }
+    return {
+      commentsToPublish,
+      commentIdsToDelete,
+    };
   },
 
   storeCommentsFromServer: (comments: IComment[]) => {
@@ -290,14 +234,7 @@ export const useCommentsStore = create<CommentsState>((set, get) => ({
 
     set({
       savedComments: commentsPerStep,
-      publishedComments: comments,
+      publishedCommentIds: comments.map((c) => c.commentId),
     });
   },
 }));
-
-function containsComment(comments: IComment[], checkComment: IComment) {
-  const getCommentHash = (comment: IComment) =>
-    `${comment.commentId}:${comment.timestamp}`;
-
-  return comments.map(getCommentHash).includes(getCommentHash(checkComment));
-}

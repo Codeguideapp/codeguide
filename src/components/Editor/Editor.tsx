@@ -8,6 +8,7 @@ import { useShallowSteps } from '../hooks/useShallowSteps';
 import { Steps } from '../Steps/Steps';
 import { isEditing } from '../store/atoms';
 import { FileNode, useFilesStore } from '../store/files';
+import { useGuideStore } from '../store/guide';
 import { Step, useStepsStore } from '../store/steps';
 import { LoadingIcon } from '../svgIcons/LoadingIcon';
 import { EditorEditDiff } from './EditorEditDiff';
@@ -63,6 +64,7 @@ function GetEditorComponent({
 }
 
 export function Editor() {
+  const isFetching = useGuideStore((s) => s.isFetching);
   const activeChange = useActiveChange();
   const activeFile = useFilesStore((s) => s.activeFile);
   const unsavedFilePaths = useUnsavedFilePaths();
@@ -82,6 +84,16 @@ export function Editor() {
     tabName = 'Welcome';
   } else {
     tabName = 'The End';
+  }
+
+  if (isFetching) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-zinc-900">
+        <div className="-mt-20">
+          <LoadingIcon />
+        </div>
+      </div>
+    );
   }
 
   return (

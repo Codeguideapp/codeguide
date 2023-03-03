@@ -1,35 +1,23 @@
 import produce from 'immer';
 import { last } from 'lodash';
 import Delta from 'quill-delta';
+import { z } from 'zod';
 import create from 'zustand';
 
+import { StepZod } from '../../server/api/routers/guide/publishGuide';
 import { calcStat, composeDeltas, deltaToString } from '../../utils/deltaUtils';
-import { fetchWithThrow } from '../../utils/fetchWithThrow';
 import { generateId } from '../../utils/generateId';
 import { isEditing } from './atoms';
 import { useCommentsStore } from './comments';
 import { FileNode, useFilesStore } from './files';
 import { useGuideStore } from './guide';
 
+export type Step = Omit<z.infer<typeof StepZod>, 'delta' | 'deltaInverted'> & {
+  delta: Delta;
+  deltaInverted: Delta;
+};
 export type Steps = Record<string, Readonly<Step>>; // steps are updated using immer so the result object can be read only
 
-export type Step = {
-  id: string;
-  path: string;
-  displayName?: string;
-  previewOpened: boolean;
-  isFileDepChange?: true;
-  renderHtml?: boolean;
-  fileStatus: 'added' | 'modified' | 'deleted';
-  isDraft: boolean;
-  highlight: {
-    offset: number;
-    length: number;
-  }[];
-  delta: Delta;
-  deltaInverted?: Delta;
-  stat: [number, number];
-};
 interface SaveDeltaParams {
   delta: Delta;
   highlight: Step['highlight'];
@@ -51,7 +39,10 @@ interface StepsState {
   deleteStep: (id: string) => void;
   deleteUntilStep: (id: string) => void;
   undraftStep: (id: string) => void;
-  publishSteps: () => Promise<{ success: boolean; error?: string }>;
+  getUnpublishedData: () => {
+    stepsToPublish: Step[];
+    stepIdsToDelete: string[];
+  };
   storeStepsFromServer: (stepsToSave: Step[]) => Promise<void>;
 }
 
@@ -305,10 +296,7 @@ export const useStepsStore = create<StepsState>((set, get) => ({
     });
     set({ steps: newSteps, activeStepId: null });
   },
-  publishSteps: async (): Promise<{
-    success: boolean;
-    error?: string;
-  }> => {
+  getUnpublishedData: () => {
     const newSteps = produce(get().steps, (stepsDraft) => {
       for (const id of Object.keys(stepsDraft)) {
         stepsDraft[id].isDraft = false;
@@ -317,69 +305,18 @@ export const useStepsStore = create<StepsState>((set, get) => ({
     });
     set({ steps: newSteps });
 
-    const stepsToSave = Object.values(get().steps).filter(
+    const stepsToPublish = Object.values(get().steps).filter(
       (step) => !get().publishedStepIds.includes(step.id)
     );
 
-    const guideId = useGuideStore.getState().id;
-
-    const stepsToDelete = get().publishedStepIds.filter(
+    const stepIdsToDelete = get().publishedStepIds.filter(
       (id) => !Object.keys(get().steps).includes(id)
     );
 
-    try {
-      if (stepsToDelete.length) {
-        await fetchWithThrow(`/api/changes?guideId=${guideId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ changeIds: stepsToDelete }),
-        }).then((deleted: string[]) => {
-          set({
-            publishedStepIds: get().publishedStepIds.filter(
-              (id) => !deleted.includes(id)
-            ),
-          });
-        });
-      }
-
-      if (stepsToSave.length === 0) {
-        return {
-          success: true,
-        };
-      }
-
-      await fetchWithThrow(`/api/changes?guideId=${guideId}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(stepsToSave.slice(0, 25)),
-      }).then((saved: string[]) => {
-        set({
-          publishedStepIds: [...get().publishedStepIds, ...saved],
-        });
-
-        // If there are more steps to save, send another request
-        if (stepsToSave.length > 25) {
-          return get().publishSteps();
-        } else {
-          return {
-            success: true,
-          };
-        }
-      });
-
-      return {
-        success: true,
-      };
-    } catch (err: any) {
-      return {
-        success: false,
-        error: err.message,
-      };
-    }
+    return {
+      stepsToPublish,
+      stepIdsToDelete,
+    };
   },
   storeStepsFromServer: async (stepsToSave: Step[]) => {
     for (const step of stepsToSave) {
