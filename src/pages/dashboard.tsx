@@ -7,7 +7,7 @@ import { Header } from '../components/LandingPage/Header';
 import { api } from '../utils/api';
 
 export default function Dashboard() {
-  const { isFetching, data, error, refetch } = api.guide.getUserGuides.useQuery(
+  const { isFetching, data, error, refetch } = api.getUserGuides.useQuery(
     undefined,
     {
       refetchOnWindowFocus: false,
@@ -15,7 +15,7 @@ export default function Dashboard() {
     }
   );
 
-  const { mutate } = api.guide.deleteGuide.useMutation({
+  const { mutate } = api.deleteGuide.useMutation({
     onSuccess: () => {
       refetch();
     },

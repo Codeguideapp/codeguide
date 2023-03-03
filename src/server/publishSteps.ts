@@ -1,7 +1,7 @@
 import { omit } from 'lodash';
 import { z } from 'zod';
 
-import { StepZod } from './api/routers/guide/publishGuide';
+import { StepZod } from './api/procedures/publishGuide';
 import { dynamoDb } from './dynamoDb';
 
 const MAX_BATCH_SIZE = 25;

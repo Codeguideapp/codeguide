@@ -1,10 +1,10 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
-import { getGuideInfo } from '../../../getGuideInfo';
-import { publishComments } from '../../../publishComments';
-import { publishSteps } from '../../../publishSteps';
-import { protectedProcedure } from '../../trpc';
+import { getGuideInfo } from '../../getGuideInfo';
+import { publishComments } from '../../publishComments';
+import { publishSteps } from '../../publishSteps';
+import { protectedProcedure } from '../trpc';
 
 const DeltaZod = z.object({
   ops: z.array(

@@ -2,10 +2,10 @@ import { TRPCError } from '@trpc/server';
 import { Octokit } from 'octokit';
 import { z } from 'zod';
 
-import { getChanges } from '../../../getChanges';
-import { getComments } from '../../../getComments';
-import { getGuideInfo } from '../../../getGuideInfo';
-import { publicProcedure } from '../../trpc';
+import { getChanges } from '../../getChanges';
+import { getComments } from '../../getComments';
+import { getGuideInfo } from '../../getGuideInfo';
+import { publicProcedure } from '../trpc';
 
 export const getGuide = publicProcedure
   .input(z.object({ guideId: z.string() }))

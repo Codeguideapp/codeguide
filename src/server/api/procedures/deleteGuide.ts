@@ -2,8 +2,8 @@ import { TRPCError } from '@trpc/server';
 import type { DocumentClient } from 'aws-sdk/clients/dynamodb';
 import { z } from 'zod';
 
-import { dynamoDb } from '../../../dynamoDb';
-import { protectedProcedure } from '../../trpc';
+import { dynamoDb } from '../../dynamoDb';
+import { protectedProcedure } from '../trpc';
 
 export const deleteGuide = protectedProcedure
   .input(z.object({ id: z.string() }))

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { CommentZod } from './api/routers/guide/publishGuide';
+import { CommentZod } from './api/procedures/publishGuide';
 import { dynamoDb } from './dynamoDb';
 
 const MAX_BATCH_SIZE = 25;

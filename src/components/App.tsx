@@ -28,7 +28,7 @@ import { useStepsStore } from './store/steps';
 
 export function App() {
   const { data: session } = useSession();
-  const publishGuideMutation = api.guide.publishGuide.useMutation();
+  const publishGuideMutation = api.publishGuide.useMutation();
   const guideId = useGuideStore((s) => s.id);
   const guideType = useGuideStore((s) => s.type);
   const prNum = useGuideStore((s) => s.prNum);

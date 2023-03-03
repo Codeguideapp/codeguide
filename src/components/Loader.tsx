@@ -31,7 +31,7 @@ export default function Loader() {
   const [, setActiveSection] = useAtom(activeSectionAtom);
   const userSession = useSession();
 
-  const res = api.guide.getGuide.useQuery(
+  const res = api.getGuide.useQuery(
     {
       guideId: document.location.pathname.split('/')[1],
     },

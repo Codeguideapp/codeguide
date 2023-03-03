@@ -4,7 +4,7 @@ import Delta from 'quill-delta';
 import { z } from 'zod';
 import create from 'zustand';
 
-import { StepZod } from '../../server/api/routers/guide/publishGuide';
+import { StepZod } from '../../server/api/procedures/publishGuide';
 import { calcStat, composeDeltas, deltaToString } from '../../utils/deltaUtils';
 import { generateId } from '../../utils/generateId';
 import { isEditing } from './atoms';

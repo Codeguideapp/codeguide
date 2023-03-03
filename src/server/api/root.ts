@@ -1,13 +1,14 @@
-import { guideRouter } from './routers/guide';
+import { deleteGuide } from './procedures/deleteGuide';
+import { getGuide } from './procedures/getGuide';
+import { getUserGuides } from './procedures/getUserGuides';
+import { publishGuide } from './procedures/publishGuide';
 import { createTRPCRouter } from './trpc';
 
-/**
- * This is the primary router for your server.
- *
- * All routers added in /api/routers should be manually added here
- */
 export const appRouter = createTRPCRouter({
-  guide: guideRouter,
+  getGuide,
+  getUserGuides,
+  deleteGuide,
+  publishGuide,
 });
 
 // export type definition of API

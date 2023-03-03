@@ -1,8 +1,8 @@
 import { TRPCError } from '@trpc/server';
 
-import { IGuide } from '../../../../types/Guide';
-import { dynamoDb } from '../../../dynamoDb';
-import { protectedProcedure } from '../../trpc';
+import { IGuide } from '../../../types/Guide';
+import { dynamoDb } from '../../dynamoDb';
+import { protectedProcedure } from '../trpc';
 
 export const getUserGuides = protectedProcedure.query(async ({ ctx }) => {
   const email = ctx.session.user.email;
