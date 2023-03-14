@@ -1,4 +1,5 @@
 import { useAtomValue } from 'jotai';
+import { findLast } from 'lodash';
 import * as monaco from 'monaco-editor';
 import { useEffect, useRef } from 'react';
 import { ReactMarkdown } from 'react-markdown/lib/react-markdown';
@@ -39,10 +40,8 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
       .slice(0, currentChangeIndex)
       .map((id) => s.steps[id]);
 
-    // this works in ts 5.0
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    const prevChange = changesUpToChangeId.findLast(
+    const prevChange = findLast(
+      changesUpToChangeId,
       (c: any) => c.path === currentChange.path
     );
 

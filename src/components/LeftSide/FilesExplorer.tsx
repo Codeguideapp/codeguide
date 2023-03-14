@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { AntdTreeNodeAttribute } from 'antd/lib/tree';
 import ForwardDirectoryTree from 'antd/lib/tree/DirectoryTree';
 import { useAtom } from 'jotai';
-import { uniq } from 'lodash';
+import { last, uniq } from 'lodash';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useResizeDetector } from 'react-resize-detector';
 import { decodeTime } from 'ulid';
@@ -27,7 +27,7 @@ export function FilesExplorer() {
   const appliedPaths = useStepsStore((s) => {
     const changeIds = Object.keys(s.steps).sort();
     const isAtEnd = !s.activeStepId && changeIds.length;
-    const activeChangeId = isAtEnd ? changeIds.at(-1) : s.activeStepId;
+    const activeChangeId = isAtEnd ? last(changeIds) : s.activeStepId;
 
     return uniq(
       changeIds
