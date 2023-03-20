@@ -79,7 +79,7 @@ export default function LandingPage() {
               </form>
               <div className="hidden justify-center md:flex">
                 <Link
-                  href="/0uf86uc30"
+                  href="/jd2t7jj9j"
                   className="flex items-center gap-2 text-white opacity-60 hover:text-white hover:opacity-100"
                 >
                   <FontAwesomeIcon icon={faArrowRight} />
