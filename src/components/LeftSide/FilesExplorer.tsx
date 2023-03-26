@@ -68,7 +68,7 @@ export function FilesExplorer() {
       toExpland.push(nextPath);
     }
 
-    setExpanded((prevVal) => uniq([...prevVal, ...toExpland]));
+    setExpanded(uniq(toExpland));
 
     setTimeout(() => {
       treeRef.current.scrollTo({
