@@ -1,9 +1,7 @@
 import produce from 'immer';
 import create from 'zustand';
 
-import { fetchWithThrow } from '../../utils/fetchWithThrow';
 import { generateId } from '../../utils/generateId';
-import { useGuideStore } from './guide';
 import { useStepsStore } from './steps';
 import { useUserStore } from './user';
 

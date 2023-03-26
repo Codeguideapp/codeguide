@@ -2,29 +2,28 @@ import { faCheck, faEdit, faMessage } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Input, Tooltip } from 'antd';
 import classNames from 'classnames';
+import { useAtomValue } from 'jotai';
 import { nanoid } from 'nanoid';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import scrollIntoView from 'scroll-into-view-if-needed';
 
 import { getFileContent } from '../../utils/deltaUtils';
-import { isEditing } from '../store/atoms';
+import { guideIsFetchingAtom, isEditing } from '../store/atoms';
 import { useCommentsStore } from '../store/comments';
 import { useFilesStore } from '../store/files';
-import { useGuideStore } from '../store/guide';
 import { Step, useStepsStore } from '../store/steps';
 import { DeltaPreview } from './DeltaPreview';
 import { getStepPreview, StepPreview } from './getStepPreview';
 
 export function Steps() {
   const activeStepRef = useRef<HTMLDivElement>(null);
-  const isFetching = useGuideStore((s) => s.isFetching);
-  const fileRefs = useGuideStore((s) => s.fileRefs);
+  const isFetching = useAtomValue(guideIsFetchingAtom);
+  const fileNodes = useFilesStore((s) => s.fileNodes);
   const setActiveStepId = useStepsStore((s) => s.setActiveStepId);
   const getStepIndex = useStepsStore((s) => s.getStepIndex);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const activeStepId = useStepsStore((s) => s.activeStepId);
-  const updateStepProps = useStepsStore((s) => s.updateStepProps);
   const savedComments = useCommentsStore((s) => s.savedComments);
   const steps = useStepsStore((s) => {
     const stepsOrder = Object.keys(s.steps).sort();
@@ -56,7 +55,7 @@ export function Steps() {
             active: false,
             isDraft: false,
             isVirtualFile:
-              fileRefs.find((f) => f.path === steps[0].path)?.origin ===
+              fileNodes.find((f) => f.path === steps[0].path)?.origin ===
               'virtual',
             step: steps[0],
           },
@@ -67,7 +66,7 @@ export function Steps() {
 
     for (const step of steps) {
       const stepIndex = stepsOrder.indexOf(step.id);
-      const fileRef = fileRefs.find((f) => f.path === step.path);
+      const fileRef = fileNodes.find((f) => f.path === step.path);
 
       if (lasFile !== step.path) {
         resultSteps.push({
@@ -166,6 +165,8 @@ export function Steps() {
             isVirtualFile,
             step,
           }) => {
+            const fileName = step.path.split('/').pop() || '';
+
             return (
               <div
                 ref={active ? activeStepRef : null}
@@ -193,30 +194,11 @@ export function Steps() {
                   </div>
 
                   {isFileNode ? (
-                    isEditing() && isVirtualFile ? (
-                      <Input
-                        size="small"
-                        placeholder="[Markdown step]"
-                        defaultValue={step.displayName}
-                        suffix={<FontAwesomeIcon icon={faEdit} size="xs" />}
-                        style={{
-                          border: '1px solid #28282b',
-                          marginLeft: 12,
-                          marginRight: 8,
-                          fontFamily: 'Inconsolata',
-                          fontSize: 14,
-                        }}
-                        onBlur={(e) => {
-                          updateStepProps(step.id, {
-                            displayName: e.target.value,
-                          });
-                        }}
-                      />
-                    ) : (
-                      <div className="step-file">
-                        {step.displayName || step.path.split('/').pop()}
-                      </div>
-                    )
+                    <div className="step-file">
+                      {isVirtualFile
+                        ? fileName.slice(0, fileName.lastIndexOf('.'))
+                        : fileName}
+                    </div>
                   ) : (
                     <>
                       <div className="step-line-h"></div>

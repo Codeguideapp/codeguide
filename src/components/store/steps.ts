@@ -10,7 +10,6 @@ import { generateId } from '../../utils/generateId';
 import { isEditing } from './atoms';
 import { useCommentsStore } from './comments';
 import { FileNode, useFilesStore } from './files';
-import { useGuideStore } from './guide';
 
 export type Step = Omit<z.infer<typeof StepZod>, 'delta' | 'deltaInverted'> & {
   delta: Delta;
@@ -327,7 +326,7 @@ export const useStepsStore = create<StepsState>((set, get) => ({
       if (!fileNode) {
         if (
           isEditing() &&
-          useGuideStore
+          useFilesStore
             .getState()
             .fileRefs.find((f) => f.origin === 'pr' && f.path === step.path)
         ) {

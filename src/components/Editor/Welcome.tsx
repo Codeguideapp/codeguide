@@ -1,12 +1,10 @@
 import Link from 'next/link';
 
+import { Guide } from '../../types/Guide';
 import { isEditing } from '../store/atoms';
-import { useGuideStore } from '../store/guide';
 import { useStepsStore } from '../store/steps';
 
-export function Welcome() {
-  const guideId = useGuideStore((s) => s.id);
-  const guideType = useGuideStore((s) => s.type);
+export function Welcome({ guide }: { guide: Guide }) {
   const stepsNum = useStepsStore((s) => Object.keys(s.steps).length);
 
   return (
@@ -18,14 +16,14 @@ export function Welcome() {
           </p>
           <p>
             If you are the author of the guide, you can add steps in the{' '}
-            <Link className="font-bold" href={`${guideId}/edit`}>
+            <Link className="font-bold" href={`${guide.id}/edit`}>
               edit mode
             </Link>
             .
           </p>
         </div>
       ) : null}
-      {isEditing() && guideType === 'browse' && (
+      {isEditing() && guide.type === 'browse' && (
         <div>
           <h2 className="py-2 font-bold">Welcome to CodeGuide!</h2>
           <div>
@@ -34,7 +32,7 @@ export function Welcome() {
           </div>
         </div>
       )}
-      {isEditing() && guideType === 'diff' && (
+      {isEditing() && guide.type === 'diff' && (
         <div>
           <h2 className="mb-2 py-2 font-bold">Welcome to CodeGuide!</h2>
           <div className="mb-2">

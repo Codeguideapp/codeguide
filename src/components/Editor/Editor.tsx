@@ -1,14 +1,15 @@
 import classNames from 'classnames';
+import { useAtomValue } from 'jotai';
 import { useMemo } from 'react';
 
+import { Guide } from '../../types/Guide';
 import { BottomBarEdit } from '../BottomBar/BottomBar';
 import { Comments } from '../Comments/Comments';
 import { useActiveChange } from '../hooks/useActiveChange';
 import { useShallowSteps } from '../hooks/useShallowSteps';
 import { Steps } from '../Steps/Steps';
-import { isEditing } from '../store/atoms';
+import { guideIsFetchingAtom, isEditing } from '../store/atoms';
 import { FileNode, useFilesStore } from '../store/files';
-import { useGuideStore } from '../store/guide';
 import { Step, useStepsStore } from '../store/steps';
 import { LoadingIcon } from '../svgIcons/LoadingIcon';
 import { EditorEditDiff } from './EditorEditDiff';
@@ -20,7 +21,9 @@ import { Welcome } from './Welcome';
 function GetEditorComponent({
   activeFile,
   activeChange,
+  guide,
 }: {
+  guide: Guide;
   activeFile?: FileNode;
   activeChange?: Step | null;
 }) {
@@ -28,7 +31,7 @@ function GetEditorComponent({
 
   if (!activeFile) {
     if (changeIds.length === 0) {
-      return <Welcome />;
+      return <Welcome guide={guide} />;
     } else {
       return <TheEnd />;
     }
@@ -63,8 +66,8 @@ function GetEditorComponent({
   return <EditorPreviewFile activeFile={activeFile} />;
 }
 
-export function Editor() {
-  const isFetching = useGuideStore((s) => s.isFetching);
+export function Editor({ guide }: { guide: Guide }) {
+  const isFetching = useAtomValue(guideIsFetchingAtom);
   const activeChange = useActiveChange();
   const activeFile = useFilesStore((s) => s.activeFile);
   const unsavedFilePaths = useUnsavedFilePaths();
@@ -72,14 +75,8 @@ export function Editor() {
   const changesNum = useStepsStore((s) => Object.keys(s.steps).length);
   let tabName = '';
 
-  if (activeChange?.displayName) {
-    tabName = activeChange.displayName;
-  } else if (activeFile) {
-    if (activeFile.origin === 'virtual') {
-      tabName = '[Markdown Step]';
-    } else {
-      tabName = activeFile.path.split('/').pop() || '';
-    }
+  if (activeFile) {
+    tabName = activeFile.path.split('/').pop() || '';
   } else if (changesNum === 0) {
     tabName = 'Welcome';
   } else {
@@ -128,6 +125,7 @@ export function Editor() {
               <GetEditorComponent
                 activeFile={activeFile}
                 activeChange={activeChange}
+                guide={guide}
               />
             </div>
           </div>

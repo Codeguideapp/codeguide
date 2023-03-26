@@ -8,13 +8,11 @@ import { AntdTreeNodeAttribute } from 'antd/lib/tree';
 import ForwardDirectoryTree from 'antd/lib/tree/DirectoryTree';
 import { useAtom } from 'jotai';
 import { last, uniq } from 'lodash';
-import React, { useEffect, useMemo, useState } from 'react';
-import { useResizeDetector } from 'react-resize-detector';
+import React, { useEffect, useMemo } from 'react';
 import { decodeTime } from 'ulid';
 
 import { expandedFilesAtom, isEditing } from '../store/atoms';
 import { useFilesStore } from '../store/files';
-import { useGuideStore } from '../store/guide';
 import { useStepsStore } from '../store/steps';
 import { pathsToTreeStructure } from './pathsToTree';
 
@@ -37,11 +35,10 @@ export function FilesExplorer() {
         .map((id) => s.steps[id].path)
     );
   });
-  const fileRefs = useGuideStore((s) => s.fileRefs);
+  const fileRefs = useFilesStore((s) => s.fileRefs);
   const activeFile = useFilesStore((s) => s.activeFile);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const [expanded, setExpanded] = useAtom(expandedFilesAtom);
-  const [wrapperHeight, setWrapperHeight] = useState(400);
 
   const treeData = useMemo(() => {
     const commitedFileRefs = fileRefs.filter(
@@ -60,14 +57,6 @@ export function FilesExplorer() {
 
     return pathsToTreeStructure([...commitedFileRefs, ...fromApplied]);
   }, [fileRefs, appliedPaths]);
-
-  const { ref } = useResizeDetector({
-    onResize(_, height) {
-      if (typeof height === 'number' && wrapperHeight !== height) {
-        setWrapperHeight(height);
-      }
-    },
-  });
 
   useEffect(() => {
     if (!highlightChange) return;
@@ -91,17 +80,16 @@ export function FilesExplorer() {
   }, [highlightChange, setExpanded]);
 
   return (
-    <div className="file-tree" ref={ref}>
+    <div className="file-tree flex flex-col">
       <div className="header">Explorer</div>
       <ForwardDirectoryTree
         ref={treeRef}
-        className="directory-tree"
+        className="grow overflow-auto"
         treeData={treeData}
         switcherIcon={<span></span>}
         icon={getIcon}
         selectedKeys={[activeFile?.path || '']}
         expandedKeys={expanded}
-        height={wrapperHeight - 40}
         onSelect={(selected, info) => {
           const node = info.node as any;
 

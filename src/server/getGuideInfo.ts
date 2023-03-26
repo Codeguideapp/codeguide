@@ -1,7 +1,7 @@
-import { IGuide } from '../types/Guide';
+import { Guide } from '../types/Guide';
 import { dynamoDb } from './dynamoDb';
 
-export function getGuideInfo(id: string): Promise<IGuide> {
+export function getGuideInfo(id: string): Promise<Guide> {
   return dynamoDb
     .get({
       TableName: process.env.DYNAMODB_GUIDES_TABLE,
@@ -10,5 +10,5 @@ export function getGuideInfo(id: string): Promise<IGuide> {
       },
     })
     .promise()
-    .then((result) => result.Item as IGuide);
+    .then((result) => result.Item as Guide);
 }

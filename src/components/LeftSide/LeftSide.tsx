@@ -2,11 +2,13 @@
 import classNames from 'classnames';
 import { useAtom } from 'jotai';
 
-import { activeSectionAtom } from '../store/atoms';
+import { Guide } from '../../types/Guide';
+import { activeSectionAtom, isEditing } from '../store/atoms';
 import { ChangedFiles } from './ChangedFiles';
 import { FilesExplorer } from './FilesExplorer';
+import { GuideFiles } from './GuideFiles';
 
-export function LeftSide() {
+export function LeftSide({ guide }: { guide: Guide }) {
   const [activeSection, setActiveSection] = useAtom(activeSectionAtom);
 
   return (
@@ -28,13 +30,26 @@ export function LeftSide() {
             active: activeSection === 'changedFiles',
           })}
         >
-          <img width="24" src="/icons/filediff.svg" alt="File Changes" />
+          <img width="20" src="/icons/git.svg" alt="Changed Files" />
         </div>
+        {isEditing() && (
+          <div
+            onClick={() => setActiveSection('guideFiles')}
+            className={classNames({
+              icon: true,
+              active: activeSection === 'guideFiles',
+            })}
+          >
+            <img width="22" src="/icons/library.svg" alt="Changed Files" />
+          </div>
+        )}
       </div>
       {activeSection === 'changedFiles' ? (
-        <ChangedFiles />
+        <ChangedFiles guide={guide} />
       ) : activeSection === 'filesExplorer' ? (
         <FilesExplorer />
+      ) : activeSection === 'guideFiles' ? (
+        <GuideFiles />
       ) : null}
     </div>
   );

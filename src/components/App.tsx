@@ -9,12 +9,12 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { Dropdown, Menu, message } from 'antd';
 import classNames from 'classnames';
-import { nanoid } from 'nanoid';
 import Link from 'next/link';
 import { signIn, useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import Split from 'react-split';
 
+import { Guide } from '../types/Guide';
 import { api } from '../utils/api';
 import { Editor } from './Editor/Editor';
 import { LeftSide } from './LeftSide/LeftSide';
@@ -23,26 +23,20 @@ import { ProfileMenu } from './ProfileMenu';
 import { isEditing } from './store/atoms';
 import { useCommentsStore } from './store/comments';
 import { useFilesStore } from './store/files';
-import { useGuideStore } from './store/guide';
 import { useStepsStore } from './store/steps';
 
-export function App() {
+export function App({ guide }: { guide: Guide }) {
   const { data: session } = useSession();
   const publishGuideMutation = api.publishGuide.useMutation();
-  const guideId = useGuideStore((s) => s.id);
-  const guideType = useGuideStore((s) => s.type);
-  const prNum = useGuideStore((s) => s.prNum);
-  const repository = useGuideStore((s) => s.repository);
-  const owner = useGuideStore((s) => s.owner);
   const getUnpublishedComments = useCommentsStore((s) => s.getUnpublishedData);
+  const virtualFiles = useFilesStore((s) =>
+    s.fileNodes.filter((f) => f.origin === 'virtual')
+  );
   const getUnpublishedSteps = useStepsStore((s) => s.getUnpublishedData);
   const hasUnpublishedChanges = useStepsStore((s) => s.hasDataToPublish());
   const hasUnpublishedComments = useCommentsStore((s) => s.hasDataToPublish());
-  const storeFile = useFilesStore((s) => s.storeFile);
   const [isDragging, setDragging] = useState(false);
   const [isSaving, setSaving] = useState(false);
-  const setActiveChangeId = useStepsStore((s) => s.setActiveStepId);
-  const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const hasUnpublishedData = hasUnpublishedChanges || hasUnpublishedComments;
 
   useEffect(() => {
@@ -98,18 +92,19 @@ export function App() {
     const unpublishedComments = getUnpublishedComments();
 
     publishGuideMutation.mutate({
-      guideId: guideId,
+      guideId: guide.id,
       deleteSteps: unpublishedSteps.stepIdsToDelete,
       saveSteps: unpublishedSteps.stepsToPublish,
       saveComments: unpublishedComments.commentsToPublish,
       deleteCommentIds: unpublishedComments.commentIdsToDelete,
+      guideFiles: virtualFiles.map((file) => ({ path: file.path })),
     });
   };
 
   const link =
-    guideType === 'diff'
-      ? `${owner}/${repository}/pull/${prNum}`
-      : `${owner}/${repository}`;
+    guide.type === 'diff'
+      ? `${guide.owner}/${guide.repository}/pull/${guide.prNum}`
+      : `${guide.owner}/${guide.repository}`;
 
   return (
     <div>
@@ -118,7 +113,7 @@ export function App() {
           <a className="text-xs font-bold hover:text-gray-400" href="/">
             CodeGuide
           </a>
-          {repository && (
+          {guide.repository && (
             <Link
               className="flex items-center gap-1 text-xs hover:text-gray-400"
               href={`https://github.com/${link}`}
@@ -154,7 +149,7 @@ export function App() {
                 <>
                   <Link
                     className=" flex items-center justify-center gap-1 px-1 py-2 text-xs text-white hover:text-gray-400"
-                    href={`/${guideId}`}
+                    href={`/${guide.id}`}
                   >
                     <FontAwesomeIcon
                       icon={faMagnifyingGlass}
@@ -162,42 +157,11 @@ export function App() {
                     />
                     <span>Preview</span>
                   </Link>
-                  <div className="flex cursor-pointer items-center justify-center gap-1 px-1 py-2 text-xs text-white hover:text-gray-400">
-                    <Dropdown
-                      trigger={['click', 'hover']}
-                      mouseEnterDelay={0}
-                      overlay={
-                        <Menu>
-                          <Menu.Item
-                            onClick={() => {
-                              const fileName = `${nanoid()}.md`;
-
-                              storeFile({
-                                oldVal: '',
-                                newVal: '',
-                                path: fileName,
-                              });
-
-                              setActiveChangeId(null);
-                              setActiveFileByPath(fileName);
-                            }}
-                          >
-                            Markdown Step
-                          </Menu.Item>
-                        </Menu>
-                      }
-                    >
-                      <div className="mr-2 flex items-center gap-1">
-                        <FontAwesomeIcon icon={faPlus} className="text-md" />
-                        <span>New</span>
-                      </div>
-                    </Dropdown>
-                  </div>
                 </>
               ) : (
                 <Link
                   className=" flex items-center justify-center gap-1 px-1 py-2 text-xs text-white hover:text-gray-400"
-                  href={`/${guideId}/edit`}
+                  href={`/${guide.id}/edit`}
                 >
                   <FontAwesomeIcon icon={faEdit} className="text-md" />
                   <span>Edit guide</span>
@@ -226,8 +190,8 @@ export function App() {
           onDragStart={() => setDragging(true)}
           onDragEnd={() => setDragging(false)}
         >
-          <LeftSide />
-          <Editor />
+          <LeftSide guide={guide} />
+          <Editor guide={guide} />
         </Split>
       </div>
       <PrevNextControls />

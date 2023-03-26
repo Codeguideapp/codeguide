@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const Guide = z.object({
+export const GuideZod = z.object({
   type: z.union([z.literal('diff'), z.literal('browse')]),
   id: z.string(),
   createdBy: z.string(),
@@ -25,8 +25,13 @@ export const Guide = z.object({
       isDeleted: z.boolean().optional(),
     })
   ),
+  guideFiles: z.array(
+    z.object({
+      path: z.string(),
+    })
+  ),
   privateRepoWhenCreated: z.boolean(),
   createdAt: z.number(),
 });
 
-export type IGuide = z.infer<typeof Guide>;
+export type Guide = z.infer<typeof GuideZod>;

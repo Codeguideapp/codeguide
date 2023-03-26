@@ -1,10 +1,9 @@
 import * as monaco from 'monaco-editor';
 import create from 'zustand';
 
-import { IGuide } from '../../types/Guide';
+import { Guide } from '../../types/Guide';
 import { fetchWithThrow } from '../../utils/fetchWithThrow';
 import { modifiedModel, originalModel } from '../../utils/monaco';
-import { useGuideStore } from './guide';
 import { useStepsStore } from './steps';
 import { useUserStore } from './user';
 
@@ -16,7 +15,7 @@ export type FileNode = {
   path: string;
   oldVal: string;
   newVal: string;
-  origin: IGuide['fileRefs'][0]['origin'];
+  origin: Guide['fileRefs'][0]['origin'];
 };
 
 export type RepoFileRef = {
@@ -27,12 +26,18 @@ export type RepoFileRef = {
 };
 
 interface FilesState {
+  fileRefs: Guide['fileRefs'];
+  owner: Guide['owner'];
+  repository: Guide['repository'];
+  mergeCommitSha: Guide['mergeCommitSha'];
+  baseSha: Guide['baseSha'];
   fileNodes: FileNode[];
   activeFile?: FileNode;
   undraftActiveFile: () => void;
   setActiveFileByPath: (path: string | undefined) => Promise<void>;
   setActiveFile: (file: FileNode | undefined) => void;
   setFileNodes: (refs: FileNode[]) => void;
+  addGuideFile: (path: string) => void;
   storeFile: ({
     newVal,
     oldVal,
@@ -46,6 +51,11 @@ interface FilesState {
 }
 
 export const useFilesStore = create<FilesState>((set, get) => ({
+  owner: '',
+  repository: '',
+  baseSha: '',
+  mergeCommitSha: '',
+  fileRefs: [],
   fileNodes: [],
   setActiveFile: (activeFile: FileNode | undefined) => {
     set({ activeFile });
@@ -59,6 +69,22 @@ export const useFilesStore = create<FilesState>((set, get) => ({
 
     monaco.editor.setModelLanguage(modifiedModel, foundLang?.id || 'plaintext');
     monaco.editor.setModelLanguage(originalModel, foundLang?.id || 'plaintext');
+  },
+  addGuideFile: (path: string) => {
+    set({
+      fileNodes: [
+        ...get().fileNodes,
+        {
+          path,
+          isFetching: false,
+          isFileDiff: false,
+          newVal: '',
+          oldVal: '',
+          origin: 'virtual',
+          status: 'modified',
+        },
+      ],
+    });
   },
   setFileNodes: (fileNodes: FileNode[]) => {
     set({ fileNodes });
@@ -129,21 +155,10 @@ export const useFilesStore = create<FilesState>((set, get) => ({
     }
   },
   storeFile: ({ newVal, oldVal, path }) => {
-    const fileRefs = useGuideStore.getState().fileRefs;
-    const fileRef = fileRefs.find((f) => f.path === path);
+    const fileRef = get().fileRefs.find((f) => f.path === path);
+
     if (!fileRef) {
-      useGuideStore.setState({
-        fileRefs: [
-          ...fileRefs,
-          {
-            path,
-            type: 'blob',
-            url: '',
-            sha: '',
-            origin: 'virtual',
-          },
-        ],
-      });
+      throw new Error('File not found');
     }
 
     const newFile: FileNode = {
@@ -153,14 +168,12 @@ export const useFilesStore = create<FilesState>((set, get) => ({
       path,
       status: 'modified',
       isFetching: false,
-      origin: fileRef?.origin || 'virtual',
+      origin: fileRef.origin,
     };
     get().setFileNodes([...get().fileNodes, newFile]);
   },
   loadFile: async (path: string): Promise<FileNode> => {
-    const fileRef = useGuideStore
-      .getState()
-      .fileRefs.find((f) => f.path === path);
+    const fileRef = get().fileRefs.find((f) => f.path === path);
 
     if (!fileRef) {
       throw new Error('File not found');
@@ -173,8 +186,8 @@ export const useFilesStore = create<FilesState>((set, get) => ({
       const getFile = (path: string, sha?: string) => {
         return octokit
           .request('GET /repos/{owner}/{repo}/contents/{path}?ref={sha}', {
-            owner: guide.owner,
-            repo: guide.repository,
+            owner: get().owner,
+            repo: get().repository,
             path,
             sha,
           })
@@ -183,15 +196,13 @@ export const useFilesStore = create<FilesState>((set, get) => ({
           });
       };
 
-      const guide = useGuideStore.getState();
-
       const oldVal = fileRef.isAdded
         ? ''
-        : await getFile(fileRef.path, guide.baseSha);
+        : await getFile(fileRef.path, get().baseSha);
 
       const newVal = fileRef.isDeleted
         ? ''
-        : await getFile(fileRef.path, guide.mergeCommitSha);
+        : await getFile(fileRef.path, get().mergeCommitSha);
 
       const newFile: FileNode = {
         isFileDiff: true,

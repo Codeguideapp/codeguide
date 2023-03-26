@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { getGuideInfo } from '../../getGuideInfo';
 import { publishComments } from '../../publishComments';
 import { publishSteps } from '../../publishSteps';
+import { updateGuide } from '../../updateGuide';
 import { protectedProcedure } from '../trpc';
 
 const DeltaZod = z.object({
@@ -34,7 +35,6 @@ export const StepZod = z.object({
       length: z.number(),
     })
   ),
-  displayName: z.string().optional(),
   renderHtml: z.boolean().optional(),
   delta: DeltaZod,
   deltaInverted: DeltaZod.optional(),
@@ -56,6 +56,7 @@ export const publishGuide = protectedProcedure
       deleteSteps: z.array(z.string()),
       saveComments: z.array(CommentZod),
       deleteCommentIds: z.array(z.string()),
+      guideFiles: z.array(z.object({ path: z.string() })),
     })
   )
   .mutation(async ({ ctx, input }) => {
@@ -66,6 +67,8 @@ export const publishGuide = protectedProcedure
       if (!guide?.canEdit.includes(email)) {
         throw new TRPCError({ code: 'FORBIDDEN' });
       }
+
+      await updateGuide(guide.id, 'guideFiles', input.guideFiles);
 
       const steps = await publishSteps({
         guideId: guide.id,

@@ -1,8 +1,8 @@
-import { Guide } from '../types/Guide';
+import { GuideZod } from '../types/Guide';
 import { dynamoDb } from './dynamoDb';
 
 export function saveGuide(guide: unknown) {
-  const guideParsed = Guide.parse(guide);
+  const guideParsed = GuideZod.parse(guide);
 
   return dynamoDb
     .put({

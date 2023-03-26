@@ -4,7 +4,7 @@ import { Octokit } from 'octokit';
 
 import { getUserSession } from '../../server/getUserSession';
 import { saveGuide } from '../../server/saveGuide';
-import { IGuide } from '../../types/Guide';
+import { Guide } from '../../types/Guide';
 import { parseGithubUrl } from '../../utils/parseGithubUrl';
 
 export default async function handler(
@@ -85,8 +85,8 @@ export default async function handler(
       }
     );
 
-    type FileRef = IGuide['fileRefs'][number];
-    const guide: IGuide = {
+    type FileRef = Guide['fileRefs'][number];
+    const guide: Guide = {
       prNum: pullRequest || undefined,
       mergeCommitSha,
       baseSha,
@@ -125,6 +125,7 @@ export default async function handler(
       ],
       privateRepoWhenCreated: repoInfo.data.private,
       createdAt: Date.now(),
+      guideFiles: [],
     };
 
     await saveGuide(guide);

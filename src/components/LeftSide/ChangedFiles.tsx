@@ -2,17 +2,16 @@ import { Tree } from 'antd';
 import { DataNode } from 'antd/lib/tree';
 import React, { useMemo } from 'react';
 
+import { Guide } from '../../types/Guide';
 import { isEditing } from '../store/atoms';
 import { useFilesStore } from '../store/files';
-import { useGuideStore } from '../store/guide';
 import { useStepsStore } from '../store/steps';
 import { FileIcon } from './FileIcon';
 
 const { DirectoryTree } = Tree;
 
-export function ChangedFiles() {
-  const type = useGuideStore((s) => s.type);
-  const changedFileRefs = useGuideStore((s) =>
+export function ChangedFiles({ guide }: { guide: Guide }) {
+  const changedFileRefs = useFilesStore((s) =>
     s.fileRefs.filter((ref) => ref.origin === 'pr')
   );
   const setActiveChangeId = useStepsStore((s) => s.setActiveStepId);
@@ -36,7 +35,7 @@ export function ChangedFiles() {
     return treeData;
   }, [changedFileRefs]);
 
-  if (type === 'browse') {
+  if (guide.type === 'browse') {
     return (
       <div className="file-tree p-4">
         File changes are available only in code review guides.

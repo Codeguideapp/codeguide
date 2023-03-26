@@ -6,7 +6,7 @@
 import * as monaco from 'monaco-editor';
 import * as Mousetrap from 'mousetrap';
 import 'mousetrap/plugins/global-bind/mousetrap-global-bind'; // must be imported after Mousetrap
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 
 import { darkTheme, darkThemeInvertedDif } from './Editor/monaco-themes/dark';
 import { App } from './App';
@@ -16,11 +16,14 @@ import { Loading } from './indexLoading';
 import { InternalError } from './indexInternalError';
 import { useFilesStore } from './store/files';
 import { api } from '../utils/api';
-import { useGuideStore } from './store/guide';
 import { useStepsStore } from './store/steps';
 import { useCommentsStore } from './store/comments';
 import { useAtom } from 'jotai';
-import { activeSectionAtom, isEditing } from './store/atoms';
+import {
+  activeSectionAtom,
+  guideIsFetchingAtom,
+  isEditing,
+} from './store/atoms';
 import { EditAccessDenied } from './editAccessDenied';
 import { useSession } from 'next-auth/react';
 
@@ -29,6 +32,7 @@ monaco.editor.defineTheme('darkTheme', darkTheme);
 
 export default function Loader() {
   const [, setActiveSection] = useAtom(activeSectionAtom);
+  const [, setIsFetching] = useAtom(guideIsFetchingAtom);
   const userSession = useSession();
 
   const res = api.getGuide.useQuery(
@@ -46,20 +50,35 @@ export default function Loader() {
   const undraftActiveFile = useFilesStore((s) => s.undraftActiveFile);
 
   useEffect(() => {
-    if (res.data && !useGuideStore.getState().id) {
-      useGuideStore.getState().setGuide(res.data.guide);
+    if (res.data && !useFilesStore.getState().repository) {
+      useFilesStore.setState({
+        owner: res.data.guide.owner,
+        repository: res.data.guide.repository,
+        baseSha: res.data.guide.baseSha,
+        fileRefs: res.data.guide.fileRefs,
+        mergeCommitSha: res.data.guide.mergeCommitSha,
+        fileNodes: res.data.guide?.guideFiles.map((file) => ({
+          path: file.path,
+          isFileDiff: false,
+          oldVal: '',
+          newVal: '',
+          status: 'modified',
+          isFetching: false,
+          origin: 'virtual',
+        })),
+      });
       Promise.all([
         useStepsStore.getState().storeStepsFromServer(res.data.changes),
         useCommentsStore.getState().storeCommentsFromServer(res.data.comments),
       ]).then(() => {
-        useGuideStore.setState({ isFetching: false });
+        setIsFetching(false);
       });
 
       if (res.data.guide.type === 'browse') {
         setActiveSection('filesExplorer');
       }
     }
-  }, [res.data, setActiveSection]);
+  }, [res.data, setActiveSection, setIsFetching]);
 
   useEffect(() => {
     Mousetrap.bindGlobal(['command+s', 'ctrl+s'], function (e) {
@@ -76,8 +95,9 @@ export default function Loader() {
   if (isEditing() && !res.data?.guide.canEdit.includes(email || ''))
     return <EditAccessDenied />;
 
-  if (res.error?.data?.code === 'NOT_FOUND') return <GuideNotFound />;
+  if (!res.data || res.error?.data?.code === 'NOT_FOUND')
+    return <GuideNotFound />;
   if (res.error) return <InternalError />;
 
-  return <App />;
+  return <App guide={res.data.guide} />;
 }
