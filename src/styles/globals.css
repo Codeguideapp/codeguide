@@ -370,3 +370,7 @@ svg.disabled {
   border-top: 1px dashed #4c4c53;
   margin-top: 15px;
 }
+
+.step-actions .ant-checkbox-wrapper + .ant-checkbox-wrapper {
+  margin-left: 0;
+}

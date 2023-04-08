@@ -20,6 +20,7 @@ const DeltaZod = z.object({
 export const StepZod = z.object({
   id: z.string(),
   path: z.string(),
+  introStep: z.boolean().optional(),
   previewOpened: z.boolean(),
   isFileDepChange: z.boolean().optional(),
   isFileNode: z.boolean().optional(),

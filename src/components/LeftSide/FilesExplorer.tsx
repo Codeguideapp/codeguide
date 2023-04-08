@@ -23,30 +23,57 @@ export function FilesExplorer() {
     s.activeStepId ? s.steps[s.activeStepId] : null
   );
   const appliedPaths = useStepsStore((s) => {
-    const changeIds = Object.keys(s.steps).sort();
-    const isAtEnd = !s.activeStepId && changeIds.length;
-    const activeChangeId = isAtEnd ? last(changeIds) : s.activeStepId;
+    const stepIds = Object.keys(s.steps).sort();
+    const isAtEnd = !s.activeStepId && stepIds.length;
+    const activeChangeId = isAtEnd ? last(stepIds) : s.activeStepId;
 
     return uniq(
-      changeIds
+      stepIds
         .filter((id) =>
           !activeChangeId ? false : decodeTime(id) <= decodeTime(activeChangeId)
         )
         .map((id) => s.steps[id].path)
     );
   });
+  const activeIntroPaths = useStepsStore((s) => {
+    const hasIntroStep = Object.values(s.steps).some((step) => step.introStep);
+    if (!hasIntroStep) {
+      return [];
+    }
+    if (!s.activeStepId) {
+      return [];
+    }
+    if (!s.steps[s.activeStepId].introStep) {
+      return [];
+    }
+
+    const stepIds = Object.keys(s.steps).sort();
+
+    return stepIds
+      .slice(0, stepIds.indexOf(s.activeStepId) + 1)
+      .map((id) => s.steps[id])
+      .filter((step) => !step.isFileDepChange)
+      .map((step) => step.path);
+  });
+
   const fileRefs = useFilesStore((s) => s.fileRefs);
   const activeFile = useFilesStore((s) => s.activeFile);
   const setActiveFileByPath = useFilesStore((s) => s.setActiveFileByPath);
   const [expanded, setExpanded] = useAtom(expandedFilesAtom);
 
   const treeData = useMemo(() => {
-    const commitedFileRefs = fileRefs.filter(
-      (ref) =>
+    const commitedFileRefs = fileRefs.filter((ref) => {
+      if (activeIntroPaths.length) {
+        // if intro steps are active, only show files that are part of the intro
+        return activeIntroPaths.includes(ref.path);
+      }
+
+      return (
         (ref.origin === 'commit' || ref.origin === 'pr') &&
         !ref.isAdded &&
         !ref.isDeleted
-    );
+      );
+    });
 
     const fromApplied = appliedPaths
       .map((path) => ({ path, type: 'blob' }))
@@ -56,7 +83,7 @@ export function FilesExplorer() {
       });
 
     return pathsToTreeStructure([...commitedFileRefs, ...fromApplied]);
-  }, [fileRefs, appliedPaths]);
+  }, [fileRefs, appliedPaths, activeIntroPaths]);
 
   useEffect(() => {
     if (!highlightChange) return;

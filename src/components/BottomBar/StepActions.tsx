@@ -20,6 +20,19 @@ export function StepActions() {
     );
     return lastStepId ? s.steps[lastStepId] : null;
   });
+  const previousStep = useStepsStore((s) => {
+    const stepIds = Object.keys(s.steps)
+      .sort()
+      .filter((c) => !s.steps[c].isFileDepChange);
+
+    if (!s.activeStepId) return null;
+    const activeIndex = stepIds.indexOf(s.activeStepId);
+
+    if (activeIndex === 0) return null;
+
+    const previousId = stepIds[activeIndex - 1];
+    return s.steps[previousId];
+  });
   const setStepPreview = useStepsStore((s) => s.setStepPreview);
   const setActiveStepId = useStepsStore((s) => s.setActiveStepId);
   const undraftStep = useStepsStore((s) => s.undraftStep);
@@ -60,7 +73,7 @@ export function StepActions() {
   );
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="step-actions flex items-center gap-2">
       {activeStep?.isDraft && activeStep.previewOpened === false && (
         <Tooltip title="Preview Step">
           <FontAwesomeIcon
@@ -145,6 +158,18 @@ export function StepActions() {
         >
           Close Preview
         </Button>
+      )}
+      {activeStep?.isDraft && (!previousStep || previousStep.introStep) && (
+        <Tooltip title="todo">
+          <Checkbox
+            checked={activeStep.introStep}
+            onChange={(e) => {
+              updateStepProps(activeStep.id, { introStep: e.target.checked });
+            }}
+          >
+            Intro
+          </Checkbox>
+        </Tooltip>
       )}
       {activeStep?.isDraft &&
         activeStep.path.split('.').pop()?.toLowerCase() === 'md' && (
