@@ -8,6 +8,7 @@ import { modifiedModel } from '../../utils/monaco';
 import { isEditing } from '../store/atoms';
 import { FileNode } from '../store/files';
 import { useStepsStore } from '../store/steps';
+import { EditorToolbar } from './EditorToolbar';
 import { useHighlight } from './useHighlight';
 
 export function EditorPreviewFile({
@@ -120,5 +121,12 @@ export function EditorPreviewFile({
     };
   }, [editorDom, activeFile, saveDelta, saveHighlight]);
 
-  return <div ref={editorDom} className="monaco edit-mode"></div>;
+  return (
+    <div className="h-full w-full">
+      <div ref={editorDom} className="monaco edit-mode h-full w-full"></div>
+      <div className="absolute top-2 right-2">
+        <EditorToolbar />
+      </div>
+    </div>
+  );
 }

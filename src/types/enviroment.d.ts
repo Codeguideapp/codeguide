@@ -4,6 +4,7 @@ declare global {
       AWS_APP_REGION: string;
       AWS_APP_ACCESS_KEY: string;
       AWS_APP_SECRET_KEY: string;
+      AWS_APP_UPLOAD_BUCKET: string;
       DYNAMODB_GUIDES_TABLE: string;
       DYNAMODB_STEPS_TABLE: string;
       DYNAMODB_COMMENTS_TABLE: string;

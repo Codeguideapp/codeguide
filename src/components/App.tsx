@@ -3,11 +3,10 @@ import { faGithub } from '@fortawesome/free-brands-svg-icons';
 import {
   faEdit,
   faMagnifyingGlass,
-  faPlus,
   faUpload,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Dropdown, Menu, message } from 'antd';
+import { message } from 'antd';
 import classNames from 'classnames';
 import Link from 'next/link';
 import { signIn, useSession } from 'next-auth/react';
