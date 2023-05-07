@@ -195,7 +195,7 @@ export function Steps() {
 
                   {isFileNode ? (
                     <div className="step-file">
-                      {isVirtualFile
+                      {isVirtualFile && fileName.includes('.')
                         ? fileName.slice(0, fileName.lastIndexOf('.'))
                         : fileName}
                     </div>

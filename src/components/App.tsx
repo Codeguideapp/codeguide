@@ -6,11 +6,12 @@ import {
   faUpload,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { message } from 'antd';
+import { message, Tooltip } from 'antd';
 import classNames from 'classnames';
 import Link from 'next/link';
 import { signIn, useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
+import Moment from 'react-moment';
 import Split from 'react-split';
 
 import { Guide } from '../types/Guide';
@@ -122,6 +123,11 @@ export function App({ guide }: { guide: Guide }) {
               <span>{link}</span>
             </Link>
           )}
+          <Tooltip title={String(new Date(guide.createdAt))}>
+            <span className="cursor-default text-xs">
+              Created <Moment fromNow>{guide.createdAt}</Moment>
+            </span>
+          </Tooltip>
         </div>
 
         <div className="flex items-center gap-2">

@@ -4,7 +4,7 @@ import Delta from 'quill-delta';
 import { z } from 'zod';
 import create from 'zustand';
 
-import { StepZod } from '../../server/api/procedures/publishGuide';
+import { StepZod } from '../../types/StepZod';
 import { calcStat, composeDeltas, deltaToString } from '../../utils/deltaUtils';
 import { generateId } from '../../utils/generateId';
 import { isEditing } from './atoms';
@@ -22,6 +22,7 @@ interface SaveDeltaParams {
   highlight: Step['highlight'];
   file: FileNode;
   isFileDepChange?: boolean;
+  highlightPaths?: Step['highlightPaths'];
 }
 interface StepsState {
   publishedStepIds: string[];
@@ -109,6 +110,7 @@ export const useStepsStore = create<StepsState>((set, get) => ({
   },
   saveDelta: (params: SaveDeltaParams) => {
     const { delta, file, highlight, isFileDepChange } = params;
+    const highlightPaths = params.highlightPaths || [];
     const steps = get().steps;
     const stepsOrder = Object.keys(steps).sort();
 
@@ -155,7 +157,8 @@ export const useStepsStore = create<StepsState>((set, get) => ({
         before === after &&
         highlight.length === 0 &&
         !draftCommentPerChange[lastStepId] &&
-        !savedComments[lastStepId]
+        !savedComments[lastStepId] &&
+        highlightPaths.length === 0
       ) {
         const newSteps = produce(steps, (stepsDraft) => {
           delete stepsDraft[lastStepId];
@@ -169,11 +172,16 @@ export const useStepsStore = create<StepsState>((set, get) => ({
           );
           stepsDraft[lastStepId].stat = calcStat(newDelta);
           stepsDraft[lastStepId].highlight = highlight;
+          stepsDraft[lastStepId].highlightPaths = highlightPaths;
         });
         set({ steps: newSteps, activeStepId: lastStepId });
       }
     } else {
-      if (before === after && highlight.length === 0) {
+      if (
+        before === after &&
+        highlight.length === 0 &&
+        highlightPaths.length === 0
+      ) {
         return;
       }
 
@@ -200,6 +208,7 @@ export const useStepsStore = create<StepsState>((set, get) => ({
           deltaInverted: delta.invert(composeDeltas(fileSteps)),
           stat: calcStat(delta),
           renderHtml: file.origin === 'virtual',
+          highlightPaths,
         };
       });
 

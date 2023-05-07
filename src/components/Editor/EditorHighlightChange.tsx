@@ -118,9 +118,11 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
         standaloneEditor.current.createDecorationsCollection(
           highlightDecorations(modifiedModel)
         );
-        standaloneEditor.current.revealRangeNearTop(
-          highlightDecorations(modifiedModel)[0].range
-        );
+        if (highlightDecorations(modifiedModel)[0]?.range) {
+          standaloneEditor.current.revealRangeNearTop(
+            highlightDecorations(modifiedModel)[0].range
+          );
+        }
       } else if (noDeletes) {
         // only inserts
         modifiedModel.setValue(currValue);

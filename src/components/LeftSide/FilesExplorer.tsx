@@ -1,14 +1,17 @@
+import { faSquareCheck } from '@fortawesome/free-regular-svg-icons';
 import {
   faChevronDown,
   faChevronRight,
   faFile,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { AntdTreeNodeAttribute } from 'antd/lib/tree';
+import { Tooltip, TreeProps } from 'antd';
+import type { AntdTreeNodeAttribute } from 'antd/lib/tree';
 import ForwardDirectoryTree from 'antd/lib/tree/DirectoryTree';
 import { useAtom } from 'jotai';
 import { last, uniq } from 'lodash';
-import React, { useEffect, useMemo } from 'react';
+import Delta from 'quill-delta';
+import React, { useEffect, useMemo, useState } from 'react';
 import { decodeTime } from 'ulid';
 
 import { expandedFilesAtom, isEditing } from '../store/atoms';
@@ -17,11 +20,19 @@ import { useStepsStore } from '../store/steps';
 import { pathsToTreeStructure } from './pathsToTree';
 
 export function FilesExplorer() {
-  const setActiveChangeId = useStepsStore((s) => s.setActiveStepId);
+  const setActiveStepId = useStepsStore((s) => s.setActiveStepId);
+  const activeStep = useStepsStore((s) =>
+    s.activeStepId ? s.steps[s.activeStepId] : null
+  );
+  const [isCheckable, setIsCheckable] = useState(false);
+  const [checkedPaths, setCheckedPaths] = useState<TreeProps['checkedKeys']>(
+    []
+  );
   const treeRef = React.useRef<any>();
   const highlightChange = useStepsStore((s) =>
     s.activeStepId ? s.steps[s.activeStepId] : null
   );
+  const saveDelta = useStepsStore((s) => s.saveDelta);
   const appliedPaths = useStepsStore((s) => {
     const stepIds = Object.keys(s.steps).sort();
     const isAtEnd = !s.activeStepId && stepIds.length;
@@ -108,15 +119,49 @@ export function FilesExplorer() {
 
   return (
     <div className="file-tree flex flex-col">
-      <div className="header">Explorer</div>
+      <div className="header">
+        <span>Explorer</span>
+        {isEditing() && (
+          <Tooltip title="Highlight multiple files">
+            <FontAwesomeIcon
+              icon={faSquareCheck}
+              className="cursor-pointer"
+              onClick={() => {
+                setIsCheckable(!isCheckable);
+                if (!isCheckable) {
+                  setCheckedPaths([]);
+                }
+              }}
+            />
+          </Tooltip>
+        )}
+      </div>
       <ForwardDirectoryTree
+        checkable={isCheckable}
+        checkedKeys={checkedPaths}
         ref={treeRef}
         className="grow overflow-auto"
         treeData={treeData}
         switcherIcon={<span></span>}
         icon={getIcon}
-        selectedKeys={[activeFile?.path || '']}
+        multiple
+        selectedKeys={
+          activeStep?.highlightPaths && !activeStep.isDraft
+            ? activeStep.highlightPaths
+            : [activeFile?.path || '']
+        }
         expandedKeys={expanded}
+        onCheck={(checked) => {
+          setCheckedPaths(checked);
+          if (activeFile) {
+            saveDelta({
+              delta: new Delta(),
+              file: activeFile,
+              highlightPaths: checked as string[],
+              highlight: [],
+            });
+          }
+        }}
         onSelect={(selected, info) => {
           const node = info.node as any;
 
@@ -132,7 +177,7 @@ export function FilesExplorer() {
 
           if (node.type === 'blob') {
             if (isEditing()) {
-              setActiveChangeId(null);
+              setActiveStepId(null);
             }
             setActiveFileByPath(node.key);
           }
