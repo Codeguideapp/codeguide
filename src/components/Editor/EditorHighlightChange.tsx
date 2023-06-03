@@ -1,3 +1,9 @@
+import {
+  DIFF_DELETE,
+  DIFF_EQUAL,
+  DIFF_INSERT,
+  diff_match_patch,
+} from 'diff-match-patch';
 import { useAtomValue } from 'jotai';
 import { findLast } from 'lodash';
 import * as monaco from 'monaco-editor';
@@ -99,7 +105,44 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
         };
       });
 
-    if (prevValue === undefined || noInserts || noDeletes) {
+    if (currentStep.showDiff && prevValue) {
+      modifiedModel.setValue(currValue);
+      originalModel.setValue(prevValue);
+
+      if (!diffEditor.current) {
+        diffEditor.current = monaco.editor.createDiffEditor(monacoDom.current, {
+          automaticLayout: true,
+          theme: 'darkTheme',
+          readOnly: true,
+          renderSideBySide: false,
+          glyphMargin: true,
+          ignoreTrimWhitespace: !showWhitespace,
+          renderMarginRevertIcon: false,
+        });
+
+        diffEditor.current.setModel({
+          original: originalModel,
+          modified: modifiedModel,
+        });
+
+        onUpdateDiffRef.current = diffEditor.current.onDidUpdateDiff(() => {
+          onUpdateDiffRef.current?.dispose();
+
+          const firstLineChange =
+            diffEditor.current?.getLineChanges()?.[0].modifiedStartLineNumber;
+
+          if (typeof firstLineChange === 'number') {
+            diffEditor.current
+              ?.getModifiedEditor()
+              .revealLineNearTop(firstLineChange);
+          }
+        });
+
+        diffEditor.current
+          .getModifiedEditor()
+          .createDecorationsCollection(highlightDecorations(modifiedModel));
+      }
+    } else {
       standaloneEditor.current = monaco.editor.create(monacoDom.current, {
         automaticLayout: true,
         theme: 'darkTheme',
@@ -111,7 +154,67 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
 
       standaloneEditor.current.setModel(modifiedModel);
 
-      if (noInserts && noDeletes) {
+      if (!currentStep.showDiff) {
+        modifiedModel.setValue(currValue);
+        const dmp = new diff_match_patch();
+        const diff = dmp.diff_main(prevValue || '', currValue);
+        dmp.diff_cleanupSemantic(diff);
+
+        const edits: monaco.editor.IIdentifiedSingleEditOperation[] = [];
+        let index = 0;
+        for (const [type, text] of diff) {
+          if (type === DIFF_EQUAL) {
+            index += text.length;
+          } else if (type === DIFF_INSERT) {
+            const posStart = modifiedModel.getPositionAt(index);
+            const posEnd = modifiedModel.getPositionAt(index + text.length);
+
+            edits.push({
+              range: new monaco.Range(
+                posStart.lineNumber,
+                posStart.column,
+                posEnd.lineNumber,
+                posEnd.column
+              ),
+              text,
+            });
+
+            index += text.length;
+          } else if (type === DIFF_DELETE) {
+          }
+        }
+
+        if (edits.length !== 0) {
+          const decorations = edits.map((ed) => {
+            return {
+              range: ed.range,
+              options: {
+                className: 'insert-highlight',
+                overviewRuler: {
+                  color: '#3f6212',
+                  position: monaco.editor.OverviewRulerLane.Right,
+                },
+                minimap: { position: 1, color: '#3f6212' },
+              },
+            };
+          });
+
+          standaloneEditor.current.createDecorationsCollection([
+            ...decorations,
+            ...highlightDecorations(modifiedModel),
+          ]);
+          standaloneEditor.current.revealRangeNearTop(decorations[0].range);
+        } else {
+          standaloneEditor.current.createDecorationsCollection(
+            highlightDecorations(modifiedModel)
+          );
+          if (highlightDecorations(modifiedModel)[0]?.range) {
+            standaloneEditor.current.revealRangeNearTop(
+              highlightDecorations(modifiedModel)[0].range
+            );
+          }
+        }
+      } else if (noInserts && noDeletes) {
         // no changes (only highlight)
         modifiedModel.setValue(currValue);
 
@@ -169,43 +272,6 @@ export function EditorHighlightChange({ changeId }: { changeId: string }) {
           ...highlightDecorations(modifiedModel),
         ]);
         standaloneEditor.current.revealRangeNearTop(decorations[0].range);
-      }
-    } else {
-      modifiedModel.setValue(currValue);
-      originalModel.setValue(prevValue);
-
-      if (!diffEditor.current) {
-        diffEditor.current = monaco.editor.createDiffEditor(monacoDom.current, {
-          automaticLayout: true,
-          theme: 'darkTheme',
-          readOnly: true,
-          renderSideBySide: false,
-          glyphMargin: true,
-          ignoreTrimWhitespace: !showWhitespace,
-          renderMarginRevertIcon: false,
-        });
-
-        diffEditor.current.setModel({
-          original: originalModel,
-          modified: modifiedModel,
-        });
-
-        onUpdateDiffRef.current = diffEditor.current.onDidUpdateDiff(() => {
-          onUpdateDiffRef.current?.dispose();
-
-          const firstLineChange =
-            diffEditor.current?.getLineChanges()?.[0].modifiedStartLineNumber;
-
-          if (typeof firstLineChange === 'number') {
-            diffEditor.current
-              ?.getModifiedEditor()
-              .revealLineNearTop(firstLineChange);
-          }
-        });
-
-        diffEditor.current
-          .getModifiedEditor()
-          .createDecorationsCollection(highlightDecorations(modifiedModel));
       }
     }
 

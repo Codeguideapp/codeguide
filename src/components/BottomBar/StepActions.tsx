@@ -184,6 +184,18 @@ export function StepActions() {
             </Checkbox>
           </Tooltip>
         )}
+      {activeStep?.isDraft && (
+        <Tooltip title="Display change in a diff view">
+          <Checkbox
+            checked={activeStep.showDiff}
+            onChange={(e) =>
+              updateStepProps(activeStep.id, { showDiff: e.target.checked })
+            }
+          >
+            DIFF
+          </Checkbox>
+        </Tooltip>
+      )}
     </div>
   );
 }

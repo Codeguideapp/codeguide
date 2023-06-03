@@ -30,6 +30,7 @@ export const StepZod = z.object({
     })
   ),
   renderHtml: z.boolean().optional(),
+  showDiff: z.boolean().optional(),
   delta: DeltaZod,
   deltaInverted: DeltaZod.optional(),
   stat: z.array(z.number()),
