@@ -11,7 +11,8 @@ export function FileIcon({ path }: { path: string }) {
       .map((c) => c.path)
   );
 
-  if (!draftChanges.includes(path)) return <FontAwesomeIcon icon={faFile} />;
+  if (!draftChanges.includes(path))
+    return <FontAwesomeIcon icon={faFile} fontSize={12} />;
 
   return (
     <div className="flex h-full w-full items-center justify-center">

@@ -40,10 +40,38 @@ export function pathsToTreeStructure(
       title: splittedPath[splittedPath.length - 1],
     };
 
+    // ensure parent exists
+    let currentPath = '';
+    let lastPath: string | symbol = ROOT;
+    for (const pathPart of splittedPath) {
+      currentPath += pathPart;
+      if (!references[currentPath]) {
+        references[currentPath] = {
+          isLeaf: false,
+          type: 'tree',
+          icon: null,
+          key: currentPath,
+          title: pathPart,
+          children: [],
+        };
+
+        if (!references[lastPath].children) {
+          references[lastPath].children = [];
+        }
+        references[lastPath].children?.push(references[currentPath]);
+        references[lastPath].children?.sort((a, b) =>
+          a.isLeaf && !b.isLeaf ? 1 : !a.isLeaf && b.isLeaf ? -1 : 0
+        );
+      }
+      lastPath = currentPath;
+      currentPath += '/';
+    }
+
     // add item to parent cildren
     splittedPath.pop();
     const parentPath =
       splittedPath.length === 0 ? ROOT : splittedPath.join('/');
+
     if (references[parentPath]) {
       if (!references[parentPath].children) {
         references[parentPath].children = [];

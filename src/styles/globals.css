@@ -116,6 +116,12 @@ body {
   overflow: hidden;
   padding-right: 30px;
 }
+.file-tree .ant-tree-indent-unit {
+  width: 10px;
+}
+.file-tree .ant-tree .ant-tree-node-content-wrapper .ant-tree-iconEle {
+  width: 20px;
+}
 
 .read-mode .file-tree .ant-tree.ant-tree-directory .ant-tree-treenode {
   pointer-events: none;

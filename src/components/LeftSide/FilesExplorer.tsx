@@ -146,7 +146,7 @@ export function FilesExplorer() {
         icon={getIcon}
         multiple
         selectedKeys={
-          activeStep?.highlightPaths && !activeStep.isDraft
+          activeStep?.highlightPaths?.length && !activeStep.isDraft
             ? activeStep.highlightPaths
             : [activeFile?.path || '']
         }
